@@ -1,0 +1,595 @@
+package com.br.linecut.ui.navigation
+
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import com.br.linecut.ui.screens.auth.EmailSentScreen
+import com.br.linecut.ui.screens.auth.ForgotPasswordScreen
+import com.br.linecut.ui.screens.auth.LoginScreen
+import com.br.linecut.ui.screens.auth.SignUpScreen
+import com.br.linecut.ui.screens.StoresScreen
+import com.br.linecut.ui.screens.StoreDetailScreen
+import com.br.linecut.ui.screens.CartScreen
+import com.br.linecut.ui.screens.OrderSummaryScreen
+import com.br.linecut.ui.screens.PaymentMethodScreen
+import com.br.linecut.ui.screens.PaymentMethod
+import com.br.linecut.ui.screens.PaymentType
+import com.br.linecut.ui.theme.LineCutTheme
+
+@Composable
+fun LineCutNavigation(
+    modifier: Modifier = Modifier,
+    startDestination: Screen = Screen.LOGIN
+) {
+    var currentScreen by remember { mutableStateOf(startDestination) }
+    var userEmail by remember { mutableStateOf("") }
+    var selectedStore by remember { mutableStateOf<com.br.linecut.ui.screens.Store?>(null) }
+    var cartItems by remember { mutableStateOf(getSampleCartItemsForNavigation()) }
+    var selectedPaymentMethod by remember { mutableStateOf(PaymentMethod.PAY_BY_APP) }
+    var selectedPaymentType by remember { mutableStateOf(PaymentType.PIX) }
+    
+    when (currentScreen) {
+        Screen.LOGIN -> {
+            LoginScreen(
+                onLoginClick = { email, password ->
+                    // TODO: Implement login logic
+                    // For now, just print the values and navigate to stores
+                    println("Login - Email: $email, Password: $password")
+                    // After successful login, navigate to stores screen
+                    currentScreen = Screen.STORES
+                },
+                onForgotPasswordClick = {
+                    currentScreen = Screen.FORGOT_PASSWORD
+                },
+                onSignUpClick = {
+                    currentScreen = Screen.SIGNUP
+                },
+                modifier = modifier
+            )
+        }
+        
+        Screen.SIGNUP -> {
+            SignUpScreen(
+                onSignUpClick = { fullName, cpf, phone, email, password, confirmPassword ->
+                    // TODO: Implement signup logic
+                    println("SignUp - Name: $fullName, CPF: $cpf, Phone: $phone, Email: $email")
+                    // After successful signup, navigate to login
+                    currentScreen = Screen.LOGIN
+                },
+                onLoginClick = {
+                    currentScreen = Screen.LOGIN
+                },
+                onTermsClick = {
+                    // TODO: Show terms and conditions
+                    println("Terms and Conditions clicked")
+                },
+                onPrivacyClick = {
+                    // TODO: Show privacy policy
+                    println("Privacy Policy clicked")
+                },
+                modifier = modifier
+            )
+        }
+        
+        Screen.FORGOT_PASSWORD -> {
+            ForgotPasswordScreen(
+                onSendEmailClick = { email ->
+                    // TODO: Implement forgot password logic
+                    println("Forgot Password - Email: $email")
+                    // Store email and navigate to success screen
+                    userEmail = email
+                    currentScreen = Screen.EMAIL_SENT
+                },
+                onCancelClick = {
+                    currentScreen = Screen.LOGIN
+                },
+                modifier = modifier
+            )
+        }
+        
+        Screen.EMAIL_SENT -> {
+            EmailSentScreen(
+                email = userEmail,
+                onResendEmailClick = {
+                    // TODO: Implement resend email logic
+                    println("Resend email to: $userEmail")
+                    // Stay on the same screen or show a toast message
+                },
+                onBackClick = {
+                    currentScreen = Screen.FORGOT_PASSWORD
+                },
+                modifier = modifier
+            )
+        }
+        
+        Screen.STORES -> {
+            StoresScreen(
+                stores = getSampleStoresForNavigation(),
+                onStoreClick = { store ->
+                    println("Store clicked: ${store.name}") // Debug
+                    selectedStore = store
+                    currentScreen = Screen.STORE_DETAIL
+                },
+                onHomeClick = {
+                    // Stay on stores screen since this is the home
+                },
+                onSearchClick = {
+                    // TODO: Navigate to search screen
+                    println("Search clicked")
+                },
+                onNotificationClick = {
+                    // TODO: Navigate to notifications screen
+                    println("Notifications clicked")
+                },
+                onOrdersClick = {
+                    // TODO: Navigate to orders screen
+                    println("Orders clicked")
+                },
+                onProfileClick = {
+                    // TODO: Navigate to profile screen or logout
+                    println("Profile clicked")
+                },
+                modifier = modifier
+            )
+        }
+        
+        Screen.STORE_DETAIL -> {
+            println("Navigating to STORE_DETAIL. Selected store: ${selectedStore?.name}") // Debug
+            val store = selectedStore ?: getSampleStoresForNavigation().firstOrNull()
+            if (store != null) {
+                println("Rendering StoreDetailScreen for: ${store.name}") // Debug
+                StoreDetailScreen(
+                    store = store,
+                    menuItems = getSampleMenuItemsForNavigation(),
+                    categories = getSampleCategoriesForNavigation(),
+                    cartTotal = 39.90,
+                    cartItemCount = 4,
+                    onBackClick = {
+                        currentScreen = Screen.STORES
+                    },
+                    onCategoryClick = { category ->
+                        // TODO: Filter menu items by category
+                        println("Category clicked: ${category.name}")
+                    },
+                    onAddItem = { item ->
+                        // TODO: Add item to cart
+                        println("Add item: ${item.name}")
+                    },
+                    onRemoveItem = { item ->
+                        // TODO: Remove item from cart
+                        println("Remove item: ${item.name}")
+                    },
+                    onViewCartClick = {
+                        currentScreen = Screen.CART
+                    },
+                    onHomeClick = {
+                        currentScreen = Screen.STORES
+                    },
+                    onSearchClick = {
+                        // TODO: Navigate to search screen
+                        println("Search clicked")
+                    },
+                    onNotificationClick = {
+                        // TODO: Navigate to notifications screen
+                        println("Notifications clicked")
+                    },
+                    onOrdersClick = {
+                        // TODO: Navigate to orders screen
+                        println("Orders clicked")
+                    },
+                    onProfileClick = {
+                        // TODO: Navigate to profile screen or logout
+                        println("Profile clicked")
+                    },
+                    modifier = modifier
+                )
+            } else {
+                // Fallback: return to stores if no store is available
+                LaunchedEffect(Unit) {
+                    currentScreen = Screen.STORES
+                }
+            }
+        }
+        
+        Screen.CART -> {
+            val store = selectedStore ?: getSampleStoresForNavigation().firstOrNull()
+            if (store != null) {
+                CartScreen(
+                    store = store,
+                    cartItems = cartItems,
+                    onBackClick = {
+                        currentScreen = Screen.STORE_DETAIL
+                    },
+                    onClearCartClick = {
+                        cartItems = emptyList()
+                    },
+                    onAddMoreItemsClick = {
+                        currentScreen = Screen.STORE_DETAIL
+                    },
+                    onAddItem = { item ->
+                        cartItems = cartItems.map { 
+                            if (it.id == item.id) it.copy(quantity = it.quantity + 1) else it
+                        }
+                    },
+                    onRemoveItem = { item ->
+                        cartItems = cartItems.mapNotNull { 
+                            when {
+                                it.id == item.id && it.quantity > 1 -> it.copy(quantity = it.quantity - 1)
+                                it.id == item.id && it.quantity == 1 -> null
+                                else -> it
+                            }
+                        }
+                    },
+                    onContinueClick = {
+                        currentScreen = Screen.ORDER_SUMMARY
+                    },
+                    onHomeClick = {
+                        currentScreen = Screen.STORES
+                    },
+                    onSearchClick = {
+                        // TODO: Navigate to search screen
+                        println("Search clicked")
+                    },
+                    onNotificationClick = {
+                        // TODO: Navigate to notifications screen
+                        println("Notifications clicked")
+                    },
+                    onOrdersClick = {
+                        // TODO: Navigate to orders screen
+                        println("Orders clicked")
+                    },
+                    onProfileClick = {
+                        // TODO: Navigate to profile screen or logout
+                        println("Profile clicked")
+                    },
+                    modifier = modifier
+                )
+            } else {
+                // Fallback: return to stores if no store is available
+                LaunchedEffect(Unit) {
+                    currentScreen = Screen.STORES
+                }
+            }
+        }
+        
+        Screen.ORDER_SUMMARY -> {
+            val store = selectedStore ?: getSampleStoresForNavigation().firstOrNull()
+            if (store != null) {
+                OrderSummaryScreen(
+                    store = store,
+                    cartItems = cartItems,
+                    onBackClick = {
+                        currentScreen = Screen.CART
+                    },
+                    onClearCartClick = {
+                        cartItems = emptyList()
+                    },
+                    onAddMoreItemsClick = {
+                        currentScreen = Screen.STORE_DETAIL
+                    },
+                    onPaymentMethodChange = { method ->
+                        // TODO: Handle payment method change
+                        println("Payment method changed: $method")
+                    },
+                    onPaymentTypeChange = { type ->
+                        // TODO: Handle payment type change
+                        println("Payment type changed: $type")
+                    },
+                    onFinishOrderClick = {
+                        currentScreen = Screen.PAYMENT_METHOD
+                    },
+                    onHomeClick = {
+                        currentScreen = Screen.STORES
+                    },
+                    onSearchClick = {
+                        // TODO: Navigate to search screen
+                        println("Search clicked")
+                    },
+                    onNotificationClick = {
+                        // TODO: Navigate to notifications screen
+                        println("Notifications clicked")
+                    },
+                    onOrdersClick = {
+                        // TODO: Navigate to orders screen
+                        println("Orders clicked")
+                    },
+                    onProfileClick = {
+                        // TODO: Navigate to profile screen or logout
+                        println("Profile clicked")
+                    },
+                    modifier = modifier
+                )
+            } else {
+                // Fallback: return to stores if no store is available
+                LaunchedEffect(Unit) {
+                    currentScreen = Screen.STORES
+                }
+            }
+        }
+        
+        Screen.PAYMENT_METHOD -> {
+            PaymentMethodScreen(
+                selectedPaymentMethod = selectedPaymentMethod,
+                selectedPaymentType = selectedPaymentType,
+                onBackClick = {
+                    currentScreen = Screen.ORDER_SUMMARY
+                },
+                onPaymentMethodChange = { method ->
+                    selectedPaymentMethod = method
+                },
+                onPaymentTypeChange = { type ->
+                    selectedPaymentType = type
+                },
+                onConfirmClick = {
+                    // TODO: Process payment and navigate to order confirmation
+                    cartItems = emptyList() // Clear cart after payment confirmation
+                    currentScreen = Screen.STORES // Navigate back to stores for now
+                },
+                modifier = modifier
+            )
+        }
+    }
+}
+
+// Previews para testar diferentes telas da navegação
+@Preview(
+    name = "Login Screen",
+    showBackground = true,
+    group = "Navigation"
+)
+@Composable
+fun NavigationLoginPreview() {
+    LineCutTheme {
+        LineCutNavigation(startDestination = Screen.LOGIN)
+    }
+}
+
+@Preview(
+    name = "SignUp Screen", 
+    showBackground = true,
+    group = "Navigation"
+)
+@Composable
+fun NavigationSignUpPreview() {
+    LineCutTheme {
+        LineCutNavigation(startDestination = Screen.SIGNUP)
+    }
+}
+
+@Preview(
+    name = "Forgot Password Screen",
+    showBackground = true,
+    group = "Navigation"
+)
+@Composable
+fun NavigationForgotPasswordPreview() {
+    LineCutTheme {
+        LineCutNavigation(startDestination = Screen.FORGOT_PASSWORD)
+    }
+}
+
+@Preview(
+    name = "Email Sent Screen",
+    showBackground = true,
+    group = "Navigation"
+)
+@Composable
+fun NavigationEmailSentPreview() {
+    LineCutTheme {
+        // Simulando que veio da tela anterior com um email
+        EmailSentScreen(
+            email = "usuario@exemplo.com",
+            onResendEmailClick = {},
+            onBackClick = {}
+        )
+    }
+}
+
+@Preview(
+    name = "Store Detail Screen",
+    showBackground = true,
+    group = "Navigation"
+)
+@Composable
+fun NavigationStoreDetailPreview() {
+    LineCutTheme {
+        // Preview com store pré-selecionada
+        var currentScreen by remember { mutableStateOf(Screen.STORE_DETAIL) }
+        var selectedStore by remember { 
+            mutableStateOf<com.br.linecut.ui.screens.Store?>(
+                getSampleStoresForNavigation().firstOrNull()
+            ) 
+        }
+        
+        when (currentScreen) {
+            Screen.STORE_DETAIL -> {
+                val store = selectedStore ?: getSampleStoresForNavigation().firstOrNull()
+                if (store != null) {
+                    StoreDetailScreen(
+                        store = store,
+                        menuItems = getSampleMenuItemsForNavigation(),
+                        categories = getSampleCategoriesForNavigation(),
+                        cartTotal = 39.90,
+                        cartItemCount = 4,
+                        onBackClick = { currentScreen = Screen.STORES },
+                        onCategoryClick = { },
+                        onAddItem = { },
+                        onRemoveItem = { },
+                        onViewCartClick = { },
+                        onHomeClick = { currentScreen = Screen.STORES },
+                        onSearchClick = { },
+                        onNotificationClick = { },
+                        onOrdersClick = { },
+                        onProfileClick = { }
+                    )
+                }
+            }
+            else -> {
+                // Fallback para outras telas se necessário
+            }
+        }
+    }
+}
+
+@Preview(
+    name = "Stores Screen",
+    showBackground = true,
+    group = "Navigation"
+)
+@Composable
+fun NavigationStoresPreview() {
+    LineCutTheme {
+        LineCutNavigation(startDestination = Screen.STORES)
+    }
+}
+
+@Preview(
+    name = "Cart Screen",
+    showBackground = true,
+    group = "Navigation"
+)
+@Composable
+fun NavigationCartPreview() {
+    LineCutTheme {
+        LineCutNavigation(startDestination = Screen.CART)
+    }
+}
+
+// Função auxiliar para dados de exemplo na navegação
+private fun getSampleStoresForNavigation() = listOf(
+    com.br.linecut.ui.screens.Store(
+        id = "1",
+        name = "Museoh",
+        category = "Lanches e Salgados",
+        location = "Praça 3 - Senac",
+        distance = "150m"
+    ),
+    com.br.linecut.ui.screens.Store(
+        id = "2",
+        name = "Sabor & Companhia",
+        category = "Refeições variadas",
+        location = "Praça 3 - Senac",
+        distance = "200m"
+    ),
+    com.br.linecut.ui.screens.Store(
+        id = "3",
+        name = "Cafezin",
+        category = "Café gourmet",
+        location = "Praça 2 - Senac",
+        distance = "240m"
+    ),
+    com.br.linecut.ui.screens.Store(
+        id = "4",
+        name = "Sanduba Burguer",
+        category = "Lanches variados",
+        location = "Praça 2 - Senac",
+        distance = "260m",
+        isFavorite = true
+    ),
+    com.br.linecut.ui.screens.Store(
+        id = "5",
+        name = "Vila Sabor",
+        category = "Refeições variadas",
+        location = "Praça 1 - Senac",
+        distance = "300m",
+        isFavorite = true
+    )
+)
+
+private fun getSampleMenuItemsForNavigation() = listOf(
+    com.br.linecut.ui.screens.MenuItem(
+        id = "1",
+        name = "Açaí",
+        description = "Creme congelado feito da polpa do fruto açaí, geralmente servido com frutas, granola e outros acompanhamentos.",
+        price = 11.90,
+        category = "acompanhamentos",
+        quantity = 1
+    ),
+    com.br.linecut.ui.screens.MenuItem(
+        id = "2",
+        name = "Croissant",
+        description = "Massa folhada em formato de meia-lua, geralmente amanteigada e podendo ter recheios doces ou salgados.",
+        price = 6.00,
+        category = "acompanhamentos",
+        quantity = 1
+    ),
+    com.br.linecut.ui.screens.MenuItem(
+        id = "3",
+        name = "Lanche Natural",
+        description = "Sanduíche preparado com pão integral, recheios leves como queijo branco, peito de peru, salada e molhos leves.",
+        price = 8.00,
+        category = "lanches",
+        quantity = 1
+    ),
+    com.br.linecut.ui.screens.MenuItem(
+        id = "4",
+        name = "Pão de Queijo",
+        description = "Pequeno pão assado, feito com polvilho, queijo e outros ingredientes, resultando em uma textura macia e elástica.",
+        price = 4.00,
+        category = "acompanhamentos",
+        quantity = 1
+    )
+)
+
+private fun getSampleCategoriesForNavigation() = listOf(
+    com.br.linecut.ui.screens.MenuCategory("acompanhamentos", "Acompanhamentos", true),
+    com.br.linecut.ui.screens.MenuCategory("bebidas", "Bebidas"),
+    com.br.linecut.ui.screens.MenuCategory("combos", "Combos"),
+    com.br.linecut.ui.screens.MenuCategory("doces", "Doces"),
+    com.br.linecut.ui.screens.MenuCategory("lanches", "Lanches"),
+    com.br.linecut.ui.screens.MenuCategory("pratos", "Pratos Principais"),
+    com.br.linecut.ui.screens.MenuCategory("salgados", "Salgados"),
+    com.br.linecut.ui.screens.MenuCategory("sobremesas", "Sobremesas")
+)
+
+// Função auxiliar para dados de exemplo do carrinho
+private fun getSampleCartItemsForNavigation() = listOf(
+    com.br.linecut.ui.screens.CartItem(
+        id = "1",
+        name = "Açaí",
+        price = 11.90,
+        quantity = 1
+    ),
+    com.br.linecut.ui.screens.CartItem(
+        id = "2",
+        name = "Pizza",
+        price = 20.00,
+        quantity = 2
+    ),
+    com.br.linecut.ui.screens.CartItem(
+        id = "3",
+        name = "Coca-cola",
+        price = 5.00,
+        quantity = 1
+    ),
+    com.br.linecut.ui.screens.CartItem(
+        id = "4",
+        name = "Suco",
+        price = 5.00,
+        quantity = 1
+    )
+)
+
+@Preview(
+    name = "Order Summary Screen",
+    showBackground = true,
+    group = "Navigation"
+)
+@Composable
+fun NavigationOrderSummaryPreview() {
+    LineCutTheme {
+        LineCutNavigation(startDestination = Screen.ORDER_SUMMARY)
+    }
+}
+
+@Preview(
+    name = "Payment Method Screen",
+    showBackground = true,
+    group = "Navigation"
+)
+@Composable
+fun NavigationPaymentMethodPreview() {
+    LineCutTheme {
+        LineCutNavigation(startDestination = Screen.PAYMENT_METHOD)
+    }
+}
