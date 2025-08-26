@@ -274,7 +274,7 @@ private fun CategoryFilters(
                     Text(
                         text = category.name,
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 13.sp,
+                            fontSize = 12.92.sp,
                             fontWeight = FontWeight.Medium
                         )
                     )
@@ -286,7 +286,13 @@ private fun CategoryFilters(
                     containerColor = Color(0xFFB9B9B9),
                     labelColor = Color.White
                 ),
-                modifier = Modifier.shadow(4.dp, RoundedCornerShape(18.dp))
+                shape = RoundedCornerShape(18.46.dp),
+                modifier = Modifier
+                    .shadow(
+                        elevation = 3.69.dp,
+                        shape = RoundedCornerShape(18.46.dp)
+                    )
+                    .height(23.07.dp)
             )
         }
     }
@@ -505,34 +511,44 @@ private fun CartSummary(
         Spacer(modifier = Modifier.weight(1f))
         
         // Botão Ver sacola
-        Button(
-            onClick = onViewCartClick,
-            colors = ButtonDefaults.buttonColors(containerColor = LineCutRed),
-            shape = RoundedCornerShape(20.dp),
+        Box(
             modifier = Modifier
-                .height(28.dp)
-                .shadow(4.dp, RoundedCornerShape(20.dp)),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+                .width(144.dp)
+                .height(28.1.dp)
+                .background(
+                    color = LineCutRed,
+                    shape = RoundedCornerShape(20.dp)
+                )
+                .shadow(
+                    elevation = 4.dp,
+                    shape = RoundedCornerShape(20.dp)
+                )
+                .clickable { onViewCartClick() }
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = "Ver sacola",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = Color.White,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 14.sp
-                    )
-                )
-                Icon(
-                    imageVector = Icons.Default.ShoppingBag,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(12.dp)
-                )
-            }
+            // Texto "Ver sacola"
+            Text(
+                text = "Ver sacola",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = Color.White,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 14.sp
+                ),
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = 16.dp)
+                    .width(84.dp)
+            )
+            
+            // Ícone da sacola
+            Icon(
+                imageVector = Icons.Default.ShoppingBag,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier
+                    .size(11.415.dp)
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 13.dp)
+            )
         }
     }
 }

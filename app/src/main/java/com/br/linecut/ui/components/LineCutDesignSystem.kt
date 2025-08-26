@@ -8,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -23,6 +24,18 @@ import com.br.linecut.ui.theme.*
  * Este arquivo centraliza todos os componentes reutilizáveis do design system.
  * Mantenha a consistência visual usando estes componentes em todas as telas.
  */
+
+/**
+ * LineCut Design System
+ * 
+ * Objeto que centraliza as definições de design do app
+ */
+object LineCutDesignSystem {
+    /**
+     * Cor de background padrão para todas as telas
+     */
+    val screenBackgroundColor: Color = Color(0xFFFFFFFF) // Branco (#FFFFFF)
+}
 
 // Text Components
 @Composable

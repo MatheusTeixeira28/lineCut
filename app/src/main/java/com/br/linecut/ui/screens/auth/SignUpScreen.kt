@@ -1,5 +1,6 @@
 package com.br.linecut.ui.screens.auth
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -53,6 +54,7 @@ fun SignUpScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .background(LineCutDesignSystem.screenBackgroundColor)
             .padding(horizontal = 58.dp)
     ) {
         Column(

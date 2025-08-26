@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.theme.*
 
 // Data class para representar uma notificação
@@ -58,13 +59,13 @@ fun NotificationsScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.White)
     ) {
         // Header com fundo arredondado
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(206.dp)
+                .background(LineCutDesignSystem.screenBackgroundColor)
         ) {
             // Fundo branco arredondado
             Card(

@@ -36,6 +36,7 @@ fun EmailSentScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .background(LineCutDesignSystem.screenBackgroundColor)
             .padding(horizontal = 24.dp)
     ) {
         Column(

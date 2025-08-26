@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.theme.*
 
 data class CartItem(
@@ -61,7 +62,7 @@ fun CartScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
+                .background(LineCutDesignSystem.screenBackgroundColor)
         ) {
             // Header da loja
             CartHeader(

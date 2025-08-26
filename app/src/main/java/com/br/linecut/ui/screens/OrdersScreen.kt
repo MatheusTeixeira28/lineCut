@@ -23,8 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-// Remove the wildcard import to avoid conflicts with Material3 NavigationBar
-// import com.br.linecut.ui.components.*
+import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.theme.*
 
 data class Order(
@@ -62,7 +61,7 @@ fun OrdersScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
