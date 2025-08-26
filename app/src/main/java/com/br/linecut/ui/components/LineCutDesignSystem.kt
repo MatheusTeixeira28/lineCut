@@ -1,5 +1,6 @@
 package com.br.linecut.ui.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -7,11 +8,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.br.linecut.R
 import com.br.linecut.ui.theme.*
 
 /**
@@ -89,15 +92,12 @@ fun LineCutLinkText(
 fun LineCutLogo(
     modifier: Modifier = Modifier
 ) {
-    Text(
-        text = "LineCut",
-        style = MaterialTheme.typography.displayLarge.copy(
-            color = LineCutRed,
-            fontWeight = FontWeight.Bold,
-            fontSize = 48.sp
-        ),
-        textAlign = TextAlign.Center,
-        modifier = modifier
+    Image(
+        painter = painterResource(id = R.drawable.linecut_login_icon),
+        contentDescription = "Logo LineCut",
+        modifier = Modifier
+            .size(296.dp)
+            .offset(x = 0.dp, y = 41.dp)
     )
 }
 

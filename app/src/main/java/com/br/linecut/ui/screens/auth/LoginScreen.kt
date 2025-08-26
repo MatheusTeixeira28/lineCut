@@ -55,13 +55,7 @@ fun LoginScreen(
                     .padding(bottom = 20.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.linecut_login_icon), // Substitua "sua_imagem" pelo nome do arquivo
-                    contentDescription = "Logo LineCut",
-                    modifier = Modifier
-                        .size(296.dp)
-                        .offset(x = 0.dp, y = 41.dp)
-                )
+                LineCutLogo()
             }
             
             LineCutSpacer(LineCutSpacing.Large)
