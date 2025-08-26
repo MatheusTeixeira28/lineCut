@@ -1,5 +1,6 @@
 package com.br.linecut.ui.screens.auth
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,12 +12,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.br.linecut.R
 import com.br.linecut.ui.components.*
 import com.br.linecut.ui.theme.*
 
@@ -52,7 +55,13 @@ fun LoginScreen(
                     .padding(bottom = 20.dp),
                 contentAlignment = Alignment.Center
             ) {
-                LineCutLogo()
+                Image(
+                    painter = painterResource(id = R.drawable.linecut_login_icon), // Substitua "sua_imagem" pelo nome do arquivo
+                    contentDescription = "Logo LineCut",
+                    modifier = Modifier
+                        .size(296.dp)
+                        .offset(x = 0.dp, y = 41.dp)
+                )
             }
             
             LineCutSpacer(LineCutSpacing.Large)
