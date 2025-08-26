@@ -38,46 +38,37 @@ fun ForgotPasswordScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp)
     ) {
-        Column(
+        // Logo posicionado como no Figma
+        Box(
             modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .size(296.dp)
+                .offset(x = 58.dp, y = 41.dp),
+            contentAlignment = Alignment.Center
         ) {
-            LineCutSpacer(LineCutSpacing.XXLarge)
-            
-            // Logo
-            Box(
-                modifier = Modifier
-                    .size(296.dp)
-                    .padding(bottom = 20.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                LineCutLogo()
-            }
-            
-            LineCutSpacer(LineCutSpacing.XXLarge)
-            
-            // Card Container
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp)
-                    .shadow(
-                        elevation = 4.dp,
-                        shape = RoundedCornerShape(10.6.dp),
-                        spotColor = Color.Black.copy(alpha = 0.25f)
-                    ),
-                shape = RoundedCornerShape(10.6.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = BackgroundPrimary
+            LineCutLogo()
+        }
+        
+        // Card Container na posição exata do Figma
+        Card(
+            modifier = Modifier
+                .fillMaxWidth() // Usar fillMaxWidth para garantir responsividade
+                .height(300.dp) // h-[300px] - altura exata do Figma
+                .padding(horizontal = 24.dp) // Padding para simular left-6 do Figma
+                .offset(y = 318.dp) // top-[318px] - posição vertical exata do Figma
+                .shadow(
+                    elevation = 4.dp,
+                    shape = RoundedCornerShape(10.6.dp),
+                    spotColor = Color.Black.copy(alpha = 0.25f)
                 ),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = 4.dp
-                )
-            ) {
+            shape = RoundedCornerShape(10.6.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = BackgroundPrimary
+            ),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 4.dp
+            )
+        ) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -152,11 +143,8 @@ fun ForgotPasswordScreen(
                     }
                 }
             }
-            
-            LineCutSpacer(LineCutSpacing.XXLarge)
         }
     }
-}
 
 @Preview(showBackground = true)
 @Composable
