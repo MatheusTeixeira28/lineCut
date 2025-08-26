@@ -12,8 +12,21 @@ import com.br.linecut.ui.screens.StoreDetailScreen
 import com.br.linecut.ui.screens.CartScreen
 import com.br.linecut.ui.screens.OrderSummaryScreen
 import com.br.linecut.ui.screens.PaymentMethodScreen
+import com.br.linecut.ui.screens.ProfileScreen
+import com.br.linecut.ui.screens.AccountDataScreen
+import com.br.linecut.ui.screens.NotificationsScreen
+import com.br.linecut.ui.screens.PaymentsScreen
+import com.br.linecut.ui.screens.OrdersScreen
+import com.br.linecut.ui.screens.OrderDetailsScreen
+import com.br.linecut.ui.screens.HelpScreen
+import com.br.linecut.ui.screens.SettingsScreen
+import com.br.linecut.ui.screens.OrderDetail
+import com.br.linecut.ui.screens.OrderDetailItem
+import com.br.linecut.ui.screens.OrderStatus
 import com.br.linecut.ui.screens.PaymentMethod
 import com.br.linecut.ui.screens.PaymentType
+import com.br.linecut.ui.screens.Store
+import com.br.linecut.ui.screens.getSampleOrderDetail
 import com.br.linecut.ui.theme.LineCutTheme
 
 @Composable
@@ -23,10 +36,36 @@ fun LineCutNavigation(
 ) {
     var currentScreen by remember { mutableStateOf(startDestination) }
     var userEmail by remember { mutableStateOf("") }
-    var selectedStore by remember { mutableStateOf<com.br.linecut.ui.screens.Store?>(null) }
+    var selectedStore by remember { mutableStateOf<Store?>(null) }
     var cartItems by remember { mutableStateOf(getSampleCartItemsForNavigation()) }
     var selectedPaymentMethod by remember { mutableStateOf(PaymentMethod.PAY_BY_APP) }
     var selectedPaymentType by remember { mutableStateOf(PaymentType.PIX) }
+    var searchQuery by remember { mutableStateOf("") }
+    var availableStores by remember { mutableStateOf(getSampleStoresForSearch()) }
+    var selectedOrderDetail by remember { mutableStateOf<OrderDetail?>(null) }
+    
+    // Initialize order detail if starting directly on ORDER_DETAILS screen
+    LaunchedEffect(startDestination) {
+        if (startDestination == Screen.ORDER_DETAILS && selectedOrderDetail == null) {
+            selectedOrderDetail = OrderDetail(
+                orderId = "#1020",
+                storeName = "Museoh",
+                storeType = "Lanches e Salgados",
+                date = "24/04/2025",
+                status = "Pedido concluído",
+                items = listOf(
+                    OrderDetailItem("Açaí", 1, 11.90),
+                    OrderDetailItem("Pizza", 2, 20.00),
+                    OrderDetailItem("Coca-cola", 1, 5.00),
+                    OrderDetailItem("Suco", 1, 6.00)
+                ),
+                total = 39.90,
+                paymentMethod = "PIX",
+                pickupLocation = "Praça 3 - Senac",
+                rating = 5
+            )
+        }
+    }
     
     when (currentScreen) {
         Screen.LOGIN -> {
@@ -114,20 +153,17 @@ fun LineCutNavigation(
                     // Stay on stores screen since this is the home
                 },
                 onSearchClick = {
-                    // TODO: Navigate to search screen
-                    println("Search clicked")
+                    // Search now integrated in StoresScreen
                 },
                 onNotificationClick = {
                     // TODO: Navigate to notifications screen
                     println("Notifications clicked")
                 },
                 onOrdersClick = {
-                    // TODO: Navigate to orders screen
-                    println("Orders clicked")
+                    currentScreen = Screen.ORDERS
                 },
                 onProfileClick = {
-                    // TODO: Navigate to profile screen or logout
-                    println("Profile clicked")
+                    currentScreen = Screen.PROFILE
                 },
                 modifier = modifier
             )
@@ -166,20 +202,19 @@ fun LineCutNavigation(
                         currentScreen = Screen.STORES
                     },
                     onSearchClick = {
-                        // TODO: Navigate to search screen
-                        println("Search clicked")
+                        // Search integrated in StoresScreen - navigate to stores
+                        currentScreen = Screen.STORES
                     },
                     onNotificationClick = {
                         // TODO: Navigate to notifications screen
                         println("Notifications clicked")
                     },
                     onOrdersClick = {
-                        // TODO: Navigate to orders screen
-                        println("Orders clicked")
+                        currentScreen = Screen.ORDERS
+
                     },
                     onProfileClick = {
-                        // TODO: Navigate to profile screen or logout
-                        println("Profile clicked")
+                        currentScreen = Screen.PROFILE
                     },
                     modifier = modifier
                 )
@@ -227,20 +262,19 @@ fun LineCutNavigation(
                         currentScreen = Screen.STORES
                     },
                     onSearchClick = {
-                        // TODO: Navigate to search screen
-                        println("Search clicked")
+                        // Search integrated in StoresScreen - navigate to stores
+                        currentScreen = Screen.STORES
                     },
                     onNotificationClick = {
                         // TODO: Navigate to notifications screen
                         println("Notifications clicked")
                     },
                     onOrdersClick = {
-                        // TODO: Navigate to orders screen
-                        println("Orders clicked")
+                        currentScreen = Screen.ORDERS
+
                     },
                     onProfileClick = {
-                        // TODO: Navigate to profile screen or logout
-                        println("Profile clicked")
+                        currentScreen = Screen.PROFILE
                     },
                     modifier = modifier
                 )
@@ -290,12 +324,11 @@ fun LineCutNavigation(
                         println("Notifications clicked")
                     },
                     onOrdersClick = {
-                        // TODO: Navigate to orders screen
-                        println("Orders clicked")
+                        currentScreen = Screen.ORDERS
+
                     },
                     onProfileClick = {
-                        // TODO: Navigate to profile screen or logout
-                        println("Profile clicked")
+                        currentScreen = Screen.PROFILE
                     },
                     modifier = modifier
                 )
@@ -326,6 +359,293 @@ fun LineCutNavigation(
                     currentScreen = Screen.STORES // Navigate back to stores for now
                 },
                 modifier = modifier
+            )
+        }
+        
+        Screen.PROFILE -> {
+            ProfileScreen(
+                userEmail = userEmail,
+                userName = "Hannah Montana", // TODO: Get from user data
+                onAccountDataClick = {
+                    currentScreen = Screen.ACCOUNT_DATA
+                },
+                onNotificationsClick = {
+                    currentScreen = Screen.NOTIFICATIONS
+                },
+                onPaymentsClick = {
+                    currentScreen = Screen.PAYMENTS
+                },
+                onFavoritesClick = {
+                    // TODO: Navigate to favorites screen
+                    println("Favorites clicked")
+                },
+                onHelpClick = {
+                    currentScreen = Screen.HELP
+                },
+                onSettingsClick = {
+                    currentScreen = Screen.SETTINGS
+                },
+                onHomeClick = {
+                    currentScreen = Screen.STORES
+                },
+                onSearchClick = {
+                    // Search integrated in StoresScreen - navigate to stores
+                    currentScreen = Screen.STORES
+                },
+                onNotificationClick = {
+                    // TODO: Navigate to notifications screen
+                    println("Notifications clicked")
+                },
+                onOrdersClick = {
+                    currentScreen = Screen.ORDERS
+
+                },
+                onProfileClick = {
+                    // Already on profile screen
+                },
+                modifier = modifier
+            )
+        }
+        
+        Screen.ACCOUNT_DATA -> {
+            AccountDataScreen(
+                userName = "Hannah Montana", // TODO: Get from user data
+                userCpf = "482.392.103-25", // TODO: Get from user data
+                userPhone = "(11) 97283-1931", // TODO: Get from user data
+                userEmail = userEmail.ifEmpty { "Hannah.Montana@gmail.com" },
+                onBackClick = {
+                    currentScreen = Screen.PROFILE
+                },
+                onEditClick = {
+                    // TODO: Navigate to edit account data screen
+                    println("Edit account data clicked")
+                },
+                onHomeClick = {
+                    currentScreen = Screen.STORES
+                },
+                onSearchClick = {
+                    // Search integrated in StoresScreen - navigate to stores
+                    currentScreen = Screen.STORES
+                },
+                onNotificationClick = {
+                    // TODO: Navigate to notifications screen
+                    println("Notifications clicked")
+                },
+                onOrdersClick = {
+                    currentScreen = Screen.ORDERS
+
+                },
+                onProfileClick = {
+                    currentScreen = Screen.PROFILE
+                },
+                modifier = modifier
+            )
+        }
+        
+        Screen.NOTIFICATIONS -> {
+            NotificationsScreen(
+                onBackClick = {
+                    currentScreen = Screen.PROFILE
+                },
+                onRatingClick = { notificationId ->
+                    // TODO: Navigate to rating screen or show rating dialog
+                    println("Rating clicked for notification: $notificationId")
+                },
+                onHomeClick = {
+                    currentScreen = Screen.STORES
+                },
+                onSearchClick = {
+                    // Search integrated in StoresScreen - navigate to stores
+                    currentScreen = Screen.STORES
+                },
+                onNotificationClick = {
+                    // Already on notifications screen
+                },
+                onOrdersClick = {
+                    currentScreen = Screen.ORDERS
+
+                },
+                onProfileClick = {
+                    currentScreen = Screen.PROFILE
+                },
+                modifier = modifier
+            )
+        }
+        
+        Screen.PAYMENTS -> {
+            PaymentsScreen(
+                onBackClick = {
+                    currentScreen = Screen.PROFILE
+                },
+                onHomeClick = {
+                    currentScreen = Screen.STORES
+                },
+                onSearchClick = {
+                    // Search integrated in StoresScreen - navigate to stores
+                    currentScreen = Screen.STORES
+                },
+                onNotificationClick = {
+                    currentScreen = Screen.NOTIFICATIONS
+                },
+                onOrdersClick = {
+                    currentScreen = Screen.ORDERS
+                },
+                onProfileClick = {
+                    currentScreen = Screen.PROFILE
+                }
+            )
+        }
+        
+        Screen.ORDERS -> {
+            OrdersScreen(
+                onHomeClick = {
+                    currentScreen = Screen.STORES
+                },
+                onSearchClick = {
+                    // Search integrated in StoresScreen - navigate to stores
+                    currentScreen = Screen.STORES
+                },
+                onNotificationClick = {
+                    currentScreen = Screen.NOTIFICATIONS
+                },
+                onOrdersClick = {
+                    // Already on orders screen
+                },
+                onProfileClick = {
+                    currentScreen = Screen.PROFILE
+                },
+                onOrderClick = { order ->
+                    // Convert Order to OrderDetail and navigate
+                    selectedOrderDetail = OrderDetail(
+                        orderId = order.id,
+                        storeName = order.storeName,
+                        storeType = "Lanches e Salgados", // Default type
+                        date = order.date,
+                        status = when(order.status) {
+                            OrderStatus.COMPLETED -> "Pedido concluído"
+                            OrderStatus.IN_PROGRESS -> "Em preparo"
+                            OrderStatus.CANCELLED -> "Cancelado"
+                        },
+                        items = listOf(
+                            OrderDetailItem("Item exemplo", 1, order.total)
+                        ),
+                        total = order.total,
+                        paymentMethod = "PIX",
+                        pickupLocation = "Praça 3 - Senac",
+                        rating = if (order.status == OrderStatus.COMPLETED) 5 else null
+                    )
+                    currentScreen = Screen.ORDER_DETAILS
+                }
+            )
+        }
+        
+        Screen.ORDER_DETAILS -> {
+            selectedOrderDetail?.let { orderDetail ->
+                OrderDetailsScreen(
+                    order = orderDetail,
+                    onBackClick = {
+                        currentScreen = Screen.ORDERS
+                    },
+                    onHomeClick = {
+                        currentScreen = Screen.STORES
+                    },
+                    onSearchClick = {
+                        currentScreen = Screen.STORES
+                    },
+                    onNotificationClick = {
+                        currentScreen = Screen.NOTIFICATIONS
+                    },
+                    onOrdersClick = {
+                        currentScreen = Screen.ORDERS
+                    },
+                    onProfileClick = {
+                        currentScreen = Screen.PROFILE
+                    },
+                    onRateOrderClick = {
+                        // TODO: Implement rating functionality
+                    },
+                    onAddToCartClick = {
+                        // TODO: Add items to cart and navigate
+                        currentScreen = Screen.CART
+                    }
+                )
+            }
+        }
+        
+        Screen.HELP -> {
+            HelpScreen(
+                onBackClick = {
+                    currentScreen = Screen.PROFILE
+                },
+                onHowToOrderClick = {
+                    // TODO: Open how to order help
+                },
+                onTrackOrderClick = {
+                    // TODO: Open track order help
+                },
+                onCancelOrderClick = {
+                    // TODO: Open cancel order help
+                },
+                onNotPickedUpClick = {
+                    // TODO: Open not picked up help
+                },
+                onContactSupportClick = {
+                    // TODO: Open contact support
+                },
+                onFAQClick = {
+                    // TODO: Open FAQ
+                },
+                onHomeClick = {
+                    currentScreen = Screen.STORES
+                },
+                onSearchClick = {
+                    currentScreen = Screen.STORES
+                },
+                onNotificationClick = {
+                    currentScreen = Screen.NOTIFICATIONS
+                },
+                onOrdersClick = {
+                    currentScreen = Screen.ORDERS
+                },
+                onProfileClick = {
+                    currentScreen = Screen.PROFILE
+                }
+            )
+        }
+        
+        Screen.SETTINGS -> {
+            SettingsScreen(
+                onBackClick = {
+                    currentScreen = Screen.PROFILE
+                },
+                onTermsClick = {
+                    // TODO: Open terms and conditions
+                },
+                onPrivacyClick = {
+                    // TODO: Open privacy policy
+                },
+                onCloseAccountClick = {
+                    // TODO: Open close account confirmation
+                },
+                onLogoutClick = {
+                    // TODO: Show logout confirmation and navigate to login
+                    currentScreen = Screen.LOGIN
+                },
+                onHomeClick = {
+                    currentScreen = Screen.STORES
+                },
+                onSearchClick = {
+                    currentScreen = Screen.STORES
+                },
+                onNotificationClick = {
+                    currentScreen = Screen.NOTIFICATIONS
+                },
+                onOrdersClick = {
+                    currentScreen = Screen.ORDERS
+                },
+                onProfileClick = {
+                    currentScreen = Screen.PROFILE
+                }
             )
         }
     }
@@ -591,5 +911,207 @@ fun NavigationOrderSummaryPreview() {
 fun NavigationPaymentMethodPreview() {
     LineCutTheme {
         LineCutNavigation(startDestination = Screen.PAYMENT_METHOD)
+    }
+}
+
+@Preview(
+    name = "Profile Screen",
+    showBackground = true,
+    group = "Navigation"
+)
+@Composable
+fun NavigationProfilePreview() {
+    LineCutTheme {
+        LineCutNavigation(startDestination = Screen.PROFILE)
+    }
+}
+
+@Preview(
+    name = "Notifications Screen",
+    showBackground = true,
+    group = "Navigation"
+)
+@Composable
+fun NavigationNotificationsPreview() {
+    LineCutTheme {
+        LineCutNavigation(startDestination = Screen.NOTIFICATIONS)
+    }
+}
+
+@Preview(
+    name = "Payments Screen",
+    showBackground = true,
+    group = "Navigation"
+)
+@Composable
+fun NavigationPaymentsPreview() {
+    LineCutTheme {
+        LineCutNavigation(startDestination = Screen.PAYMENTS)
+    }
+}
+
+@Preview(
+    name = "Account Data Screen",
+    showBackground = true,
+    group = "Navigation"
+)
+@Composable
+fun NavigationAccountDataPreview() {
+    LineCutTheme {
+        LineCutNavigation(startDestination = Screen.ACCOUNT_DATA)
+    }
+}
+
+@Preview(
+    name = "Stores Screen with Search",
+    showBackground = true,
+    group = "Navigation"
+)
+@Composable
+fun NavigationStoresWithSearchPreview() {
+    LineCutTheme {
+        LineCutNavigation(startDestination = Screen.STORES)
+    }
+}
+
+@Preview(
+    name = "Orders Screen",
+    showBackground = true,
+    group = "Navigation"
+)
+@Composable
+fun NavigationOrdersScreenPreview() {
+    LineCutTheme {
+        LineCutNavigation(startDestination = Screen.ORDERS)
+    }
+}
+
+// Função para gerar dados de exemplo das lojas para busca
+private fun getSampleStoresForSearch(): List<Store> {
+    return listOf(
+        Store(
+            id = "1",
+            name = "Museoh",
+            category = "Lanches e Salgados",
+            location = "Praça 3 - Senac",
+            distance = "150m",
+            isFavorite = true
+        ),
+        Store(
+            id = "2",
+            name = "Sabor & Companhia",
+            category = "Refeições variadas",
+            location = "Praça 3 - Senac",
+            distance = "200m",
+            isFavorite = false
+        ),
+        Store(
+            id = "3",
+            name = "Cafezin",
+            category = "Café gourmet",
+            location = "Praça 2 - Senac",
+            distance = "240m",
+            isFavorite = false
+        ),
+        Store(
+            id = "4",
+            name = "Sanduba Burguer",
+            category = "Lanches variados",
+            location = "Praça 2 - Senac",
+            distance = "260m",
+            isFavorite = true
+        ),
+        Store(
+            id = "5",
+            name = "Vila Sabor",
+            category = "Refeições variadas",
+            location = "Praça 1 - Senac",
+            distance = "300m",
+            isFavorite = true
+        ),
+        Store(
+            id = "6",
+            name = "Varanda",
+            category = "Snacks",
+            location = "Praça 1 - Senac",
+            distance = "320m",
+            isFavorite = false
+        ),
+        Store(
+            id = "7",
+            name = "Urban Food",
+            category = "Refeição rápida",
+            location = "Praça 1 - Senac",
+            distance = "400m",
+            isFavorite = false
+        )
+    )
+}
+
+// Sample data for preview
+private fun getSampleOrderDetail() = OrderDetail(
+    orderId = "#1020",
+    storeName = "Museoh",
+    storeType = "Lanches e Salgados",
+    date = "24/04/2025",
+    status = "Pedido concluído",
+    items = listOf(
+        OrderDetailItem("Açaí", 1, 11.90),
+        OrderDetailItem("Pizza", 2, 20.00),
+        OrderDetailItem("Coca-cola", 1, 5.00),
+        OrderDetailItem("Suco", 1, 6.00)
+    ),
+    total = 39.90,
+    paymentMethod = "PIX",
+    pickupLocation = "Praça 3 - Senac",
+    rating = 5
+)
+
+@Preview(
+    name = "Order Details Screen",
+    showBackground = true,
+    group = "Navigation"
+)
+@Composable
+fun OrderDetailsScreenWithoutRatingPreview() {
+    LineCutTheme {
+        OrderDetailsScreen(
+            order = getSampleOrderDetail().copy(
+                status = "Em preparo",
+                rating = null
+            ),
+            onBackClick = { },
+            onHomeClick = { },
+            onSearchClick = { },
+            onNotificationClick = { },
+            onOrdersClick = { },
+            onProfileClick = { },
+            onRateOrderClick = { },
+            onAddToCartClick = { }
+        )
+    }
+}
+
+@Preview(
+    name = "Help Screen",
+    showBackground = true,
+    group = "Navigation"
+)
+@Composable
+fun NavigationHelpPreview() {
+    LineCutTheme {
+        LineCutNavigation(startDestination = Screen.HELP)
+    }
+}
+
+@Preview(
+    name = "Settings Screen",
+    showBackground = true,
+    group = "Navigation"
+)
+@Composable
+fun NavigationSettingsPreview() {
+    LineCutTheme {
+        LineCutNavigation(startDestination = Screen.SETTINGS)
     }
 }

@@ -1,11 +1,14 @@
 package com.br.linecut.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -47,6 +50,20 @@ fun StoresScreen(
     onProfileClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    var isSearchVisible by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    
+    // Filtrar lojas baseado na busca
+    val filteredStores = remember(stores, searchQuery) {
+        if (searchQuery.isBlank()) {
+            stores
+        } else {
+            stores.filter { store ->
+                store.name.contains(searchQuery, ignoreCase = true) ||
+                store.category.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
 
     Column(
         modifier = modifier
@@ -122,10 +139,89 @@ fun StoresScreen(
                     }
                 }
             }
+            
+            // Barra de busca - posicionada com CSS especificado
+            if (isSearchVisible) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 140.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Card(
+                        modifier = Modifier
+                            .width(343.dp)
+                            .height(28.1.dp)
+                            .shadow(
+                                elevation = 2.dp,
+                                shape = RoundedCornerShape(15.dp)
+                            ),
+                        shape = RoundedCornerShape(15.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = BorderStroke(
+                            width = 1.dp,
+                            color = Color(0xFFE0E0E0)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Buscar",
+                                tint = TextPlaceholder,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            
+                            Spacer(modifier = Modifier.width(8.dp))
+                            
+                            BasicTextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                modifier = Modifier.weight(1f),
+                                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                    color = TextPrimary,
+                                    fontSize = 13.sp
+                                ),
+                                singleLine = true,
+                                decorationBox = { innerTextField ->
+                                    if (searchQuery.isEmpty()) {
+                                        Text(
+                                            text = "Buscar lojas...",
+                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                color = TextPlaceholder,
+                                                fontSize = 13.sp
+                                            )
+                                        )
+                                    }
+                                    innerTextField()
+                                }
+                            )
+                            
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(
+                                    onClick = { searchQuery = "" },
+                                    modifier = Modifier.size(20.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Limpar busca",
+                                        tint = TextPlaceholder,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
         
         // Lista de lojas
-        if (stores.isEmpty()) {
+        if (filteredStores.isEmpty()) {
             // Estado vazio
             Box(
                 modifier = Modifier
@@ -144,13 +240,13 @@ fun StoresScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Nenhuma loja encontrada",
+                        text = if (searchQuery.isNotEmpty()) "Nenhuma loja encontrada" else "Nenhuma loja encontrada",
                         style = MaterialTheme.typography.titleMedium.copy(
                             color = TextSecondary
                         )
                     )
                     Text(
-                        text = "Tente ajustar os filtros ou sua localização",
+                        text = if (searchQuery.isNotEmpty()) "Tente buscar por outro termo" else "Tente ajustar os filtros ou sua localização",
                         style = MaterialTheme.typography.bodyMedium.copy(
                             color = TextPlaceholder
                         )
@@ -167,10 +263,10 @@ fun StoresScreen(
             ) {
                 // Primeiro item com espaço extra do header
                 item {
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(if (isSearchVisible) 36.dp else 4.dp))
                 }
                 
-                items(stores) { store ->
+                items(filteredStores) { store ->
                     StoreCard(
                         store = store,
                         onStoreClick = { onStoreClick(store) },
@@ -188,7 +284,10 @@ fun StoresScreen(
         // Bottom Navigation
         BottomNavigationBar(
             onHomeClick = onHomeClick,
-            onSearchClick = onSearchClick,
+            onSearchClick = {
+                isSearchVisible = !isSearchVisible 
+                if (!isSearchVisible) searchQuery = ""
+            },
             onNotificationClick = onNotificationClick,
             onOrdersClick = onOrdersClick,
             onProfileClick = onProfileClick
@@ -401,6 +500,277 @@ fun StoresScreenPreview() {
     LineCutTheme {
         StoresScreen(
             stores = getSampleStores()
+        )
+    }
+}
+
+@Preview(
+    name = "Stores Screen - Com Busca",
+    showBackground = true,
+    showSystemUi = true
+)
+@Composable
+fun StoresScreenSearchPreview() {
+    LineCutTheme {
+        StoresScreenWithSearch(
+            stores = getSampleStores()
+        )
+    }
+}
+
+// Componente auxiliar para preview com busca visível
+@Composable
+private fun StoresScreenWithSearch(
+    stores: List<Store> = emptyList(),
+    currentAddress: String = "Senac Campinas",
+    onStoreClick: (Store) -> Unit = {},
+    onHomeClick: () -> Unit = {},
+    onNotificationClick: () -> Unit = {},
+    onOrdersClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    var isSearchVisible by remember { mutableStateOf(true) } // Forçado como true para preview
+    var searchQuery by remember { mutableStateOf("lanches") } // Exemplo de busca
+    
+    // Filtrar lojas baseado na busca
+    val filteredStores = remember(stores, searchQuery) {
+        if (searchQuery.isBlank()) {
+            stores
+        } else {
+            stores.filter { store ->
+                store.name.contains(searchQuery, ignoreCase = true) ||
+                store.category.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color.White)
+    ) {
+        // Header com fundo arredondado - mais fiel ao Figma
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(184.dp)
+        ) {
+            // Fundo branco arredondado que se estende além das bordas
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(133.dp)
+                    .offset(y = (-73).dp)
+                    .shadow(
+                        elevation = 4.dp,
+                        shape = RoundedCornerShape(30.dp)
+                    ),
+                shape = RoundedCornerShape(30.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {}
+            
+            // Conteúdo do header
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 30.dp, top = 82.dp)
+            ) {
+                // Título "Lojas"
+                LineCutTitle(
+                    text = "Lojas"
+                )
+                
+                Spacer(modifier = Modifier.height(32.dp))
+                
+                // Endereço centralizado
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Card(
+                        modifier = Modifier
+                            .shadow(
+                                elevation = 4.dp,
+                                shape = RoundedCornerShape(10.dp)
+                            ),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = "Localização",
+                                tint = TextSecondary,
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = currentAddress,
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    color = TextSecondary,
+                                    fontSize = 12.sp
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+            
+            // Barra de busca - posicionada com CSS especificado
+            if (isSearchVisible) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 140.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Card(
+                        modifier = Modifier
+                            .width(343.dp)
+                            .height(28.1.dp)
+                            .shadow(
+                                elevation = 2.dp,
+                                shape = RoundedCornerShape(15.dp)
+                            ),
+                        shape = RoundedCornerShape(15.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = BorderStroke(
+                            width = 1.dp,
+                            color = Color(0xFFE0E0E0)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Buscar",
+                                tint = TextPlaceholder,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            
+                            Spacer(modifier = Modifier.width(8.dp))
+                            
+                            BasicTextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                modifier = Modifier.weight(1f),
+                                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                    color = TextPrimary,
+                                    fontSize = 13.sp
+                                ),
+                                singleLine = true,
+                                decorationBox = { innerTextField ->
+                                    if (searchQuery.isEmpty()) {
+                                        Text(
+                                            text = "Buscar lojas...",
+                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                color = TextPlaceholder,
+                                                fontSize = 13.sp
+                                            )
+                                        )
+                                    }
+                                    innerTextField()
+                                }
+                            )
+                            
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(
+                                    onClick = { searchQuery = "" },
+                                    modifier = Modifier.size(20.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Limpar busca",
+                                        tint = TextPlaceholder,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Lista de lojas
+        if (filteredStores.isEmpty()) {
+            // Estado vazio
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.StoreMallDirectory,
+                        contentDescription = null,
+                        tint = TextSecondary,
+                        modifier = Modifier.size(64.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = if (searchQuery.isNotEmpty()) "Nenhuma loja encontrada" else "Nenhuma loja encontrada",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            color = TextSecondary
+                        )
+                    )
+                    Text(
+                        text = if (searchQuery.isNotEmpty()) "Tente buscar por outro termo" else "Tente ajustar os filtros ou sua localização",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = TextPlaceholder
+                        )
+                    )
+                }
+            }
+        } else {
+            // Lista com dados
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 23.dp),
+                verticalArrangement = Arrangement.spacedBy(19.dp)
+            ) {
+                // Primeiro item com espaço extra do header
+                item {
+                    Spacer(modifier = Modifier.height(if (isSearchVisible) 36.dp else 4.dp))
+                }
+                
+                items(filteredStores) { store ->
+                    StoreCard(
+                        store = store,
+                        onStoreClick = { onStoreClick(store) },
+                        onFavoriteClick = { /* TODO: Toggle favorite */ }
+                    )
+                }
+                
+                // Spacer para o bottom navigation
+                item {
+                    Spacer(modifier = Modifier.height(20.dp))
+                }
+            }
+        }
+        
+        // Bottom Navigation
+        BottomNavigationBar(
+            onHomeClick = onHomeClick,
+            onSearchClick = {
+                isSearchVisible = !isSearchVisible 
+                if (!isSearchVisible) searchQuery = ""
+            },
+            onNotificationClick = onNotificationClick,
+            onOrdersClick = onOrdersClick,
+            onProfileClick = onProfileClick
         )
     }
 }

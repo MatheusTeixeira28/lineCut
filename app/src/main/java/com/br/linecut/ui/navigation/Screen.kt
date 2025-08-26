@@ -12,7 +12,15 @@ enum class Screen {
     STORE_DETAIL,
     CART,
     ORDER_SUMMARY,
-    PAYMENT_METHOD
+    PAYMENT_METHOD,
+    PROFILE,
+    ACCOUNT_DATA,
+    NOTIFICATIONS,
+    PAYMENTS,
+    ORDERS,
+    ORDER_DETAILS,
+    HELP,
+    SETTINGS
 }
 
 /**
