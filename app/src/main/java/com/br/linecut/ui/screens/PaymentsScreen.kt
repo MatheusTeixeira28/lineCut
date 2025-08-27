@@ -25,6 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
+import com.br.linecut.ui.components.NavigationItem
 import com.br.linecut.ui.theme.LineCutTheme
 
 @Composable
@@ -200,6 +201,7 @@ fun PaymentsScreen(
         // Bottom navigation
         LineCutBottomNavigationBar(
             modifier = Modifier.align(Alignment.BottomCenter),
+            selectedItem = NavigationItem.PROFILE,
             onHomeClick = onHomeClick,
             onSearchClick = onSearchClick,
             onNotificationClick = onNotificationClick,

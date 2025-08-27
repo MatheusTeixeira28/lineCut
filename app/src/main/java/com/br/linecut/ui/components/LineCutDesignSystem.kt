@@ -142,6 +142,10 @@ private fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier {
     ) { onClick() }
 }
 
+enum class NavigationItem {
+    HOME, SEARCH, NOTIFICATIONS, ORDERS, PROFILE
+}
+
 // Navigation Components
 @Composable
 fun LineCutBottomNavigationBar(
@@ -150,6 +154,7 @@ fun LineCutBottomNavigationBar(
     onNotificationClick: () -> Unit,
     onOrdersClick: () -> Unit,
     onProfileClick: () -> Unit,
+    selectedItem: NavigationItem = NavigationItem.HOME,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -168,7 +173,7 @@ fun LineCutBottomNavigationBar(
                 Icon(
                     imageVector = Icons.Default.Home,
                     contentDescription = "Home",
-                    tint = Color.White,
+                    tint = if (selectedItem == NavigationItem.HOME) Color.White else Color.White.copy(alpha = 0.5f),
                     modifier = Modifier.size(25.dp)
                 )
             }
@@ -177,7 +182,7 @@ fun LineCutBottomNavigationBar(
                 Icon(
                     imageVector = Icons.Default.Search,
                     contentDescription = "Buscar",
-                    tint = Color.White,
+                    tint = if (selectedItem == NavigationItem.SEARCH) Color.White else Color.White.copy(alpha = 0.5f),
                     modifier = Modifier.size(25.dp)
                 )
             }
@@ -186,7 +191,7 @@ fun LineCutBottomNavigationBar(
                 Icon(
                     imageVector = Icons.Default.Notifications,
                     contentDescription = "Notificações",
-                    tint = Color.White,
+                    tint = if (selectedItem == NavigationItem.NOTIFICATIONS) Color.White else Color.White.copy(alpha = 0.5f),
                     modifier = Modifier.size(25.dp)
                 )
             }
@@ -195,7 +200,7 @@ fun LineCutBottomNavigationBar(
                 Icon(
                     imageVector = Icons.Default.Receipt,
                     contentDescription = "Pedidos",
-                    tint = Color.White,
+                    tint = if (selectedItem == NavigationItem.ORDERS) Color.White else Color.White.copy(alpha = 0.5f),
                     modifier = Modifier.size(25.dp)
                 )
             }
@@ -204,7 +209,7 @@ fun LineCutBottomNavigationBar(
                 Icon(
                     imageVector = Icons.Default.Person,
                     contentDescription = "Perfil",
-                    tint = Color.White,
+                    tint = if (selectedItem == NavigationItem.PROFILE) Color.White else Color.White.copy(alpha = 0.5f),
                     modifier = Modifier.size(25.dp)
                 )
             }

@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
+import com.br.linecut.ui.components.NavigationItem
 import com.br.linecut.ui.theme.*
 
 // Data class para representar uma notificação
@@ -100,7 +101,8 @@ fun NotificationsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .padding(horizontal = 22.dp),
+                .padding(horizontal = 22.dp)
+                .background(LineCutDesignSystem.screenBackgroundColor),
             verticalArrangement = Arrangement.spacedBy(15.dp),
             contentPadding = PaddingValues(top = 16.dp, bottom = 20.dp)
         ) {
@@ -114,6 +116,7 @@ fun NotificationsScreen(
 
         // Bottom Navigation
         LineCutBottomNavigationBar(
+            selectedItem = NavigationItem.NOTIFICATIONS,
             onHomeClick = onHomeClick,
             onSearchClick = onSearchClick,
             onNotificationClick = onNotificationClick,
@@ -138,7 +141,7 @@ private fun NotificationCard(
                 shape = RoundedCornerShape(10.77.dp)
             ),
         shape = RoundedCornerShape(10.77.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(LineCutDesignSystem.screenBackgroundColor)
     ) {
         Box(
             modifier = Modifier

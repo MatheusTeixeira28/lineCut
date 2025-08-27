@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.br.linecut.R
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
+import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.theme.*
 
 @Composable
@@ -50,7 +51,7 @@ fun AccountDataScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
         // Header com fundo arredondado
         Box(
