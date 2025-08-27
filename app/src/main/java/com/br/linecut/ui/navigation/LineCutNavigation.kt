@@ -156,8 +156,7 @@ fun LineCutNavigation(
                     // Search now integrated in StoresScreen
                 },
                 onNotificationClick = {
-                    // TODO: Navigate to notifications screen
-                    println("Notifications clicked")
+                    currentScreen = Screen.NOTIFICATIONS
                 },
                 onOrdersClick = {
                     currentScreen = Screen.ORDERS
@@ -206,8 +205,7 @@ fun LineCutNavigation(
                         currentScreen = Screen.STORES
                     },
                     onNotificationClick = {
-                        // TODO: Navigate to notifications screen
-                        println("Notifications clicked")
+                        currentScreen = Screen.NOTIFICATIONS
                     },
                     onOrdersClick = {
                         currentScreen = Screen.ORDERS
@@ -266,8 +264,7 @@ fun LineCutNavigation(
                         currentScreen = Screen.STORES
                     },
                     onNotificationClick = {
-                        // TODO: Navigate to notifications screen
-                        println("Notifications clicked")
+                        currentScreen = Screen.NOTIFICATIONS
                     },
                     onOrdersClick = {
                         currentScreen = Screen.ORDERS
@@ -316,12 +313,10 @@ fun LineCutNavigation(
                         currentScreen = Screen.STORES
                     },
                     onSearchClick = {
-                        // TODO: Navigate to search screen
-                        println("Search clicked")
+                        currentScreen = Screen.STORES
                     },
                     onNotificationClick = {
-                        // TODO: Navigate to notifications screen
-                        println("Notifications clicked")
+                        currentScreen = Screen.NOTIFICATIONS
                     },
                     onOrdersClick = {
                         currentScreen = Screen.ORDERS
@@ -393,8 +388,7 @@ fun LineCutNavigation(
                     currentScreen = Screen.STORES
                 },
                 onNotificationClick = {
-                    // TODO: Navigate to notifications screen
-                    println("Notifications clicked")
+                    currentScreen = Screen.NOTIFICATIONS
                 },
                 onOrdersClick = {
                     currentScreen = Screen.ORDERS
@@ -428,8 +422,7 @@ fun LineCutNavigation(
                     currentScreen = Screen.STORES
                 },
                 onNotificationClick = {
-                    // TODO: Navigate to notifications screen
-                    println("Notifications clicked")
+                    currentScreen = Screen.NOTIFICATIONS
                 },
                 onOrdersClick = {
                     currentScreen = Screen.ORDERS
@@ -498,6 +491,9 @@ fun LineCutNavigation(
         
         Screen.ORDERS -> {
             OrdersScreen(
+                onBackClick = {
+                    currentScreen = Screen.STORES
+                },
                 onHomeClick = {
                     currentScreen = Screen.STORES
                 },

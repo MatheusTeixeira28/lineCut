@@ -20,6 +20,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.br.linecut.ui.components.LineCutDesignSystem
+import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.theme.*
 
 // Data class para representar uma notificação
@@ -112,7 +113,7 @@ fun NotificationsScreen(
         }
 
         // Bottom Navigation
-        BottomNavigationBar(
+        LineCutBottomNavigationBar(
             onHomeClick = onHomeClick,
             onSearchClick = onSearchClick,
             onNotificationClick = onNotificationClick,
@@ -243,7 +244,7 @@ private fun NotificationCard(
 }
 
 @Composable
-private fun BottomNavigationBar(
+private fun LineCutBottomNavigationBar(
     onHomeClick: () -> Unit,
     onSearchClick: () -> Unit,
     onNotificationClick: () -> Unit,

@@ -19,6 +19,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.br.linecut.ui.components.LineCutDesignSystem
+import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.theme.*
 
 data class SettingsOption(
@@ -113,7 +114,7 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(88.dp)
-                    .background(Color.White)
+                    .background(LineCutDesignSystem.screenBackgroundColor)
             )
             
             // Main content - Settings options list
@@ -148,7 +149,7 @@ fun SettingsScreen(
             }
         }
         
-        // Bottom Navigation
+        // Bottom Navigation Bar
         LineCutBottomNavigationBar(
             onHomeClick = onHomeClick,
             onSearchClick = onSearchClick,

@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.theme.LineCutTheme
 
 @Composable
@@ -197,64 +198,14 @@ fun PaymentsScreen(
         }
         
         // Bottom navigation
-        Surface(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .height(44.dp),
-            color = Color(0xFF9C0202)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onHomeClick) {
-                    Icon(
-                        imageVector = Icons.Default.Home,
-                        contentDescription = "Home",
-                        tint = Color.White,
-                        modifier = Modifier.size(25.dp)
-                    )
-                }
-                
-                IconButton(onClick = onSearchClick) {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Buscar",
-                        tint = Color.White,
-                        modifier = Modifier.size(25.dp)
-                    )
-                }
-                
-                IconButton(onClick = onNotificationClick) {
-                    Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = "Notificações",
-                        tint = Color.White,
-                        modifier = Modifier.size(25.dp)
-                    )
-                }
-                
-                IconButton(onClick = onOrdersClick) {
-                    Icon(
-                        imageVector = Icons.Default.ShoppingCart,
-                        contentDescription = "Pedidos",
-                        tint = Color.White,
-                        modifier = Modifier.size(25.dp)
-                    )
-                }
-                
-                IconButton(onClick = onProfileClick) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Perfil",
-                        tint = Color.White,
-                        modifier = Modifier.size(25.dp)
-                    )
-                }
-            }
-        }
+        LineCutBottomNavigationBar(
+            modifier = Modifier.align(Alignment.BottomCenter),
+            onHomeClick = onHomeClick,
+            onSearchClick = onSearchClick,
+            onNotificationClick = onNotificationClick,
+            onOrdersClick = onOrdersClick,
+            onProfileClick = onProfileClick
+        )
     }
 }
 

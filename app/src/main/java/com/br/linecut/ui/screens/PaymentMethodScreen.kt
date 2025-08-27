@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -27,6 +28,11 @@ fun PaymentMethodScreen(
     onPaymentMethodChange: (PaymentMethod) -> Unit = {},
     onPaymentTypeChange: (PaymentType) -> Unit = {},
     onConfirmClick: () -> Unit = {},
+    onHomeClick: () -> Unit = {},
+    onSearchClick: () -> Unit = {},
+    onNotificationClick: () -> Unit = {},
+    onOrdersClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -240,7 +246,8 @@ fun PaymentMethodScreen(
                 .shadow(
                     elevation = 4.dp,
                     spotColor = Color.Black.copy(alpha = 0.25f)
-                ),
+                )
+                .offset(y = (-44).dp),
             contentAlignment = Alignment.Center
         ) {
             Button(
@@ -263,6 +270,16 @@ fun PaymentMethodScreen(
                 )
             }
         }
+        
+        // Bottom Navigation Bar
+        LineCutBottomNavigationBar(
+            modifier = Modifier.align(Alignment.BottomCenter),
+            onHomeClick = onHomeClick,
+            onSearchClick = onSearchClick,
+            onNotificationClick = onNotificationClick,
+            onOrdersClick = onOrdersClick,
+            onProfileClick = onProfileClick
+        )
     }
 }
 

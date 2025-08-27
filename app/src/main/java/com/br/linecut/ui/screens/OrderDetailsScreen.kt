@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.br.linecut.ui.components.LineCutDesignSystem
+import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.theme.*
 
 // Data classes para order details
@@ -398,7 +399,7 @@ fun OrderDetailsScreen(
             Spacer(modifier = Modifier.height(32.dp))
         }
         
-        // Bottom Navigation
+        // Bottom Navigation Bar
         LineCutBottomNavigationBar(
             onHomeClick = onHomeClick,
             onSearchClick = onSearchClick,

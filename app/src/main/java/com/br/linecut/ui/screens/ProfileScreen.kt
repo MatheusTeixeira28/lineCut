@@ -27,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.br.linecut.ui.components.LineCutDesignSystem
+import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.theme.*
 
 data class ProfileMenuItem(
@@ -241,8 +242,7 @@ fun ProfileScreen(
         }
         
         // Bottom Navigation - Fixa na parte inferior
-        BottomNavigationBar(
-            currentScreen = "profile",
+        LineCutBottomNavigationBar(
             onHomeClick = onHomeClick,
             onSearchClick = onSearchClick,
             onNotificationClick = onNotificationClick,
@@ -283,72 +283,6 @@ private fun ProfileMenuItemRow(
                 fontSize = 16.sp
             )
         )
-    }
-}
-
-@Composable
-private fun BottomNavigationBar(
-    currentScreen: String = "",
-    onHomeClick: () -> Unit,
-    onSearchClick: () -> Unit,
-    onNotificationClick: () -> Unit,
-    onOrdersClick: () -> Unit,
-    onProfileClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(44.dp),
-        shape = RoundedCornerShape(0.dp),
-        colors = CardDefaults.cardColors(containerColor = LineCutRed)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onHomeClick) {
-                Icon(
-                    imageVector = Icons.Default.Home,
-                    contentDescription = "Home",
-                    tint = if (currentScreen == "home") Color.White else Color.White.copy(alpha = 0.7f),
-                    modifier = Modifier.size(25.dp)
-                )
-            }
-            IconButton(onClick = onSearchClick) {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "Buscar",
-                    tint = if (currentScreen == "search") Color.White else Color.White.copy(alpha = 0.7f),
-                    modifier = Modifier.size(25.dp)
-                )
-            }
-            IconButton(onClick = onNotificationClick) {
-                Icon(
-                    imageVector = Icons.Default.Notifications,
-                    contentDescription = "Notificações",
-                    tint = if (currentScreen == "notifications") Color.White else Color.White.copy(alpha = 0.7f),
-                    modifier = Modifier.size(25.dp)
-                )
-            }
-            IconButton(onClick = onOrdersClick) {
-                Icon(
-                    imageVector = Icons.Default.ShoppingBag,
-                    contentDescription = "Pedidos",
-                    tint = if (currentScreen == "orders") Color.White else Color.White.copy(alpha = 0.7f),
-                    modifier = Modifier.size(25.dp)
-                )
-            }
-            IconButton(onClick = onProfileClick) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Perfil",
-                    tint = if (currentScreen == "profile") Color.White else Color.White.copy(alpha = 0.7f),
-                    modifier = Modifier.size(25.dp)
-                )
-            }
-        }
     }
 }
 

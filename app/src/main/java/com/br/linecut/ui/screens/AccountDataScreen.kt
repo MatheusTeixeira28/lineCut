@@ -27,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.br.linecut.R
+import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.theme.*
 
 @Composable
@@ -222,7 +223,7 @@ fun AccountDataScreen(
         Spacer(modifier = Modifier.weight(1f))
 
         // Bottom Navigation
-        BottomNavigationBar(
+        LineCutBottomNavigationBar(
             onHomeClick = onHomeClick,
             onSearchClick = onSearchClick,
             onNotificationClick = onNotificationClick,
@@ -294,74 +295,6 @@ private fun AccountDataField(
     }
 }
 
-@Composable
-private fun BottomNavigationBar(
-    onHomeClick: () -> Unit,
-    onSearchClick: () -> Unit,
-    onNotificationClick: () -> Unit,
-    onOrdersClick: () -> Unit,
-    onProfileClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(44.dp),
-        shape = RoundedCornerShape(0.dp),
-        colors = CardDefaults.cardColors(containerColor = LineCutRed)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onHomeClick) {
-                Icon(
-                    imageVector = Icons.Default.Home,
-                    contentDescription = "Home",
-                    tint = Color.White,
-                    modifier = Modifier.size(25.dp)
-                )
-            }
-            
-            IconButton(onClick = onSearchClick) {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "Buscar",
-                    tint = Color.White,
-                    modifier = Modifier.size(25.dp)
-                )
-            }
-            
-            IconButton(onClick = onNotificationClick) {
-                Icon(
-                    imageVector = Icons.Default.Notifications,
-                    contentDescription = "Notificações",
-                    tint = Color.White,
-                    modifier = Modifier.size(25.dp)
-                )
-            }
-            
-            IconButton(onClick = onOrdersClick) {
-                Icon(
-                    imageVector = Icons.Default.Receipt,
-                    contentDescription = "Pedidos",
-                    tint = Color.White,
-                    modifier = Modifier.size(25.dp)
-                )
-            }
-            
-            IconButton(onClick = onProfileClick) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Perfil",
-                    tint = Color.White,
-                    modifier = Modifier.size(25.dp)
-                )
-            }
-        }
-    }
-}
 
 // Previews
 @Preview(

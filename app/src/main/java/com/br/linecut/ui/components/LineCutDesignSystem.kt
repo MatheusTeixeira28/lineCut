@@ -4,9 +4,13 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -136,4 +140,74 @@ private fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier {
         indication = null,
         interactionSource = remember { MutableInteractionSource() }
     ) { onClick() }
+}
+
+// Navigation Components
+@Composable
+fun LineCutBottomNavigationBar(
+    onHomeClick: () -> Unit,
+    onSearchClick: () -> Unit,
+    onNotificationClick: () -> Unit,
+    onOrdersClick: () -> Unit,
+    onProfileClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(44.dp),
+        shape = RoundedCornerShape(0.dp),
+        colors = CardDefaults.cardColors(containerColor = LineCutRed)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onHomeClick) {
+                Icon(
+                    imageVector = Icons.Default.Home,
+                    contentDescription = "Home",
+                    tint = Color.White,
+                    modifier = Modifier.size(25.dp)
+                )
+            }
+            
+            IconButton(onClick = onSearchClick) {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Buscar",
+                    tint = Color.White,
+                    modifier = Modifier.size(25.dp)
+                )
+            }
+            
+            IconButton(onClick = onNotificationClick) {
+                Icon(
+                    imageVector = Icons.Default.Notifications,
+                    contentDescription = "Notificações",
+                    tint = Color.White,
+                    modifier = Modifier.size(25.dp)
+                )
+            }
+            
+            IconButton(onClick = onOrdersClick) {
+                Icon(
+                    imageVector = Icons.Default.Receipt,
+                    contentDescription = "Pedidos",
+                    tint = Color.White,
+                    modifier = Modifier.size(25.dp)
+                )
+            }
+            
+            IconButton(onClick = onProfileClick) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "Perfil",
+                    tint = Color.White,
+                    modifier = Modifier.size(25.dp)
+                )
+            }
+        }
+    }
 }
