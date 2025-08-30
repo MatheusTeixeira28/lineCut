@@ -1,6 +1,7 @@
 package com.br.linecut.ui.navigation
 
 import androidx.compose.runtime.*
+import com.br.linecut.R
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.br.linecut.ui.screens.auth.EmailSentScreen
@@ -12,6 +13,7 @@ import com.br.linecut.ui.screens.StoreDetailScreen
 import com.br.linecut.ui.screens.CartScreen
 import com.br.linecut.ui.screens.OrderSummaryScreen
 import com.br.linecut.ui.screens.PaymentMethodScreen
+import com.br.linecut.ui.screens.QRCodePixScreen
 import com.br.linecut.ui.screens.ProfileScreen
 import com.br.linecut.ui.screens.AccountDataScreen
 import com.br.linecut.ui.screens.NotificationsScreen
@@ -20,6 +22,9 @@ import com.br.linecut.ui.screens.OrdersScreen
 import com.br.linecut.ui.screens.OrderDetailsScreen
 import com.br.linecut.ui.screens.HelpScreen
 import com.br.linecut.ui.screens.SettingsScreen
+import com.br.linecut.ui.screens.PrivacyPolicyScreen
+import com.br.linecut.ui.screens.CloseAccountScreen
+import com.br.linecut.ui.screens.AccountClosedScreen
 import com.br.linecut.ui.screens.OrderDetail
 import com.br.linecut.ui.screens.OrderDetailItem
 import com.br.linecut.ui.screens.OrderStatus
@@ -349,9 +354,31 @@ fun LineCutNavigation(
                     selectedPaymentType = type
                 },
                 onConfirmClick = {
-                    // TODO: Process payment and navigate to order confirmation
-                    cartItems = emptyList() // Clear cart after payment confirmation
-                    currentScreen = Screen.STORES // Navigate back to stores for now
+                    if (selectedPaymentMethod == PaymentMethod.PAY_BY_APP) {
+                        // Navegar para tela de QR Code PIX
+                        currentScreen = Screen.QR_CODE_PIX
+                    } else {
+                        // Para pagamento na retirada, finalizar pedido
+                        cartItems = emptyList() // Clear cart after payment confirmation
+                        currentScreen = Screen.STORES // Navigate back to stores for now
+                    }
+                },
+                modifier = modifier
+            )
+        }
+        
+        Screen.QR_CODE_PIX -> {
+            val totalAmount = cartItems.sumOf { it.price * it.quantity }
+            QRCodePixScreen(
+                totalAmount = totalAmount,
+                onBackClick = {
+                    currentScreen = Screen.PAYMENT_METHOD
+                },
+                onFinishPaymentClick = {
+                    // Clear cart after payment completion
+                    cartItems = emptyList()
+                    // TODO: Navigate to order confirmation screen
+                    currentScreen = Screen.STORES
                 },
                 modifier = modifier
             )
@@ -618,10 +645,10 @@ fun LineCutNavigation(
                     // TODO: Open terms and conditions
                 },
                 onPrivacyClick = {
-                    // TODO: Open privacy policy
+                    currentScreen = Screen.PRIVACY_POLICY
                 },
                 onCloseAccountClick = {
-                    // TODO: Open close account confirmation
+                    currentScreen = Screen.CLOSE_ACCOUNT
                 },
                 onLogoutClick = {
                     // TODO: Show logout confirmation and navigate to login
@@ -641,6 +668,67 @@ fun LineCutNavigation(
                 },
                 onProfileClick = {
                     currentScreen = Screen.PROFILE
+                }
+            )
+        }
+        
+        Screen.PRIVACY_POLICY -> {
+            PrivacyPolicyScreen(
+                onBackClick = {
+                    currentScreen = Screen.SETTINGS
+                },
+                onHomeClick = {
+                    currentScreen = Screen.STORES
+                },
+                onSearchClick = {
+                    currentScreen = Screen.STORES
+                },
+                onNotificationClick = {
+                    currentScreen = Screen.NOTIFICATIONS
+                },
+                onOrdersClick = {
+                    currentScreen = Screen.ORDERS
+                },
+                onProfileClick = {
+                    currentScreen = Screen.PROFILE
+                }
+            )
+        }
+        
+        Screen.CLOSE_ACCOUNT -> {
+            CloseAccountScreen(
+                onBackClick = {
+                    currentScreen = Screen.SETTINGS
+                },
+                onCancelClick = {
+                    currentScreen = Screen.SETTINGS
+                },
+                onConfirmCloseClick = {
+                    // Navigate to account closed confirmation screen
+                    currentScreen = Screen.ACCOUNT_CLOSED
+                },
+                onHomeClick = {
+                    currentScreen = Screen.STORES
+                },
+                onSearchClick = {
+                    currentScreen = Screen.STORES
+                },
+                onNotificationClick = {
+                    currentScreen = Screen.NOTIFICATIONS
+                },
+                onOrdersClick = {
+                    currentScreen = Screen.ORDERS
+                },
+                onProfileClick = {
+                    currentScreen = Screen.PROFILE
+                }
+            )
+        }
+        
+        Screen.ACCOUNT_CLOSED -> {
+            AccountClosedScreen(
+                onLoginClick = {
+                    currentScreen = Screen.LOGIN
                 }
             )
         }
@@ -775,40 +863,45 @@ fun NavigationCartPreview() {
 private fun getSampleStoresForNavigation() = listOf(
     com.br.linecut.ui.screens.Store(
         id = "1",
-        name = "Museoh",
+    name = "Burger Queen",
         category = "Lanches e Salgados",
         location = "Praça 3 - Senac",
-        distance = "150m"
+    distance = "150m",
+    imageRes = R.drawable.burger_queen
     ),
     com.br.linecut.ui.screens.Store(
         id = "2",
-        name = "Sabor & Companhia",
+    name = "Sabor & Cia",
         category = "Refeições variadas",
         location = "Praça 3 - Senac",
-        distance = "200m"
+    distance = "200m",
+    imageRes = R.drawable.sabor_e_cia
     ),
     com.br.linecut.ui.screens.Store(
         id = "3",
         name = "Cafezin",
         category = "Café gourmet",
         location = "Praça 2 - Senac",
-        distance = "240m"
+    distance = "240m",
+    imageRes = R.drawable.cafezin
     ),
     com.br.linecut.ui.screens.Store(
         id = "4",
-        name = "Sanduba Burguer",
+    name = "Sanduba Burger",
         category = "Lanches variados",
         location = "Praça 2 - Senac",
         distance = "260m",
-        isFavorite = true
+    isFavorite = true,
+    imageRes = R.drawable.sanduba_burger
     ),
     com.br.linecut.ui.screens.Store(
         id = "5",
         name = "Vila Sabor",
         category = "Refeições variadas",
         location = "Praça 1 - Senac",
-        distance = "300m",
-        isFavorite = true
+    distance = "300m",
+    isFavorite = true,
+    imageRes = R.drawable.vila_sabor
     )
 )
 
@@ -1109,5 +1202,17 @@ fun NavigationHelpPreview() {
 fun NavigationSettingsPreview() {
     LineCutTheme {
         LineCutNavigation(startDestination = Screen.SETTINGS)
+    }
+}
+
+@Preview(
+    name = "Privacy Policy Screen",
+    showBackground = true,
+    group = "Navigation"
+)
+@Composable
+fun NavigationPrivacyPolicyPreview() {
+    LineCutTheme {
+        LineCutNavigation(startDestination = Screen.PRIVACY_POLICY)
     }
 }

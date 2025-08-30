@@ -13,6 +13,7 @@ enum class Screen {
     CART,
     ORDER_SUMMARY,
     PAYMENT_METHOD,
+    QR_CODE_PIX,
     PROFILE,
     ACCOUNT_DATA,
     NOTIFICATIONS,
@@ -20,7 +21,10 @@ enum class Screen {
     ORDERS,
     ORDER_DETAILS,
     HELP,
-    SETTINGS
+    SETTINGS,
+    PRIVACY_POLICY,
+    CLOSE_ACCOUNT,
+    ACCOUNT_CLOSED
 }
 
 /**

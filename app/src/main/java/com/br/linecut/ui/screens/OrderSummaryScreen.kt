@@ -29,17 +29,6 @@ import androidx.compose.ui.unit.sp
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.theme.*
 
-enum class PaymentMethod {
-    PAY_BY_APP,
-    PAY_ON_PICKUP
-}
-
-enum class PaymentType {
-    PIX,
-    CREDIT_CARD,
-    DEBIT_CARD
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderSummaryScreen(
@@ -541,6 +530,36 @@ private fun PaymentMethodSection(
                 }
             }
         }
+        
+        // Card de atenção (quando pagar na retirada)
+        if (selectedPaymentMethod == PaymentMethod.PAY_ON_PICKUP) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(97.dp),
+                shape = RoundedCornerShape(10.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 17.dp, vertical = 15.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Atenção: o pagamento deverá ser efetuado no momento da retirada do produto na loja.",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = Color(0xFF515050),
+                            fontSize = 15.sp,
+                            lineHeight = 20.sp
+                        ),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -671,7 +690,7 @@ fun OrderSummaryScreenPreview() {
 }
 
 @Preview(
-    name = "Payment Method Section",
+    name = "Payment Method Section - Pay by App",
     showBackground = true
 )
 @Composable
@@ -679,6 +698,22 @@ fun PaymentMethodSectionPreview() {
     LineCutTheme {
         PaymentMethodSection(
             selectedPaymentMethod = PaymentMethod.PAY_BY_APP,
+            selectedPaymentType = PaymentType.PIX,
+            onPaymentMethodChange = {},
+            onPaymentTypeChange = {}
+        )
+    }
+}
+
+@Preview(
+    name = "Payment Method Section - Pay on Pickup",
+    showBackground = true
+)
+@Composable
+fun PaymentMethodSectionPayOnPickupPreview() {
+    LineCutTheme {
+        PaymentMethodSection(
+            selectedPaymentMethod = PaymentMethod.PAY_ON_PICKUP,
             selectedPaymentType = PaymentType.PIX,
             onPaymentMethodChange = {},
             onPaymentTypeChange = {}

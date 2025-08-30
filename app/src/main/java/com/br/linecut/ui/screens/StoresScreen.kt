@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.br.linecut.R
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.components.LineCutTitle
@@ -77,19 +78,23 @@ fun StoresScreen(
                 .fillMaxWidth()
                 .height(184.dp)
         ) {
-            // Fundo branco arredondado que se estende além das bordas
-            Card(
+            // Header simples baseado no Figma
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(133.dp)
-                    .offset(y = (-73).dp)
+                    .height(126.dp)
+                    .background(
+                        LineCutDesignSystem.screenBackgroundColor,
+                        shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
+                    )
                     .shadow(
                         elevation = 4.dp,
-                        shape = RoundedCornerShape(30.dp)
-                    ),
-                shape = RoundedCornerShape(30.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {}
+                        shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp),
+                        ambientColor = Color.Black.copy(alpha = 0.25f),
+                        spotColor = Color.Black.copy(alpha = 0.25f)
+                    )
+            ) {
+            }
             
             // Conteúdo do header
             Column(
@@ -98,10 +103,15 @@ fun StoresScreen(
                     .padding(start = 30.dp, top = 82.dp)
             ) {
                 // Título "Lojas"
-                LineCutTitle(
-                    text = "Lojas"
+
+                Text(
+                    text = "Lojas",
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        color = LineCutRed,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp
+                    )
                 )
-                
                 Spacer(modifier = Modifier.height(32.dp))
                 
                 // Endereço centralizado
@@ -764,32 +774,36 @@ fun StoreCardFavoritePreview() {
 private fun getSampleStores(): List<Store> = listOf(
     Store(
         id = "1",
-        name = "Museoh",
+        name = "Burger Queen",
         category = "Lanches e Salgados",
         location = "Praça 3 - Senac",
-        distance = "150m"
+        distance = "150m",
+        imageRes = R.drawable.burger_queen
     ),
     Store(
         id = "2",
-        name = "Sabor & Companhia",
+        name = "Sabor & Cia",
         category = "Refeições variadas",
         location = "Praça 3 - Senac",
-        distance = "200m"
+        distance = "200m",
+        imageRes = R.drawable.sabor_e_cia
     ),
     Store(
         id = "3",
         name = "Cafezin",
         category = "Café gourmet",
         location = "Praça 2 - Senac",
-        distance = "240m"
+        distance = "240m",
+        imageRes = R.drawable.cafezin
     ),
     Store(
         id = "4",
-        name = "Sanduba Burguer",
+        name = "Sanduba Burger",
         category = "Lanches variados",
         location = "Praça 2 - Senac",
         distance = "260m",
-        isFavorite = true
+        isFavorite = true,
+        imageRes = R.drawable.sanduba_burger
     ),
     Store(
         id = "5",
@@ -797,20 +811,23 @@ private fun getSampleStores(): List<Store> = listOf(
         category = "Refeições variadas",
         location = "Praça 1 - Senac",
         distance = "300m",
-        isFavorite = true
+        isFavorite = true,
+        imageRes = R.drawable.vila_sabor
     ),
     Store(
         id = "6",
         name = "Varanda",
         category = "Snacks",
         location = "Praça 1 - Senac",
-        distance = "320m"
+        distance = "320m",
+        imageRes = R.drawable.varanda
     ),
     Store(
         id = "7",
         name = "Urban Food",
         category = "Refeição rápida",
         location = "Praça 1 - Senac",
-        distance = "400m"
+        distance = "400m",
+        imageRes = R.drawable.urban_food
     )
 )

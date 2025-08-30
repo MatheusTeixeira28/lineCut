@@ -61,27 +61,38 @@ fun NotificationsScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
-        // Header com fundo arredondado
+        // Header simples baseado no Figma
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(206.dp)
-                .background(LineCutDesignSystem.screenBackgroundColor)
+                .height(126.dp)
+                .background(
+                    LineCutDesignSystem.screenBackgroundColor,
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
+                )
+                .shadow(
+                    elevation = 4.dp,
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp),
+                    ambientColor = Color.Black.copy(alpha = 0.25f),
+                    spotColor = Color.Black.copy(alpha = 0.25f)
+                )
         ) {
-            // Fundo branco arredondado
-            Card(
+            // Botão voltar
+            IconButton(
+                onClick = onBackClick,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(133.dp)
-                    .offset(y = (-73).dp)
-                    .shadow(
-                        elevation = 4.dp,
-                        shape = RoundedCornerShape(30.dp)
-                    ),
-                shape = RoundedCornerShape(30.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {}
+                    .padding(start = 24.dp, top = 60.dp)
+                    .size(24.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Voltar",
+                    tint = LineCutRed,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
             
             // Título "Notificações"
             Text(
@@ -89,22 +100,22 @@ fun NotificationsScreen(
                 style = MaterialTheme.typography.titleLarge.copy(
                     color = LineCutRed,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp
+                    fontSize = 20.sp
                 ),
                 modifier = Modifier
-                    .padding(start = 30.dp, top = 82.dp)
+                    .align(Alignment.CenterStart)
+                    .padding(start = 60.dp, top = 20.dp)
             )
         }
 
-        // Lista de notificações
+        // Lista de notificações - começando mais próxima ao header
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .padding(horizontal = 22.dp)
-                .background(LineCutDesignSystem.screenBackgroundColor),
-            verticalArrangement = Arrangement.spacedBy(15.dp),
-            contentPadding = PaddingValues(top = 16.dp, bottom = 20.dp)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(top = 24.dp, bottom = 20.dp)
         ) {
             items(notifications) { notification ->
                 NotificationCard(
@@ -241,75 +252,6 @@ private fun NotificationCard(
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun LineCutBottomNavigationBar(
-    onHomeClick: () -> Unit,
-    onSearchClick: () -> Unit,
-    onNotificationClick: () -> Unit,
-    onOrdersClick: () -> Unit,
-    onProfileClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(44.dp),
-        shape = RoundedCornerShape(0.dp),
-        colors = CardDefaults.cardColors(containerColor = LineCutRed)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onHomeClick) {
-                Icon(
-                    imageVector = Icons.Default.Home,
-                    contentDescription = "Home",
-                    tint = Color.White,
-                    modifier = Modifier.size(25.dp)
-                )
-            }
-            
-            IconButton(onClick = onSearchClick) {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "Buscar",
-                    tint = Color.White,
-                    modifier = Modifier.size(25.dp)
-                )
-            }
-            
-            IconButton(onClick = onNotificationClick) {
-                Icon(
-                    imageVector = Icons.Default.Notifications,
-                    contentDescription = "Notificações",
-                    tint = Color.White,
-                    modifier = Modifier.size(25.dp)
-                )
-            }
-            
-            IconButton(onClick = onOrdersClick) {
-                Icon(
-                    imageVector = Icons.Default.Receipt,
-                    contentDescription = "Pedidos",
-                    tint = Color.White,
-                    modifier = Modifier.size(25.dp)
-                )
-            }
-            
-            IconButton(onClick = onProfileClick) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Perfil",
-                    tint = Color.White,
-                    modifier = Modifier.size(25.dp)
-                )
             }
         }
     }

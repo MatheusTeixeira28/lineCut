@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.br.linecut.R
 import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.theme.*
@@ -92,7 +93,8 @@ fun CartScreen(
                 // Lista de itens
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(bottom = 90.dp)
                 ) {
                     items(cartItems) { item ->
                         CartItemCard(
@@ -101,21 +103,25 @@ fun CartScreen(
                             onRemoveItem = { onRemoveItem(item) }
                         )
                     }
-                }
-                
-                // Botão "Adicionar mais itens"
-                if (cartItems.isNotEmpty()) {
-                    AddMoreItemsButton(
-                        onClick = onAddMoreItemsClick,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 24.dp)
-                    )
+
+                    if (cartItems.isNotEmpty()) {
+                        item {
+                Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                    .padding(top = 10.dp, bottom = 12.dp),
+                                contentAlignment = Alignment.CenterEnd
+                            ) {
+                                AddMoreItemsButton(
+                                    onClick = onAddMoreItemsClick
+                                )
+                            }
+                        }
+                    }
                 }
             }
             
-            // Espaço para o resumo e bottom nav
-            Spacer(modifier = Modifier.height(126.dp))
+            // (removido) Espaço fixo substituído por contentPadding no LazyColumn
         }
         
         // Área do resumo e bottom nav
@@ -411,11 +417,13 @@ private fun AddMoreItemsButton(
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier.height(20.dp),
+        modifier = modifier
+            .width(170.dp)
+            .height(20.dp),
         colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-        shape = RoundedCornerShape(20.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, LineCutRed),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
+        shape = RoundedCornerShape(19.84.dp),
+        border = androidx.compose.foundation.BorderStroke(0.94.dp, LineCutRed),
+        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 0.dp)
     ) {
         Text(
             text = "Adicionar mais itens",
@@ -479,8 +487,7 @@ private fun CartSummary(
             colors = ButtonDefaults.buttonColors(containerColor = LineCutRed),
             shape = RoundedCornerShape(20.dp),
             modifier = Modifier
-                .height(28.dp)
-                .shadow(4.dp, RoundedCornerShape(20.dp)),
+                .height(28.dp),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
         ) {
             Text(
@@ -535,10 +542,11 @@ fun CartScreenPreview() {
         CartScreen(
             store = Store(
                 id = "1",
-                name = "Museoh",
+                name = "Burguer Queen",
                 category = "Lanches e Salgados",
                 location = "Praça 3 - Senac",
-                distance = "150m"
+                distance = "150m",
+                imageRes = R.drawable.burger_queen
             ),
             cartItems = getSampleCartItems()
         )
@@ -575,7 +583,7 @@ fun EmptyCartScreenPreview() {
         CartScreen(
             store = Store(
                 id = "1",
-                name = "Museoh",
+                name = "Burguer Queen",
                 category = "Lanches e Salgados",
                 location = "Praça 3 - Senac",
                 distance = "150m"
