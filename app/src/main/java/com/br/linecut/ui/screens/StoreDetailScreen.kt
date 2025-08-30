@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.theme.*
+import com.br.linecut.R
 
 data class MenuItem(
     val id: String,
@@ -139,7 +140,7 @@ private fun StoreHeader(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(235.dp)
+            .height(250.dp)
             .offset(y = (-13).dp)
             .shadow(
                 elevation = 4.dp,
@@ -233,7 +234,7 @@ private fun StoreHeader(
                     .shadow(3.dp, RoundedCornerShape(20.dp))
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(

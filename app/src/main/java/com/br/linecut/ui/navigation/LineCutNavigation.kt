@@ -912,7 +912,8 @@ private fun getSampleMenuItemsForNavigation() = listOf(
         description = "Creme congelado feito da polpa do fruto açaí, geralmente servido com frutas, granola e outros acompanhamentos.",
         price = 11.90,
         category = "acompanhamentos",
-        quantity = 1
+        quantity = 1,
+        imageRes = R.drawable.acai
     ),
     com.br.linecut.ui.screens.MenuItem(
         id = "2",
@@ -920,7 +921,8 @@ private fun getSampleMenuItemsForNavigation() = listOf(
         description = "Massa folhada em formato de meia-lua, geralmente amanteigada e podendo ter recheios doces ou salgados.",
         price = 6.00,
         category = "acompanhamentos",
-        quantity = 1
+        quantity = 1,
+        imageRes = R.drawable.croissant
     ),
     com.br.linecut.ui.screens.MenuItem(
         id = "3",
@@ -928,7 +930,8 @@ private fun getSampleMenuItemsForNavigation() = listOf(
         description = "Sanduíche preparado com pão integral, recheios leves como queijo branco, peito de peru, salada e molhos leves.",
         price = 8.00,
         category = "lanches",
-        quantity = 1
+        quantity = 1,
+        imageRes = R.drawable.lanche_natural
     ),
     com.br.linecut.ui.screens.MenuItem(
         id = "4",
@@ -936,7 +939,8 @@ private fun getSampleMenuItemsForNavigation() = listOf(
         description = "Pequeno pão assado, feito com polvilho, queijo e outros ingredientes, resultando em uma textura macia e elástica.",
         price = 4.00,
         category = "acompanhamentos",
-        quantity = 1
+        quantity = 1,
+        imageRes = R.drawable.pao_de_queijo
     )
 )
 
