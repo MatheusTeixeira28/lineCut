@@ -93,8 +93,7 @@ fun StoresScreen(
                         ambientColor = Color.Black.copy(alpha = 0.25f),
                         spotColor = Color.Black.copy(alpha = 0.25f)
                     )
-            ) {
-            }
+            ) { }
             
             // Conteúdo do header
             Column(

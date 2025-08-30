@@ -1,8 +1,8 @@
 package com.br.linecut.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -11,35 +11,41 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.br.linecut.ui.components.LineCutDesignSystem
-import com.br.linecut.ui.theme.*
 import com.br.linecut.R
+import com.br.linecut.ui.components.LineCutBottomNavigationBar
+import com.br.linecut.ui.components.LineCutDesignSystem
+import com.br.linecut.ui.components.NavigationItem
+import com.br.linecut.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun QRCodePixScreen(
-    totalAmount: Double = 39.90,
+fun PickupQRScreen(
+    orderNumber: String = "#1024",
     onBackClick: () -> Unit = {},
-    onFinishPaymentClick: () -> Unit = {},
+    onHomeClick: () -> Unit = {},
+    onSearchClick: () -> Unit = {},
+    onNotificationClick: () -> Unit = {},
+    onOrdersClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    var isSearchVisible by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
-        // Header simples baseado no padrão das outras telas
+        // Header identical to QRCodePixScreen - same proportions
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -75,7 +81,7 @@ fun QRCodePixScreen(
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
-                    text = "QR Code PIX",
+                    text = "QR de Retirada",
                     style = MaterialTheme.typography.titleLarge.copy(
                         color = LineCutRed,
                         fontWeight = FontWeight.Bold,
@@ -92,9 +98,9 @@ fun QRCodePixScreen(
                 .fillMaxWidth()
                 .background(LineCutDesignSystem.screenBackgroundColor)
         ) {
-            // Texto "Escaneie para pagar em seu banco"
+            // Texto "Apresente este QR Code no balcão"
             Text(
-                text = "Escaneie para pagar em seu banco",
+                text = "Apresente este QR Code no balcão",
                 style = MaterialTheme.typography.bodyLarge.copy(
                     color = Color(0xFF515050),
                     fontWeight = FontWeight.Normal,
@@ -103,29 +109,29 @@ fun QRCodePixScreen(
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 70.dp, top = 86.dp, end = 70.dp)
+                    .padding(start = 72.dp, top = 89.dp, end = 72.dp) // 215px - 126px = 89dp
             )
             
-        // QR Code - centralizado (Figma: 236x236) preenchendo sem distorcer
+            // QR Code - 236x236 centralizado (mesmo do QRCodePixScreen)
             Box(
                 modifier = Modifier
-                    .size(420.dp)
-                    .padding(top = 175.dp) // 328dp - 126dp = 202dp
-            .align(Alignment.TopCenter),
+                    .size(236.dp)
+                    .offset(y = 213.dp) // 339px - 126px = 213dp
+                    .align(Alignment.TopCenter),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.qr_code),
-                    contentDescription = "QR Code PIX",
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Fit
+                    contentDescription = "QR Code de Retirada",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
                 )
             }
             
-            // Card com valor a ser pago - centralizado
+            // Card com número do pedido - 339x97 centralizado
             Box(
                 modifier = Modifier
-                    .padding(top = 531.dp) // 657dp - 126dp = 531dp
+                    .offset(y = 550.dp) // 676px - 126px = 550dp
                     .width(339.dp)
                     .height(97.dp)
                     .align(Alignment.TopCenter)
@@ -134,7 +140,7 @@ fun QRCodePixScreen(
                         shape = RoundedCornerShape(10.dp)
                     )
                     .border(
-                        width = 1.dp, // Apenas linha vermelha, sem sombra
+                        width = 1.dp,
                         color = LineCutRed,
                         shape = RoundedCornerShape(10.dp)
                     )
@@ -145,7 +151,7 @@ fun QRCodePixScreen(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "Valor a ser pago:",
+                        text = "Número do pedido:",
                         style = MaterialTheme.typography.bodyLarge.copy(
                             color = Color(0xFF515050),
                             fontWeight = FontWeight.Normal,
@@ -153,7 +159,7 @@ fun QRCodePixScreen(
                         )
                     )
                     Text(
-                        text = "R$ ${String.format("%.2f", totalAmount).replace(".", ",")}",
+                        text = orderNumber,
                         style = MaterialTheme.typography.headlineMedium.copy(
                             color = Color(0xFF515050),
                             fontWeight = FontWeight.SemiBold,
@@ -164,53 +170,41 @@ fun QRCodePixScreen(
             }
         }
         
-        // Área inferior com shadow e botão
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(100.dp)
-                .background(Color.White)
-                .shadow(
-                    elevation = 4.dp,
-                    ambientColor = Color.Black.copy(alpha = 0.25f),
-                    spotColor = Color.Black.copy(alpha = 0.25f)
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Button(
-                onClick = onFinishPaymentClick,
-                colors = ButtonDefaults.buttonColors(containerColor = LineCutRed),
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier
-                    .width(343.dp)
-                    .height(28.dp)
-                    ,
-                contentPadding = PaddingValues(0.dp)
-            ) {
-                Text(
-                    text = "Finalizar pagamento",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = Color.White,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 14.sp
-                    )
-                )
-            }
-        }
+        // Bottom Navigation - seguindo o padrão especificado
+        LineCutBottomNavigationBar(
+            selectedItem = if (isSearchVisible) NavigationItem.SEARCH else NavigationItem.HOME,
+            onHomeClick = {
+                if (isSearchVisible) {
+                    isSearchVisible = false
+                } else {
+                    onHomeClick()
+                }
+            },
+            onSearchClick = {
+                isSearchVisible = true
+                if (!isSearchVisible) {
+                    // This condition will never be true, but keeping the pattern
+                }
+                onSearchClick()
+            },
+            onNotificationClick = onNotificationClick,
+            onOrdersClick = onOrdersClick,
+            onProfileClick = onProfileClick
+        )
     }
 }
 
 // Preview
 @Preview(
-    name = "QR Code PIX Screen",
+    name = "Pickup QR Screen",
     showBackground = true,
     showSystemUi = true
 )
 @Composable
-fun QRCodePixScreenPreview() {
+fun PickupQRScreenPreview() {
     LineCutTheme {
-        QRCodePixScreen(
-            totalAmount = 39.90
+        PickupQRScreen(
+            orderNumber = "#1024"
         )
     }
 }

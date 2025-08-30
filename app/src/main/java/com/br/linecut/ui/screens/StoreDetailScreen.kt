@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,6 +30,10 @@ import androidx.compose.ui.unit.sp
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.theme.*
 import com.br.linecut.R
+import kotlinx.coroutines.launch
+
+// Shared layout constant for category filter chip height (from Figma spec)
+private val FiltersChipHeight = 23.07.dp
 
 data class MenuItem(
     val id: String,
@@ -74,15 +79,14 @@ fun StoreDetailScreen(
         ) {
             // Header da loja
             StoreHeader(
-                store = store,
-                onBackClick = onBackClick
+                store = store
             )
             
             // Filtros de categoria
             CategoryFilters(
                 categories = categories,
                 onCategoryClick = onCategoryClick,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
             
             // Lista de produtos
@@ -90,7 +94,9 @@ fun StoreDetailScreen(
                 items = menuItems,
                 onAddItem = onAddItem,
                 onRemoveItem = onRemoveItem,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(top = FiltersChipHeight / 2)
             )
             
             // Espaço para o carrinho e bottom nav
@@ -134,14 +140,14 @@ fun StoreDetailScreen(
 @Composable
 private fun StoreHeader(
     store: Store,
-    onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(250.dp)
-            .offset(y = (-13).dp)
+            .height(250.dp + topInset)
+            .offset(y = -topInset)
             .shadow(
                 elevation = 4.dp,
                 shape = RoundedCornerShape(30.dp)
@@ -150,25 +156,11 @@ private fun StoreHeader(
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Botão voltar
-            IconButton(
-                onClick = onBackClick,
-                modifier = Modifier
-                    .padding(16.dp)
-                    .size(20.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Voltar",
-                    tint = LineCutRed
-                )
-            }
-            
             // Conteúdo principal
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 35.dp, top = 87.dp, end = 35.dp),
+                    .padding(start = 35.dp, top = 110.dp, end = 35.dp),
                 verticalAlignment = Alignment.Top
             ) {
                 // Logo circular da loja
@@ -189,7 +181,7 @@ private fun StoreHeader(
                 Spacer(modifier = Modifier.width(19.dp))
                 
                 // Informações da loja
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     // Nome da loja
                     Text(
                         text = store.name,
@@ -197,7 +189,8 @@ private fun StoreHeader(
                             color = LineCutRed,
                             fontWeight = FontWeight.Bold,
                             fontSize = 24.sp
-                        )
+                        ),
+                        maxLines = 1
                     )
                     
                     Spacer(modifier = Modifier.height(8.dp))
@@ -223,38 +216,44 @@ private fun StoreHeader(
                     )
                 }
             }
-            
-            // Status "Aberto" no canto superior direito
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+            // Status "Aberto" fixo no topo à direita, sem sobrepor o nome
+            StatusBadge(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = 73.dp, end = 16.dp)
-                    .shadow(3.dp, RoundedCornerShape(20.dp))
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(10.dp)
-                            .background(
-                                color = Color(0xFF4CAF50),
-                                shape = CircleShape
-                            )
+                    .padding(top = 78.dp, end = 16.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun StatusBadge(modifier: Modifier = Modifier) {
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        modifier = modifier
+            .shadow(3.dp, RoundedCornerShape(20.dp))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(10.dp)
+                    .background(
+                        color = Color(0xFF4CAF50),
+                        shape = CircleShape
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Aberto",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = LineCutRed,
-                            fontSize = 16.sp
-                        )
-                    )
-                }
-            }
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = "Aberto",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = LineCutRed,
+                    fontSize = 14.sp
+                )
+            )
         }
     }
 }
@@ -265,37 +264,67 @@ private fun CategoryFilters(
     onCategoryClick: (MenuCategory) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LazyRow(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    // Pull the filters up by half the chip height so they sit centered on the seam between header and list
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .offset(y = -(FiltersChipHeight / 2)),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        items(categories) { category ->
-            FilterChip(
-                onClick = { onCategoryClick(category) },
-                label = {
-                    Text(
-                        text = category.name,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 12.92.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    )
-                },
-                selected = category.isSelected,
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = LineCutRed,
-                    selectedLabelColor = Color.White,
-                    containerColor = Color(0xFFB9B9B9),
-                    labelColor = Color.White
-                ),
-                shape = RoundedCornerShape(18.46.dp),
-                modifier = Modifier
-                    .shadow(
-                        elevation = 3.69.dp,
-                        shape = RoundedCornerShape(18.46.dp)
-                    )
-                    .height(23.07.dp)
+        IconButton(
+            onClick = {
+                if (categories.isNotEmpty()) {
+                    scope.launch {
+                        val prev = (listState.firstVisibleItemIndex - 1).coerceAtLeast(0)
+                        listState.animateScrollToItem(prev)
+                    }
+                }
+            },
+            modifier = Modifier.size(20.dp)
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_filter_arrow),
+                contentDescription = "Mover filtros",
+                tint = Color.Unspecified,
+                modifier = Modifier.size(20.dp)
             )
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+    LazyRow(
+            state = listState,
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(categories) { category ->
+                FilterChip(
+                    onClick = { onCategoryClick(category) },
+                    label = {
+                        Text(
+                            text = category.name,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontSize = 12.92.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        )
+                    },
+                    selected = category.isSelected,
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = LineCutRed,
+                        selectedLabelColor = Color.White,
+                        containerColor = Color(0xFFB9B9B9),
+                        labelColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(18.46.dp),
+                    modifier = Modifier
+                        .shadow(
+                            elevation = 3.69.dp,
+                            shape = RoundedCornerShape(18.46.dp)
+                        )
+                        .height(FiltersChipHeight)
+                )
+            }
         }
     }
 }
@@ -340,29 +369,24 @@ private fun MenuItemCard(
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(start = 12.dp, end = 16.dp, top = 12.dp, bottom = 12.dp),
+            modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.Top
         ) {
-            // Imagem do produto
-            Card(
-                shape = RoundedCornerShape(9.dp),
-                modifier = Modifier.size(width = 106.dp, height = 80.dp)
-            ) {
-                Image(
-                    painter = painterResource(id = item.imageRes),
-                    contentDescription = "Imagem ${item.name}",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+            // Imagem do produto - fills the full height of the card
+            Image(
+                painter = painterResource(id = item.imageRes),
+                contentDescription = "Imagem ${item.name}",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(width = 106.dp, height = 104.dp)
+                    .clip(RoundedCornerShape(topStart = 19.dp, bottomStart = 19.dp)) // Round only left corners to match card
+            )
             
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            // Informações do produto
+            // Content area with padding
             Column(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp) // Further reduced end padding to prevent button cutoff
             ) {
                 // Nome e preço na mesma linha
                 Row(
@@ -405,12 +429,13 @@ private fun MenuItemCard(
                 )
             }
             
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(4.dp)) // Reduced to 4dp to give maximum space for buttons
             
             // Controles de quantidade (layout vertical)
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(end = 8.dp) // Increased padding to ensure buttons have enough margin from edge
             ) {
                 // Botão adicionar (sempre visível)
                 Box(
@@ -521,10 +546,6 @@ private fun CartSummary(
                     color = LineCutRed,
                     shape = RoundedCornerShape(20.dp)
                 )
-                .shadow(
-                    elevation = 4.dp,
-                    shape = RoundedCornerShape(20.dp)
-                )
                 .clickable { onViewCartClick() }
         ) {
             // Texto "Ver sacola"
@@ -536,7 +557,7 @@ private fun CartSummary(
                     fontSize = 14.sp
                 ),
                 modifier = Modifier
-                    .align(Alignment.CenterStart)
+                    .align(Alignment.Center)
                     .padding(start = 16.dp)
                     .width(84.dp)
             )
@@ -594,8 +615,7 @@ fun StoreHeaderPreview() {
                 category = "Lanches e Salgados",
                 location = "Praça 3 - Senac",
                 distance = "150m"
-            ),
-            onBackClick = {}
+            )
         )
     }
 }

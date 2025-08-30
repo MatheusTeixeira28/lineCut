@@ -14,6 +14,7 @@ enum class Screen {
     ORDER_SUMMARY,
     PAYMENT_METHOD,
     QR_CODE_PIX,
+    PICKUP_QR,
     PROFILE,
     ACCOUNT_DATA,
     NOTIFICATIONS,

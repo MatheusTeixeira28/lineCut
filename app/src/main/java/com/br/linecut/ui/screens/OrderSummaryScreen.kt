@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.br.linecut.R
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.theme.*
 
@@ -248,9 +249,9 @@ private fun OrderSummaryTitle(
             modifier = Modifier.size(20.dp)
         ) {
             Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                painter = painterResource(id = R.drawable.ic_filter_arrow),
                 contentDescription = "Voltar",
-                tint = LineCutRed,
+                tint = Color.Unspecified,
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -646,8 +647,8 @@ private fun OrderSummaryFooter(
             colors = ButtonDefaults.buttonColors(containerColor = LineCutRed),
             shape = RoundedCornerShape(20.dp),
             modifier = Modifier
-                .height(28.dp)
-                .shadow(4.dp, RoundedCornerShape(20.dp)),
+                .width(144.dp)
+                .height(28.1.dp),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
         ) {
             Text(

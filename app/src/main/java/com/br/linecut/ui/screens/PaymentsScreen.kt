@@ -25,6 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
+import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.components.NavigationItem
 import com.br.linecut.ui.theme.LineCutTheme
 
@@ -40,30 +41,31 @@ fun PaymentsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
         // Top section with title and back button
+        // Header com fundo arredondado - mais fiel ao Figma
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(206.dp)
-                .offset(y = (-73).dp)
+                .height(184.dp)
         ) {
-            // White rounded background with shadow
-            Card(
+            // Header simples baseado no Figma
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(206.dp)
-                    .offset(x = (-8).dp)
+                    .height(126.dp)
+                    .background(
+                        LineCutDesignSystem.screenBackgroundColor,
+                        shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
+                    )
                     .shadow(
                         elevation = 4.dp,
-                        shape = RoundedCornerShape(30.dp),
+                        shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp),
                         ambientColor = Color.Black.copy(alpha = 0.25f),
                         spotColor = Color.Black.copy(alpha = 0.25f)
-                    ),
-                shape = RoundedCornerShape(30.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {}
+                    )
+            ) { }
             
             // Back button
             IconButton(

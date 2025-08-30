@@ -69,13 +69,13 @@ fun CartScreen(
             // Header da loja
             CartHeader(
                 store = store,
-                modifier = Modifier.padding(bottom = 24.dp)
+                modifier = Modifier.padding(bottom = 8.dp) // Reduced from 24dp to 8dp
             )
             
             // Título e botão voltar
             CartTitle(
                 onBackClick = onBackClick,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp) // Reduced from 16dp to 8dp
             )
             
             // Lista de itens do carrinho
@@ -87,12 +87,12 @@ fun CartScreen(
                 // Cabeçalho "Itens adicionados" e "Limpar"
                 CartItemsHeader(
                     onClearCartClick = onClearCartClick,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    modifier = Modifier.padding(bottom = 12.dp) // Reduced from 16dp to 12dp
                 )
                 
                 // Lista de itens
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp), // Reduced from 12dp to 8dp
                     modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(bottom = 90.dp)
                 ) {
@@ -109,7 +109,7 @@ fun CartScreen(
                 Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                    .padding(top = 10.dp, bottom = 12.dp),
+                    .padding(top = 6.dp, bottom = 8.dp), // Reduced from top=10dp, bottom=12dp
                                 contentAlignment = Alignment.CenterEnd
                             ) {
                                 AddMoreItemsButton(
@@ -237,9 +237,9 @@ private fun CartTitle(
             modifier = Modifier.size(20.dp)
         ) {
             Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                painter = painterResource(id = R.drawable.ic_filter_arrow),
                 contentDescription = "Voltar",
-                tint = LineCutRed,
+                tint = Color.Unspecified,
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -487,7 +487,8 @@ private fun CartSummary(
             colors = ButtonDefaults.buttonColors(containerColor = LineCutRed),
             shape = RoundedCornerShape(20.dp),
             modifier = Modifier
-                .height(28.dp),
+                .width(144.dp)
+                .height(28.1.dp),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp)
         ) {
             Text(
@@ -508,25 +509,29 @@ private fun getSampleCartItems(): List<CartItem> = listOf(
         id = "1",
         name = "Açaí",
         price = 11.90,
-        quantity = 1
+        quantity = 1,
+        imageRes = R.drawable.acai
     ),
     CartItem(
         id = "2",
         name = "Pizza",
         price = 20.00,
-        quantity = 2
+        quantity = 2,
+        imageRes = R.drawable.pizza
     ),
     CartItem(
         id = "3",
         name = "Coca-cola",
         price = 5.00,
-        quantity = 1
+        quantity = 1,
+        imageRes = R.drawable.coca_cola
     ),
     CartItem(
         id = "4",
         name = "Suco",
         price = 5.00,
-        quantity = 1
+        quantity = 1,
+        imageRes = R.drawable.suco
     )
 )
 

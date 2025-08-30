@@ -12,11 +12,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.br.linecut.R
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
+import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,10 +48,9 @@ fun PaymentMethodScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(206.dp) // h-[206px] conforme CSS original
-                .offset(y = (-75).dp) // top-[-75px] conforme CSS
+                .height(126.dp)
                 .background(
-                    Color.White,
+                    LineCutDesignSystem.screenBackgroundColor,
                     shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
                 )
                 .shadow(
@@ -57,33 +60,34 @@ fun PaymentMethodScreen(
                     spotColor = Color.Black.copy(alpha = 0.25f)
                 )
         ) {
-            // Botão voltar
-            IconButton(
-                onClick = onBackClick,
+            // Linha inferior do header com voltar + título
+            Row(
                 modifier = Modifier
-                    .padding(start = 34.dp, top = 158.dp) // left-[34px] top-[83px] + 75px = 158dp
-                    .size(20.dp) // size-5 = 20dp conforme CSS
+                    .align(Alignment.BottomStart)
+                    .padding(start = 34.dp, end = 34.dp, bottom = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Voltar",
-                    tint = LineCutRed,
+                IconButton(
+                    onClick = onBackClick,
                     modifier = Modifier.size(20.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_filter_arrow),
+                        contentDescription = "Voltar",
+                        tint = Color.Unspecified,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(
+                    text = "Forma de pagamento",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        color = LineCutRed,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
+                    )
                 )
             }
-            
-            // Título "Forma de pagamento"
-            Text(
-                text = "Forma de pagamento",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    color = LineCutRed,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp // text-[20px] conforme CSS
-                ),
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .padding(start = 80.dp, top = 153.dp) // left-20 = 80dp, top-[78px] + 75px = 153dp
-            )
         }
 
         // Conteúdo principal
@@ -171,30 +175,19 @@ fun PaymentMethodScreen(
             
             // Opção PIX (quando pagar pelo app)
             if (selectedPaymentMethod == PaymentMethod.PAY_BY_APP) {
-                Box(
-                    modifier = Modifier
-                        .width(298.dp) // w-[298px] conforme CSS
-                        .height(36.dp) // h-9 = 36dp conforme CSS
-                        .background(
-                            Color.White,
-                            shape = RoundedCornerShape(10.dp) // rounded-[10px] conforme CSS
-                        )
-                        .shadow(
-                            elevation = 2.dp,
-                            shape = RoundedCornerShape(10.dp)
-                        )
-                        .offset(x = 11.dp) // left-[45px] - 34px = 11dp
+                NoticeCard(
+                    width = 298.dp,
+                    height = 36.dp,
+                    offsetX = 11.dp,
+                    contentPadding = PaddingValues(start = 6.dp)
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(start = 6.dp), // left-[51px] - 45px = 6dp
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // Ícone PIX
                         Box(
                             modifier = Modifier
-                                .size(24.dp) // size-6 = 24dp conforme CSS
+                                .size(24.dp)
                                 .background(
                                     color = Color(0xFF32BCAD),
                                     shape = RoundedCornerShape(4.dp)
@@ -210,17 +203,16 @@ fun PaymentMethodScreen(
                                 )
                             )
                         }
-                        
-                        Spacer(modifier = Modifier.width(6.dp)) // left-[81px] - 75px = 6dp
-                        
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
                         Text(
                             text = "Pagamento via PIX selecionado",
                             style = MaterialTheme.typography.bodyLarge.copy(
-                                color = Color(0xFF515050), // text-[#515050] conforme CSS
-                                fontWeight = FontWeight.Normal, // Poppins:Regular conforme CSS
-                                fontSize = 15.sp // text-[15px] conforme CSS
-                            ),
-                            modifier = Modifier.width(286.dp) // w-[286px] conforme CSS
+                                color = Color(0xFF515050),
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 15.sp
+                            )
                         )
                     }
                 }
@@ -228,33 +220,18 @@ fun PaymentMethodScreen(
             
             // Card de atenção (quando pagar na retirada)
             if (selectedPaymentMethod == PaymentMethod.PAY_ON_PICKUP) {
-                Card(
-                    modifier = Modifier
-                        .width(339.dp) // w-[339px] conforme CSS do Figma
-                        .height(97.dp) // h-[97px] conforme CSS do Figma
-                        .offset(x = 3.dp), // left-[37px] - 34px = 3dp
-                    shape = RoundedCornerShape(10.dp), // rounded-[10px] conforme CSS
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 17.5.dp, vertical = 11.5.dp), // Para centralizar o texto
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Atenção: o pagamento deverá ser efetuado no momento da retirada do produto na loja.",
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                color = Color(0xFF515050), // text-[#515050] conforme CSS
-                                fontWeight = FontWeight.Normal, // Poppins:Regular conforme CSS
-                                fontSize = 15.sp, // text-[15px] conforme CSS
-                                lineHeight = 20.sp
-                            ),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            modifier = Modifier.width(304.dp) // w-[304px] conforme CSS
-                        )
-                    }
+                NoticeCard() {
+                    Text(
+                        text = "Atenção: o pagamento deverá ser efetuado no momento da retirada do produto na loja.",
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            color = Color(0xFF515050),
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 15.sp,
+                            lineHeight = 20.sp
+                        ),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.width(304.dp)
+                    )
                 }
             }
             
@@ -289,7 +266,7 @@ fun PaymentMethodScreen(
                 modifier = Modifier
                     .width(343.dp) // w-[343px] conforme CSS
                     .height(28.098.dp) // h-[28.098px] conforme CSS
-                    .shadow(4.dp, RoundedCornerShape(20.dp)),
+                    ,
                 contentPadding = PaddingValues(0.dp)
             ) {
                 Text(
@@ -301,6 +278,35 @@ fun PaymentMethodScreen(
                     )
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun NoticeCard(
+    modifier: Modifier = Modifier,
+    width: Dp = 339.dp,
+    height: Dp = 97.dp,
+    offsetX: Dp = 3.dp,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 17.5.dp, vertical = 11.5.dp),
+    content: @Composable BoxScope.() -> Unit
+) {
+    Card(
+        modifier = modifier
+            .width(width)
+            .height(height)
+            .offset(x = offsetX),
+        shape = RoundedCornerShape(10.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(contentPadding),
+            contentAlignment = Alignment.Center
+        ) {
+            content()
         }
     }
 }

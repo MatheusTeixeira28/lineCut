@@ -14,6 +14,7 @@ import com.br.linecut.ui.screens.CartScreen
 import com.br.linecut.ui.screens.OrderSummaryScreen
 import com.br.linecut.ui.screens.PaymentMethodScreen
 import com.br.linecut.ui.screens.QRCodePixScreen
+import com.br.linecut.ui.screens.PickupQRScreen
 import com.br.linecut.ui.screens.ProfileScreen
 import com.br.linecut.ui.screens.AccountDataScreen
 import com.br.linecut.ui.screens.NotificationsScreen
@@ -377,8 +378,33 @@ fun LineCutNavigation(
                 onFinishPaymentClick = {
                     // Clear cart after payment completion
                     cartItems = emptyList()
-                    // TODO: Navigate to order confirmation screen
+                    // Navigate to pickup QR screen
+                    currentScreen = Screen.PICKUP_QR
+                },
+                modifier = modifier
+            )
+        }
+        
+        Screen.PICKUP_QR -> {
+            PickupQRScreen(
+                orderNumber = "#1024", // TODO: Get actual order number
+                onBackClick = {
+                    currentScreen = Screen.QR_CODE_PIX
+                },
+                onHomeClick = {
                     currentScreen = Screen.STORES
+                },
+                onSearchClick = {
+                    currentScreen = Screen.STORES
+                },
+                onNotificationClick = {
+                    currentScreen = Screen.NOTIFICATIONS
+                },
+                onOrdersClick = {
+                    currentScreen = Screen.ORDERS
+                },
+                onProfileClick = {
+                    currentScreen = Screen.PROFILE
                 },
                 modifier = modifier
             )
@@ -961,24 +987,28 @@ private fun getSampleCartItemsForNavigation() = listOf(
         id = "1",
         name = "Açaí",
         price = 11.90,
-        quantity = 1
+        quantity = 1,
+        imageRes = R.drawable.acai
     ),
     com.br.linecut.ui.screens.CartItem(
         id = "2",
         name = "Pizza",
         price = 20.00,
+        imageRes = R.drawable.pizza,
         quantity = 2
     ),
     com.br.linecut.ui.screens.CartItem(
         id = "3",
         name = "Coca-cola",
         price = 5.00,
-        quantity = 1
+        quantity = 1,
+        imageRes = R.drawable.coca_cola
     ),
     com.br.linecut.ui.screens.CartItem(
         id = "4",
         name = "Suco",
         price = 5.00,
+        imageRes = R.drawable.suco,
         quantity = 1
     )
 )
@@ -1004,6 +1034,30 @@ fun NavigationOrderSummaryPreview() {
 fun NavigationPaymentMethodPreview() {
     LineCutTheme {
         LineCutNavigation(startDestination = Screen.PAYMENT_METHOD)
+    }
+}
+
+@Preview(
+    name = "QR Code PIX Screen",
+    showBackground = true,
+    group = "Navigation"
+)
+@Composable
+fun NavigationQRCodePixPreview() {
+    LineCutTheme {
+        LineCutNavigation(startDestination = Screen.QR_CODE_PIX)
+    }
+}
+
+@Preview(
+    name = "Pickup QR Screen",
+    showBackground = true,
+    group = "Navigation"
+)
+@Composable
+fun NavigationPickupQRPreview() {
+    LineCutTheme {
+        LineCutNavigation(startDestination = Screen.PICKUP_QR)
     }
 }
 
