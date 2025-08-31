@@ -12,7 +12,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
@@ -59,44 +63,50 @@ fun EmailSentScreen(
                 LineCutLogo()
             }
             
-            LineCutSpacer(LineCutSpacing.XXLarge)
-            
-            // Card Container
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(240.dp)
-                    .shadow(
-                        elevation = 4.dp,
-                        shape = RoundedCornerShape(10.6.dp),
-                        spotColor = Color.Black.copy(alpha = 0.25f)
-                    ),
-                shape = RoundedCornerShape(10.6.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = BackgroundPrimary
-                ),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = 4.dp
-                )
+        }
+        
+        // Card Container na posição exata do Figma
+        Card(
+            modifier = Modifier
+                .fillMaxWidth() // Usar fillMaxWidth para garantir responsividade
+                .height(240.dp) // Altura ajustada para o conteúdo da EmailSentScreen
+                .padding(horizontal = 24.dp) // Padding para simular left-6 do Figma
+                .offset(y = 318.dp) // top-[318px] - posição vertical exata do Figma
+                .drawBehind {
+                    // Sombra sutil conforme Figma: apenas lado direito e embaixo, bem leve
+                    drawRoundRect(
+                        color = Color.Black.copy(alpha = 0.15f), // Opacidade reduzida para efeito mais sutil
+                        topLeft = Offset(2.dp.toPx(), 3.dp.toPx()), // Offset menor e mais sutil
+                        size = Size(size.width, size.height),
+                        cornerRadius = CornerRadius(10.6.dp.toPx())
+                    )
+                },
+            shape = RoundedCornerShape(10.6.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = BackgroundPrimary
+            ),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 4.dp
+            )
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize()
             ) {
-                Box(
-                    modifier = Modifier.fillMaxSize()
+                // Back Button
+                IconButton(
+                    onClick = onBackClick,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(16.dp)
+                        .size(20.dp)
                 ) {
-                    // Back Button
-                    IconButton(
-                        onClick = onBackClick,
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(16.dp)
-                            .size(20.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_filter_arrow),
-                            contentDescription = "Voltar",
-                            tint = Color.Unspecified,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_filter_arrow),
+                        contentDescription = "Voltar",
+                        tint = Color.Unspecified,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
                     
                     Column(
                         modifier = Modifier
@@ -169,7 +179,7 @@ fun EmailSentScreen(
             LineCutSpacer(LineCutSpacing.XXLarge)
         }
     }
-}
+
 
 @Preview(showBackground = true)
 @Composable
