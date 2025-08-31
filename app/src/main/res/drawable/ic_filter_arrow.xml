@@ -13,7 +13,7 @@
     <!-- Left arrow - centralizado -->
     <path
         android:pathData="M12,6.5L8.5,10L12,13.5"
-        android:strokeColor="#FFFFFF"
+        android:strokeColor="#9C0202"
         android:strokeWidth="1.5"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
