@@ -1,9 +1,8 @@
 package com.br.linecut.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,11 +17,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.br.linecut.R
 import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.theme.*
@@ -44,7 +45,8 @@ data class OrderDetail(
     val total: Double,
     val paymentMethod: String,
     val pickupLocation: String,
-    val rating: Int? = null
+    val rating: Int? = null,
+    val imageRes: Int
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,18 +79,16 @@ fun OrderDetailsScreen(
         ) {
             Row(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 34.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .offset(x = 30.dp, y = 80.dp)
             ) {
                 IconButton(
                     onClick = onBackClick,
                     modifier = Modifier.size(20.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        painter = painterResource(id = R.drawable.ic_filter_arrow),
                         contentDescription = "Voltar",
-                        tint = LineCutRed,
+                        tint = Color.Unspecified,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -135,11 +135,11 @@ fun OrderDetailsScreen(
                                 .background(Color.Gray),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Store,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(24.dp)
+                            Image(
+                                painter = painterResource(id = order.imageRes),
+                                contentDescription = "Logo Burger_queen}",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
                             )
                         }
                         
@@ -431,7 +431,7 @@ private fun StarRating(
 // Sample data for preview
 fun getSampleOrderDetail() = OrderDetail(
     orderId = "#1020",
-    storeName = "Museoh",
+    storeName = "Burger Queen",
     storeType = "Lanches e Salgados",
     date = "24/04/2025",
     status = "Pedido concluído",
@@ -444,7 +444,8 @@ fun getSampleOrderDetail() = OrderDetail(
     total = 39.90,
     paymentMethod = "PIX",
     pickupLocation = "Praça 3 - Senac",
-    rating = 5
+    rating = 5,
+    imageRes = R.drawable.burger_queen
 )
 
 // Previews

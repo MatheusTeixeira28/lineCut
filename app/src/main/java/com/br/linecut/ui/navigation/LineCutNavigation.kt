@@ -68,7 +68,8 @@ fun LineCutNavigation(
                 total = 39.90,
                 paymentMethod = "PIX",
                 pickupLocation = "Praça 3 - Senac",
-                rating = 5
+                rating = 5,
+                imageRes = R.drawable.burger_queen
             )
         }
     }
@@ -581,7 +582,8 @@ fun LineCutNavigation(
                         total = order.total,
                         paymentMethod = "PIX",
                         pickupLocation = "Praça 3 - Senac",
-                        rating = if (order.status == OrderStatus.COMPLETED) 5 else null
+                        rating = if (order.status == OrderStatus.COMPLETED) 5 else null,
+                        imageRes = R.drawable.burger_queen
                     )
                     currentScreen = Screen.ORDER_DETAILS
                 }
@@ -1211,7 +1213,8 @@ private fun getSampleOrderDetail() = OrderDetail(
     total = 39.90,
     paymentMethod = "PIX",
     pickupLocation = "Praça 3 - Senac",
-    rating = 5
+    rating = 5,
+    imageRes = R.drawable.burger_queen
 )
 
 @Preview(

@@ -1,5 +1,6 @@
 package com.br.linecut.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -24,6 +27,7 @@ import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.components.NavigationItem
 import com.br.linecut.ui.theme.*
+import com.br.linecut.R
 
 data class Order(
     val id: String,
@@ -34,6 +38,7 @@ data class Order(
     val status: OrderStatus,
     val total: Double,
     val rating: Int? = null,
+    val imageRes: Int = android.R.drawable.ic_menu_gallery, // placeholder
     val canRate: Boolean = true
 )
 
@@ -65,16 +70,17 @@ fun OrdersScreen(
         // Header background (Rectangle 6)
         Box(
             modifier = Modifier
-                .width(428.dp)
-                .height(206.dp)
-                .offset(x = (-8).dp, y = (-80).dp)
+                .fillMaxWidth()
+                .height(126.dp)
+                .background(
+                    LineCutDesignSystem.screenBackgroundColor,
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
+                )
                 .shadow(
                     elevation = 4.dp,
-                    shape = RoundedCornerShape(30.dp)
-                )
-                .background(
-                    color = Color.White,
-                    shape = RoundedCornerShape(30.dp)
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp),
+                    ambientColor = Color.Black.copy(alpha = 0.25f),
+                    spotColor = Color.Black.copy(alpha = 0.25f)
                 )
         )
         
@@ -91,9 +97,11 @@ fun OrdersScreen(
         // Pedidos container
         Box(
             modifier = Modifier
-                .width(407.dp)
+                .fillMaxWidth()
                 .height(725.71.dp)
-                .offset(x = 18.dp, y = 147.dp)
+                .offset(y = 147.dp)
+                .padding(horizontal = 24.dp), // Padding para centralizar os cards
+            contentAlignment = Alignment.TopCenter
         ) {
             // Order cards with exact positioning
             orders.forEachIndexed { index, order ->
@@ -131,7 +139,7 @@ fun OrderCardAbsolute(
         modifier = modifier
             .width(368.dp)
             .height(165.dp)
-            .offset(x = (-19.5).dp, y = topOffset)
+            .offset(y = topOffset) // Removido o offset horizontal negativo
             .shadow(
                 elevation = 4.31.dp,
                 shape = RoundedCornerShape(10.77.dp)
@@ -162,11 +170,11 @@ fun OrderCardAbsolute(
                 .background(Color(0xFF8B4513)),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "M",
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
+            Image(
+                painter = painterResource(id = order.imageRes),
+                contentDescription = "Logo Burger_queen}",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
             )
         }
         
@@ -197,7 +205,7 @@ fun OrderCardAbsolute(
             fontWeight = FontWeight.Normal,
             fontSize = 11.sp,
             color = Color(0xFF515050).copy(alpha = 0.85f),
-            modifier = Modifier.offset(x = 139.dp, y = 84.dp)
+            modifier = Modifier.offset(x = 68.91.dp, y = 84.dp)
         )
         
         // Line divider
@@ -220,7 +228,7 @@ fun OrderCardAbsolute(
         Box(
             modifier = Modifier
                 .size(14.dp)
-                .offset(x = 247.65.dp, y = 11.84.dp)
+                .offset(x = 233.00.dp, y = 14.dp)
                 .shadow(4.31.dp, CircleShape)
                 .background(statusColor, CircleShape),
             contentAlignment = Alignment.Center
@@ -260,7 +268,7 @@ fun OrderCardAbsolute(
             fontWeight = FontWeight.Normal,
             fontSize = 10.77.sp,
             color = Color(0xFF515050),
-            modifier = Modifier.offset(x = 270.dp, y = 14.dp)
+            modifier = Modifier.offset(x = 250.dp, y = 10.dp)
         )
         
         // "Avaliação" label
@@ -296,8 +304,7 @@ fun OrderCardAbsolute(
             modifier = Modifier
                 .width(124.9.dp)
                 .height(20.46.dp)
-                .offset(x = 226.11.dp, y = 129.21.dp)
-                .shadow(2.15.dp, RoundedCornerShape(21.53.dp))
+                .offset(x = 210.dp, y = 129.21.dp)
                 .background(Color.Transparent, RoundedCornerShape(21.53.dp))
                 .border(1.08.dp, Color(0xFF959595), RoundedCornerShape(21.53.dp))
                 .clickable { onDetailsClick() },
@@ -363,66 +370,72 @@ fun getSampleOrders(): List<Order> {
             id = "1",
             orderNumber = "#1025",
             date = "24 Abril 2025",
-            storeName = "Museoh",
+            storeName = "Burger Queen",
             storeCategory = "Lanches e Salgados",
             status = OrderStatus.IN_PROGRESS,
             total = 42.90,
             rating = null,
+            imageRes = R.drawable.burger_queen,
             canRate = true
         ),
         Order(
             id = "2",
             orderNumber = "#1024",
             date = "24 Abril 2025",
-            storeName = "Museoh",
+            storeName = "Burger Queen",
             storeCategory = "Lanches e Salgados",
             status = OrderStatus.IN_PROGRESS,
             total = 35.50,
             rating = null,
+            imageRes = R.drawable.burger_queen,
             canRate = true
         ),
         Order(
             id = "3",
             orderNumber = "#1020",
             date = "13 Abril 2025",
-            storeName = "Museoh",
+            storeName = "Burger Queen",
             storeCategory = "Lanches e Salgados",
             status = OrderStatus.COMPLETED,
             total = 39.90,
             rating = 5,
+            imageRes = R.drawable.burger_queen,
             canRate = true
         ),
         Order(
             id = "4",
             orderNumber = "#1013",
             date = "10 Abril 2025",
-            storeName = "Museoh",
+            storeName = "Burger Queen",
             storeCategory = "Lanches e Salgados",
             status = OrderStatus.CANCELLED,
             total = 28.75,
             rating = null,
+            imageRes = R.drawable.burger_queen,
             canRate = false
         ),
         Order(
             id = "5",
             orderNumber = "#1013",
             date = "5 Abril 2025",
-            storeName = "Museoh",
+            storeName = "Burger Queen",
             storeCategory = "Lanches e Salgados",
             status = OrderStatus.COMPLETED,
             total = 55.80,
             rating = 5,
+            imageRes = R.drawable.burger_queen,
             canRate = true
         ),
         Order(
             id = "6",
             orderNumber = "#1013",
             date = "2 Abril 2025",
-            storeName = "Museoh",
+            storeName = "Burger Queen",
             storeCategory = "Lanches e Salgados",
             status = OrderStatus.COMPLETED,
             total = 31.20,
             rating = 5,
+            imageRes = R.drawable.burger_queen,
             canRate = true
         )
     )

@@ -54,6 +54,9 @@ fun OrderSummaryScreen(
     val totalPrice = cartItems.sumOf { it.price * it.quantity }
     val totalItems = cartItems.sumOf { it.quantity }
     
+    // Estado interno para controlar o método de pagamento selecionado
+    var currentPaymentMethod by remember { mutableStateOf(selectedPaymentMethod) }
+    
     Box(modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -99,9 +102,12 @@ fun OrderSummaryScreen(
                 item {
                     // Forma de pagamento
                     PaymentMethodSection(
-                        selectedPaymentMethod = selectedPaymentMethod,
+                        selectedPaymentMethod = currentPaymentMethod,
                         selectedPaymentType = selectedPaymentType,
-                        onPaymentMethodChange = onPaymentMethodChange,
+                        onPaymentMethodChange = { method -> 
+                            currentPaymentMethod = method
+                            onPaymentMethodChange(method)
+                        },
                         onPaymentTypeChange = onPaymentTypeChange
                     )
                 }
