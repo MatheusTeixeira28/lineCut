@@ -26,11 +26,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.br.linecut.data.models.AuthResult
 import com.br.linecut.ui.components.LineCutBodyText
 import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.components.LineCutLinkText
@@ -42,17 +46,39 @@ import com.br.linecut.ui.components.LineCutTextField
 import com.br.linecut.ui.components.LineCutTitle
 import com.br.linecut.ui.theme.LineCutTheme
 import com.br.linecut.ui.theme.TextPrimary
+import com.br.linecut.ui.viewmodel.AuthViewModel
 
 @Composable
 fun LoginScreen(
-    onLoginClick: (String, String) -> Unit = { _, _ -> },
+    onLoginSuccess: () -> Unit = {},
     onForgotPasswordClick: () -> Unit = {},
     onSignUpClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    authViewModel: AuthViewModel = viewModel()
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+    
+    // Observar estados do ViewModel
+    val loginState by authViewModel.loginState.collectAsState()
+    val isLoading by authViewModel.isLoading.collectAsState()
+    
+    // Observar o estado do login
+    LaunchedEffect(loginState) {
+        val currentState = loginState
+        when (currentState) {
+            is AuthResult.Success -> {
+                authViewModel.clearLoginState()
+                onLoginSuccess()
+            }
+            is AuthResult.Error -> {
+                errorMessage = currentState.message
+            }
+            else -> {}
+        }
+    }
 
     Box(
         modifier = modifier
@@ -131,11 +157,26 @@ fun LoginScreen(
             
             LineCutSpacer(LineCutSpacing.XLarge)
             
+            // Exibir mensagem de erro se houver
+            if (errorMessage.isNotEmpty()) {
+                Text(
+                    text = errorMessage,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                LineCutSpacer(LineCutSpacing.Medium)
+            }
+            
             // Login Button
             LineCutPrimaryButton(
-                text = "Entrar",
-                onClick = { onLoginClick(email, password) },
-                enabled = email.isNotBlank() && password.isNotBlank(),
+                text = if (isLoading) "Entrando..." else "Entrar",
+                onClick = { 
+                    errorMessage = ""
+                    authViewModel.loginUser(email, password)
+                },
+                enabled = email.isNotBlank() && password.isNotBlank() && !isLoading,
                 modifier = Modifier.width(196.dp)
             )
             

@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "140700221422",
+    "firebase_url": "https://linecut-3bf2b-default-rtdb.firebaseio.com",
+    "project_id": "linecut-3bf2b",
+    "storage_bucket": "linecut-3bf2b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:140700221422:android:a6b6d4a995527c799098ff",
+        "android_client_info": {
+          "package_name": "com.br.linecut"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAeNePWNxbs-sN5ZkgYITNrjF1iKKDtDU0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

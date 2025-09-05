@@ -77,11 +77,8 @@ fun LineCutNavigation(
     when (currentScreen) {
         Screen.LOGIN -> {
             LoginScreen(
-                onLoginClick = { email, password ->
-                    // TODO: Implement login logic
-                    // For now, just print the values and navigate to stores
-                    println("Login - Email: $email, Password: $password")
-                    // After successful login, navigate to stores screen
+                onLoginSuccess = {
+                    // Após login bem-sucedido, navegar para a tela principal
                     currentScreen = Screen.STORES
                 },
                 onForgotPasswordClick = {
@@ -96,10 +93,8 @@ fun LineCutNavigation(
         
         Screen.SIGNUP -> {
             SignUpScreen(
-                onSignUpClick = { fullName, cpf, phone, email, password, confirmPassword ->
-                    // TODO: Implement signup logic
-                    println("SignUp - Name: $fullName, CPF: $cpf, Phone: $phone, Email: $email")
-                    // After successful signup, navigate to login
+                onSignUpSuccess = {
+                    // Após cadastro bem-sucedido, navegar para a tela de login
                     currentScreen = Screen.LOGIN
                 },
                 onLoginClick = {

@@ -20,17 +20,21 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.br.linecut.data.models.AuthResult
 import com.br.linecut.ui.components.*
 import com.br.linecut.ui.theme.*
+import com.br.linecut.ui.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignUpScreen(
-    onSignUpClick: (String, String, String, String, String, String) -> Unit = { _, _, _, _, _, _ -> },
+    onSignUpSuccess: () -> Unit = {},
     onLoginClick: () -> Unit = {},
     onTermsClick: () -> Unit = {},
     onPrivacyClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    authViewModel: AuthViewModel = viewModel()
 ) {
     var fullName by remember { mutableStateOf("") }
     var cpf by remember { mutableStateOf("") }
@@ -40,6 +44,11 @@ fun SignUpScreen(
     var confirmPassword by remember { mutableStateOf("") }
     var acceptTerms by remember { mutableStateOf(false) }
     var acceptPrivacy by remember { mutableStateOf(false) }
+    
+    // Estados do Firebase
+    val signUpState by authViewModel.signUpState.collectAsState()
+    val isLoading by authViewModel.isLoading.collectAsState()
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val isFormValid = fullName.isNotBlank() && 
                      cpf.isNotBlank() && 
@@ -50,6 +59,21 @@ fun SignUpScreen(
                      password == confirmPassword &&
                      acceptTerms && 
                      acceptPrivacy
+
+    // Observar o estado do cadastro
+    LaunchedEffect(signUpState) {
+        val currentState = signUpState
+        when (currentState) {
+            is AuthResult.Success -> {
+                authViewModel.clearSignUpState()
+                onSignUpSuccess()
+            }
+            is AuthResult.Error -> {
+                errorMessage = currentState.message
+            }
+            else -> {}
+        }
+    }
 
     Box(
         modifier = modifier
@@ -231,13 +255,41 @@ fun SignUpScreen(
             
             LineCutSpacer(LineCutSpacing.XLarge)
             
+            // Error Message
+            errorMessage?.let { error ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Text(
+                        text = error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+                LineCutSpacer(LineCutSpacing.Medium)
+            }
+            
             // Sign Up Button
             LineCutPrimaryButton(
-                text = "Cadastrar",
+                text = if (isLoading) "Cadastrando..." else "Cadastrar",
                 onClick = { 
-                    onSignUpClick(fullName, cpf, phone, email, password, confirmPassword)
+                    errorMessage = null
+                    authViewModel.signUpUser(
+                        fullName = fullName,
+                        cpf = cpf,
+                        phone = phone,
+                        email = email,
+                        password = password,
+                        confirmPassword = confirmPassword
+                    )
                 },
-                enabled = isFormValid,
+                enabled = isFormValid && !isLoading,
                 modifier = Modifier.width(196.dp)
             )
             
