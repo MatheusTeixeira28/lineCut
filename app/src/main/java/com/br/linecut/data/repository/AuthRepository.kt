@@ -229,9 +229,37 @@ class AuthRepository {
     }
     
     /**
-     * Obtém o usuário atual
+     * Obtém o usuário atual do Firebase Auth
      */
-    fun getCurrentUser(): com.google.firebase.auth.FirebaseUser? {
+    fun getCurrentFirebaseUser(): com.google.firebase.auth.FirebaseUser? {
         return auth.currentUser
+    }
+    
+    /**
+     * Obtém os dados completos do usuário atual do Realtime Database
+     */
+    suspend fun getCurrentUser(): User? {
+        return try {
+            val currentFirebaseUser = auth.currentUser
+            if (currentFirebaseUser != null) {
+                val uid = currentFirebaseUser.uid
+                val snapshot = realtimeDatabase.reference
+                    .child("usuarios")
+                    .child(uid)
+                    .get()
+                    .await()
+                
+                if (snapshot.exists()) {
+                    val userData = snapshot.getValue(User::class.java)
+                    userData
+                } else {
+                    null
+                }
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
     }
 }

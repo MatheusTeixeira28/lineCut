@@ -1,6 +1,7 @@
 package com.br.linecut.ui.navigation
 
 import androidx.compose.runtime.*
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.br.linecut.R
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -34,11 +35,13 @@ import com.br.linecut.ui.screens.PaymentType
 import com.br.linecut.ui.screens.Store
 import com.br.linecut.ui.screens.getSampleOrderDetail
 import com.br.linecut.ui.theme.LineCutTheme
+import com.br.linecut.ui.viewmodel.AuthViewModel
 
 @Composable
 fun LineCutNavigation(
     modifier: Modifier = Modifier,
-    startDestination: Screen = Screen.LOGIN
+    startDestination: Screen = Screen.LOGIN,
+    authViewModel: AuthViewModel = viewModel()
 ) {
     var currentScreen by remember { mutableStateOf(startDestination) }
     var userEmail by remember { mutableStateOf("") }
@@ -48,6 +51,16 @@ fun LineCutNavigation(
     var selectedPaymentType by remember { mutableStateOf(PaymentType.PIX) }
     var searchQuery by remember { mutableStateOf("") }
     var availableStores by remember { mutableStateOf(getSampleStoresForSearch()) }
+    
+    // Observar o usuário atual
+    val currentUser by authViewModel.currentUser.collectAsState()
+    
+    // Carregar dados do usuário quando navegar para o profile
+    LaunchedEffect(currentScreen) {
+        if (currentScreen == Screen.PROFILE && currentUser == null) {
+            authViewModel.loadCurrentUser()
+        }
+    }
     var selectedOrderDetail by remember { mutableStateOf<OrderDetail?>(null) }
     
     // Initialize order detail if starting directly on ORDER_DETAILS screen
@@ -87,6 +100,7 @@ fun LineCutNavigation(
                 onSignUpClick = {
                     currentScreen = Screen.SIGNUP
                 },
+                authViewModel = authViewModel,
                 modifier = modifier
             )
         }
@@ -108,6 +122,7 @@ fun LineCutNavigation(
                     // TODO: Show privacy policy
                     println("Privacy Policy clicked")
                 },
+                authViewModel = authViewModel,
                 modifier = modifier
             )
         }
@@ -408,8 +423,8 @@ fun LineCutNavigation(
         
         Screen.PROFILE -> {
             ProfileScreen(
-                userEmail = userEmail,
-                userName = "Hannah Montana", // TODO: Get from user data
+                userEmail = currentUser?.email ?: "Usuário não encontrado",
+                userName = currentUser?.fullName ?: "Carregando...",
                 onAccountDataClick = {
                     currentScreen = Screen.ACCOUNT_DATA
                 },

@@ -29,6 +29,10 @@ class AuthViewModel : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
     
+    // Estado do usuário atual
+    private val _currentUser = MutableStateFlow<User?>(null)
+    val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
+    
     /**
      * Realiza o cadastro do usuário
      */
@@ -77,6 +81,11 @@ class AuthViewModel : ViewModel() {
             
             _loginState.value = result
             _isLoading.value = false
+            
+            // Se o login foi bem-sucedido, carregar os dados do usuário
+            if (result is AuthResult.Success) {
+                loadCurrentUser()
+            }
         }
     }
     
@@ -94,6 +103,7 @@ class AuthViewModel : ViewModel() {
         authRepository.logoutUser()
         clearSignUpState()
         clearLoginState()
+        clearCurrentUser()
     }
     
     /**
@@ -101,5 +111,22 @@ class AuthViewModel : ViewModel() {
      */
     fun isUserLoggedIn(): Boolean {
         return authRepository.isUserLoggedIn()
+    }
+    
+    /**
+     * Carrega os dados do usuário atual
+     */
+    fun loadCurrentUser() {
+        viewModelScope.launch {
+            val user = authRepository.getCurrentUser()
+            _currentUser.value = user
+        }
+    }
+    
+    /**
+     * Limpa os dados do usuário atual
+     */
+    fun clearCurrentUser() {
+        _currentUser.value = null
     }
 }
