@@ -15,7 +15,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
@@ -25,6 +27,8 @@ import com.br.linecut.data.models.AuthResult
 import com.br.linecut.ui.components.*
 import com.br.linecut.ui.theme.*
 import com.br.linecut.ui.viewmodel.AuthViewModel
+import com.br.linecut.ui.utils.SimpleCpfVisualTransformation
+import com.br.linecut.ui.utils.SimplePhoneVisualTransformation
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,13 +41,16 @@ fun SignUpScreen(
     authViewModel: AuthViewModel = viewModel()
 ) {
     var fullName by remember { mutableStateOf("") }
-    var cpf by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
+    var cpfDigits by remember { mutableStateOf("") } // Armazenar apenas dígitos
+    var phoneDigits by remember { mutableStateOf("") } // Armazenar apenas dígitos
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var acceptTerms by remember { mutableStateOf(false) }
     var acceptPrivacy by remember { mutableStateOf(false) }
+    
+    // Estados de validação em tempo real
+    var emailError by remember { mutableStateOf<String?>(null) }
     
     // Estados do Firebase
     val signUpState by authViewModel.signUpState.collectAsState()
@@ -51,14 +58,15 @@ fun SignUpScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val isFormValid = fullName.isNotBlank() && 
-                     cpf.isNotBlank() && 
-                     phone.isNotBlank() && 
+                     cpfDigits.isNotBlank() && 
+                     phoneDigits.isNotBlank() && 
                      email.isNotBlank() && 
                      password.isNotBlank() && 
                      confirmPassword.isNotBlank() && 
                      password == confirmPassword &&
                      acceptTerms && 
-                     acceptPrivacy
+                     acceptPrivacy &&
+                     emailError == null
 
     // Observar o estado do cadastro
     LaunchedEffect(signUpState) {
@@ -123,38 +131,70 @@ fun SignUpScreen(
             LineCutSpacer(LineCutSpacing.Medium)
             
             // CPF Field
-            LineCutTextField(
-                value = cpf,
-                onValueChange = { cpf = it },
-                placeholder = "CPF",
-                leadingIcon = Icons.Outlined.Person, // Usando Person como placeholder para ID
-                keyboardType = KeyboardType.Number,
-                modifier = Modifier.fillMaxWidth()
-            )
+            Column {
+                LineCutTextField(
+                    value = cpfDigits,
+                    onValueChange = { input ->
+                        // Apenas aceitar dígitos
+                        val newDigits = input.filter { it.isDigit() }.take(11)
+                        cpfDigits = newDigits
+                    },
+                    placeholder = "000.000.000-00",
+                    leadingIcon = Icons.Outlined.Person,
+                    keyboardType = KeyboardType.Number,
+                    visualTransformation = SimpleCpfVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
             
             LineCutSpacer(LineCutSpacing.Medium)
             
             // Phone Field
-            LineCutTextField(
-                value = phone,
-                onValueChange = { phone = it },
-                placeholder = "Telefone",
-                leadingIcon = Icons.Outlined.Phone,
-                keyboardType = KeyboardType.Phone,
-                modifier = Modifier.fillMaxWidth()
-            )
+            Column {
+                LineCutTextField(
+                    value = phoneDigits,
+                    onValueChange = { input ->
+                        // Apenas aceitar dígitos
+                        val newDigits = input.filter { it.isDigit() }.take(11)
+                        phoneDigits = newDigits
+                    },
+                    placeholder = "(00) 00000-0000",
+                    leadingIcon = Icons.Outlined.Phone,
+                    keyboardType = KeyboardType.Phone,
+                    visualTransformation = SimplePhoneVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
             
             LineCutSpacer(LineCutSpacing.Medium)
             
             // Email Field
-            LineCutTextField(
-                value = email,
-                onValueChange = { email = it },
-                placeholder = "Email",
-                leadingIcon = Icons.Outlined.Email,
-                keyboardType = KeyboardType.Email,
-                modifier = Modifier.fillMaxWidth()
-            )
+            Column {
+                LineCutTextField(
+                    value = email,
+                    onValueChange = { newValue ->
+                        email = newValue
+                        
+                        // Validação básica de email
+                        emailError = if (newValue.isNotEmpty() && !newValue.contains("@")) {
+                            "Email inválido"
+                        } else {
+                            null
+                        }
+                    },
+                    placeholder = "Email",
+                    leadingIcon = Icons.Outlined.Email,
+                    keyboardType = KeyboardType.Email,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                emailError?.let { error ->
+                    Text(
+                        text = error,
+                        modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                    )
+                }
+            }
             
             LineCutSpacer(LineCutSpacing.Medium)
             
@@ -257,21 +297,14 @@ fun SignUpScreen(
             
             // Error Message
             errorMessage?.let { error ->
-                Card(
+                Text(
+                    text = error,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = LineCutRed,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
-                ) {
-                    Text(
-                        text = error,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.padding(16.dp)
-                    )
-                }
+                        .padding(horizontal = 16.dp)
+                )
                 LineCutSpacer(LineCutSpacing.Medium)
             }
             
@@ -282,9 +315,9 @@ fun SignUpScreen(
                     errorMessage = null
                     authViewModel.signUpUser(
                         fullName = fullName,
-                        cpf = cpf,
-                        phone = phone,
-                        email = email,
+                        cpf = cpfDigits, // Usa dígitos puros
+                        phone = phoneDigits, // Usa dígitos puros
+                        email = email.trim().lowercase(),
                         password = password,
                         confirmPassword = confirmPassword
                     )

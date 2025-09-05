@@ -8,6 +8,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.tasks.await
 import android.util.Patterns
+import com.br.linecut.ui.utils.ValidationUtils
 
 /**
  * Repositório para gerenciar operações de autenticação e usuários no Firebase
@@ -32,6 +33,12 @@ class AuthRepository {
             val validation = validateSignUpData(fullName, cpf, phone, email, password, confirmPassword)
             if (!validation.isValid) {
                 return AuthResult.Error(validation.errorMessage ?: "Dados inválidos")
+            }
+            
+            // Verificar se o email já existe no banco de dados
+            val emailExists = checkEmailExists(email)
+            if (emailExists) {
+                return AuthResult.Error("Este email já está cadastrado")
             }
             
             // Criar conta no Firebase Auth
@@ -115,6 +122,22 @@ class AuthRepository {
     }
     
     /**
+     * Verifica se o email já existe no banco de dados
+     */
+    private suspend fun checkEmailExists(email: String): Boolean {
+        return try {
+            val query = realtimeDatabase.getReference("usuarios")
+                .orderByChild("email")
+                .equalTo(email)
+            
+            val snapshot = query.get().await()
+            snapshot.exists()
+        } catch (e: Exception) {
+            false // Em caso de erro, permite continuar
+        }
+    }
+    
+    /**
      * Valida os dados do formulário de cadastro
      */
     private fun validateSignUpData(
@@ -130,18 +153,18 @@ class AuthRepository {
             return ValidationResult(false, "Nome deve ter pelo menos 2 caracteres")
         }
         
-        // Validar CPF (validação básica de formato)
-        if (cpf.isBlank() || cpf.replace("[.-]".toRegex(), "").length != 11) {
-            return ValidationResult(false, "CPF deve ter 11 dígitos")
+        // Validar CPF usando ValidationUtils
+        if (cpf.isBlank() || !ValidationUtils.isValidCpf(cpf)) {
+            return ValidationResult(false, "CPF inválido")
         }
         
-        // Validar telefone
-        if (phone.isBlank() || phone.replace("[()\\s-]".toRegex(), "").length < 10) {
+        // Validar telefone usando ValidationUtils
+        if (phone.isBlank() || !ValidationUtils.isValidPhone(phone)) {
             return ValidationResult(false, "Telefone inválido")
         }
         
-        // Validar email
-        if (email.isBlank() || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+        // Validar email usando ValidationUtils
+        if (!ValidationUtils.isValidEmail(email)) {
             return ValidationResult(false, "Email inválido")
         }
         

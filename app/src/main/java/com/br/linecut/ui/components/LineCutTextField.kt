@@ -27,7 +27,8 @@ fun LineCutTextField(
     trailingIcon: ImageVector? = null,
     onTrailingIconClick: (() -> Unit)? = null,
     isPassword: Boolean = false,
-    keyboardType: KeyboardType = KeyboardType.Text
+    keyboardType: KeyboardType = KeyboardType.Text,
+    visualTransformation: VisualTransformation = VisualTransformation.None
 ) {
     var isPasswordVisible by remember { mutableStateOf(false) }
     
@@ -69,7 +70,7 @@ fun LineCutTextField(
                 visualTransformation = if (isPassword && !isPasswordVisible) {
                     PasswordVisualTransformation()
                 } else {
-                    VisualTransformation.None
+                    visualTransformation
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
                 singleLine = true,
