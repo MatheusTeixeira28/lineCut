@@ -467,10 +467,6 @@ fun LineCutNavigation(
         
         Screen.ACCOUNT_DATA -> {
             AccountDataScreen(
-                userName = "Hannah Montana", // TODO: Get from user data
-                userCpf = "482.392.103-25", // TODO: Get from user data
-                userPhone = "(11) 97283-1931", // TODO: Get from user data
-                userEmail = userEmail.ifEmpty { "Hannah.Montana@gmail.com" },
                 onBackClick = {
                     currentScreen = Screen.PROFILE
                 },

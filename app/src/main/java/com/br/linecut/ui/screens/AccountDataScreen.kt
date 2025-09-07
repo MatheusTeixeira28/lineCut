@@ -28,17 +28,17 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.br.linecut.R
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.theme.*
+import com.br.linecut.ui.viewmodel.AuthViewModel
+import com.br.linecut.ui.utils.SimpleCpfVisualTransformation
+import com.br.linecut.ui.utils.SimplePhoneVisualTransformation
 
 @Composable
 fun AccountDataScreen(
-    userName: String = "Hannah Montana",
-    userCpf: String = "482.392.103-25",
-    userPhone: String = "(11) 97283-1931",
-    userEmail: String = "Hannah.Montana@gmail.com",
     onBackClick: () -> Unit = {},
     onEditClick: () -> Unit = {},
     onHomeClick: () -> Unit = {},
@@ -46,9 +46,40 @@ fun AccountDataScreen(
     onNotificationClick: () -> Unit = {},
     onOrdersClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    authViewModel: AuthViewModel = viewModel()
 ) {
     var isPasswordVisible by remember { mutableStateOf(false) }
+    
+    // Estados dos dados do usuário do Firebase
+    val currentUser by authViewModel.currentUser.collectAsState()
+    
+    // Carregar dados do usuário quando a tela for aberta
+    LaunchedEffect(Unit) {
+        authViewModel.loadCurrentUser()
+    }
+    
+    // Formatação dos dados para exibição
+    val formattedCpf = currentUser?.cpf?.let { cpf ->
+        val digits = cpf.filter { it.isDigit() }
+        when {
+            digits.length <= 3 -> digits
+            digits.length <= 6 -> "${digits.substring(0, 3)}.${digits.substring(3)}"
+            digits.length <= 9 -> "${digits.substring(0, 3)}.${digits.substring(3, 6)}.${digits.substring(6)}"
+            else -> "${digits.substring(0, 3)}.${digits.substring(3, 6)}.${digits.substring(6, 9)}-${digits.substring(9)}"
+        }
+    } ?: ""
+    
+    val formattedPhone = currentUser?.phone?.let { phone ->
+        val digits = phone.filter { it.isDigit() }
+        when {
+            digits.isEmpty() -> ""
+            digits.length == 1 -> "(${digits}"
+            digits.length <= 2 -> "(${digits})"
+            digits.length <= 7 -> "(${digits.substring(0, 2)}) ${digits.substring(2)}"
+            else -> "(${digits.substring(0, 2)}) ${digits.substring(2, 7)}-${digits.substring(7)}"
+        }
+    } ?: ""
 
     Column(
         modifier = modifier
@@ -101,7 +132,69 @@ fun AccountDataScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp)) // Reduzido para aproximar do design do Figma
+        // Espaço para centralizar a foto entre header e cards
+        Spacer(modifier = Modifier.height(40.dp))
+
+        // Container centralizado para foto e botão editar
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(160.dp), // Altura suficiente para a foto e espaçamento
+            contentAlignment = Alignment.Center
+        ) {
+            // Foto do usuário centralizada
+            Box(
+                modifier = Modifier
+                    .size(135.dp)
+                    .shadow(
+                        elevation = 4.dp,
+                        shape = CircleShape
+                    )
+                    .background(
+                        color = Color(0xFFE8E8E8),
+                        shape = CircleShape
+                    )
+                    .clip(CircleShape)
+            ) {
+                // Foto do usuário (placeholder)
+                Image(
+                    painter = painterResource(id = R.drawable.ic_launcher_foreground), // Placeholder
+                    contentDescription = "Foto do usuário",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            
+            // Botão editar posicionado no canto superior direito da foto
+            Box(
+                modifier = Modifier
+                    .size(30.dp)
+                    .offset(x = 50.dp, y = (-50).dp) // Posicionamento relativo à foto centralizada
+                    .shadow(
+                        elevation = 4.dp,
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                    .background(
+                        color = LineCutDesignSystem.screenBackgroundColor,
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                    .border(
+                        BorderStroke(1.dp, LineCutRed),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                    .clickable { onEditClick() },
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.editar),
+                    contentDescription = "Editar foto",
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+        
+        // Espaço antes dos cards
+        Spacer(modifier = Modifier.height(20.dp))
 
         // Seção de dados do usuário
         Column(
@@ -110,113 +203,63 @@ fun AccountDataScreen(
                 .padding(horizontal = 45.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Foto do usuário
-            Box(
-                modifier = Modifier
-                    .size(135.dp)
-                    .offset(y = (-10).dp) // Ajuste para seguir o CSS
-            ) {
-                // Círculo de fundo da foto
+            if (currentUser == null) {
+                // Estado de carregamento
                 Box(
                     modifier = Modifier
-                        .size(135.dp)
-                        .shadow(
-                            elevation = 4.dp,
-                            shape = CircleShape
-                        )
-                        .background(
-                            color = Color(0xFFE8E8E8),
-                            shape = CircleShape
-                        )
-                        .clip(CircleShape)
-                ) {
-                    // Foto do usuário (placeholder)
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_launcher_foreground), // Placeholder
-                        contentDescription = "Foto do usuário",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-            }
-            
-            // Botão editar posicionado no canto superior direito conforme Figma
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp) // Container para posicionamento absoluto
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(30.dp)
-                        .offset(x = 283.dp, y = (-157).dp) // Posição baseada no Figma: left-[283px] top-[-187px] + ajuste para nossa estrutura
-                        .shadow(
-                            elevation = 4.dp,
-                            shape = RoundedCornerShape(10.dp)
-                        )
-                        .background(
-                            color = LineCutDesignSystem.screenBackgroundColor,
-                            shape = RoundedCornerShape(10.dp)
-                        )
-                        .border(
-                            BorderStroke(1.dp, LineCutRed),
-                            shape = RoundedCornerShape(10.dp)
-                        )
-                        .clickable { onEditClick() },
+                        .fillMaxWidth()
+                        .height(200.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.editar),
-                        contentDescription = "Editar foto",
-                        modifier = Modifier.size(20.dp)
+                    CircularProgressIndicator(
+                        color = LineCutRed,
+                        modifier = Modifier.size(40.dp)
                     )
                 }
-            }
-            
-            Spacer(modifier = Modifier.height(15.dp)) // Reduzido para aproximar do design do Figma
-
-            // Campos de dados
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
-            ) {
+            } else {
+                // Campos de dados com dados do usuário
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(15.dp)
+                ) {
                 // Nome completo
                 AccountDataField(
                     icon = Icons.Default.Person,
-                    value = userName,
+                    value = currentUser?.fullName ?: "",
                     placeholder = "Nome completo"
                 )
 
                 // CPF
                 AccountDataField(
                     icon = Icons.Default.CreditCard,
-                    value = userCpf,
+                    value = formattedCpf,
                     placeholder = "CPF"
                 )
 
                 // Telefone
                 AccountDataField(
                     icon = Icons.Default.Phone,
-                    value = userPhone,
+                    value = formattedPhone,
                     placeholder = "Telefone"
                 )
 
                 // Email
                 AccountDataField(
                     icon = Icons.Default.Email,
-                    value = userEmail,
+                    value = currentUser?.email ?: "",
                     placeholder = "Email"
                 )
 
                 // Senha
                 AccountDataField(
                     icon = Icons.Default.Lock,
-                    value = "**********",
+                    value = "••••••••", // Senha mascarada por segurança
                     placeholder = "Senha",
                     isPassword = true,
                     isPasswordVisible = isPasswordVisible,
                     onPasswordVisibilityChange = { isPasswordVisible = !isPasswordVisible }
                 )
+                }
             }
         }
 
@@ -269,7 +312,11 @@ private fun AccountDataField(
             
             // Texto do campo
             Text(
-                text = if (isPassword && !isPasswordVisible) "**********" else value,
+                text = if (isPassword) {
+                    if (isPasswordVisible) "minhasenha123" else "••••••••"
+                } else {
+                    value
+                },
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = TextSecondary,
                     fontSize = 14.sp
