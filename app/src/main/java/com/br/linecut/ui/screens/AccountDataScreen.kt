@@ -3,6 +3,8 @@ package com.br.linecut.ui.screens
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -53,56 +55,53 @@ fun AccountDataScreen(
             .fillMaxSize()
             .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
-        // Header com fundo arredondado
+        // Header com fundo arredondado - mesmas proporções da QRCodePixScreen
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(206.dp)
+                .height(126.dp)
+                .background(
+                    LineCutDesignSystem.screenBackgroundColor,
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
+                )
+                .shadow(
+                    elevation = 4.dp,
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp),
+                    ambientColor = Color.Black.copy(alpha = 0.25f),
+                    spotColor = Color.Black.copy(alpha = 0.25f)
+                )
         ) {
-            // Fundo branco arredondado
-            Card(
+            // Linha inferior do header com voltar + título
+            Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(133.dp)
-                    .offset(y = (-73).dp)
-                    .shadow(
-                        elevation = 4.dp,
-                        shape = RoundedCornerShape(30.dp)
-                    ),
-                shape = RoundedCornerShape(30.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {}
-            
-            // Botão voltar
-            IconButton(
-                onClick = onBackClick,
-                modifier = Modifier
-                    .padding(start = 34.dp, top = 88.dp)
-                    .size(20.dp)
+                    .align(Alignment.BottomStart)
+                    .padding(start = 34.dp, end = 34.dp, bottom = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Voltar",
-                    tint = LineCutRed,
+                IconButton(
+                    onClick = onBackClick,
                     modifier = Modifier.size(20.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_filter_arrow),
+                        contentDescription = "Voltar",
+                        tint = Color.Unspecified,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(
+                    text = "Meus dados",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        color = LineCutRed,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
+                    )
                 )
             }
-            
-            // Título "Meus dados"
-            Text(
-                text = "Meus dados",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    color = LineCutRed,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp
-                ),
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 82.dp)
-            )
         }
 
-        Spacer(modifier = Modifier.height(40.dp))
+        Spacer(modifier = Modifier.height(20.dp)) // Reduzido para aproximar do design do Figma
 
         // Seção de dados do usuário
         Column(
@@ -111,7 +110,7 @@ fun AccountDataScreen(
                 .padding(horizontal = 45.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Foto do usuário e botão editar
+            // Foto do usuário
             Box(
                 modifier = Modifier
                     .size(135.dp)
@@ -141,40 +140,40 @@ fun AccountDataScreen(
                 }
             }
             
-            // Botão de editar foto - posicionado separadamente conforme CSS
+            // Botão editar posicionado no canto superior direito conforme Figma
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(0.dp) // Container invisível para posicionamento absoluto
+                    .height(80.dp) // Container para posicionamento absoluto
             ) {
-                Card(
-                    onClick = onEditClick,
+                Box(
                     modifier = Modifier
                         .size(30.dp)
-                        .offset(x = 216.dp, y = (-197).dp) // Posição baseada no CSS: left: 283px - 67px = 216dp, top: -187px - 10dp = -197dp
+                        .offset(x = 283.dp, y = (-157).dp) // Posição baseada no Figma: left-[283px] top-[-187px] + ajuste para nossa estrutura
                         .shadow(
                             elevation = 4.dp,
                             shape = RoundedCornerShape(10.dp)
-                        ),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    border = BorderStroke(1.dp, LineCutRed)
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Editar foto",
-                            tint = LineCutRed,
-                            modifier = Modifier.size(20.dp)
                         )
-                    }
+                        .background(
+                            color = LineCutDesignSystem.screenBackgroundColor,
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                        .border(
+                            BorderStroke(1.dp, LineCutRed),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                        .clickable { onEditClick() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.editar),
+                        contentDescription = "Editar foto",
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
-
-            Spacer(modifier = Modifier.height(27.dp)) // Ajustado para compensar o novo posicionamento
+            
+            Spacer(modifier = Modifier.height(15.dp)) // Reduzido para aproximar do design do Figma
 
             // Campos de dados
             Column(
