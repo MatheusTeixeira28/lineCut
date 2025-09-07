@@ -14,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.KeyboardType
@@ -191,6 +192,7 @@ fun SignUpScreen(
                 emailError?.let { error ->
                     Text(
                         text = error,
+                        color = LineCutRed,
                         modifier = Modifier.padding(start = 16.dp, top = 4.dp)
                     )
                 }
@@ -238,7 +240,8 @@ fun SignUpScreen(
                         onCheckedChange = { acceptTerms = it },
                         colors = CheckboxDefaults.colors(
                             checkedColor = LineCutRed,
-                            uncheckedColor = TextSecondary
+                            uncheckedColor = TextSecondary,
+                            checkmarkColor = Color.White
                         ),
                         modifier = Modifier.size(16.dp)
                     )
@@ -271,7 +274,8 @@ fun SignUpScreen(
                         onCheckedChange = { acceptPrivacy = it },
                         colors = CheckboxDefaults.colors(
                             checkedColor = LineCutRed,
-                            uncheckedColor = TextSecondary
+                            uncheckedColor = TextSecondary,
+                            checkmarkColor = Color.White
                         ),
                         modifier = Modifier.size(16.dp)
                     )
