@@ -1,36 +1,70 @@
 package com.br.linecut.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.br.linecut.R
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.components.NavigationItem
+import com.br.linecut.ui.theme.LineCutRed
 import com.br.linecut.ui.theme.LineCutTheme
+
+// Data class para representar um pagamento
+data class Payment(
+    val id: String,
+    val storeName: String,
+    val amount: String,
+    val paymentMethod: String,
+    val orderNumber: String,
+    val date: String
+)
+
+// Função para gerar dados de exemplo
+private fun getSamplePayments(): List<Payment> {
+    return listOf(
+        Payment("1", "Burger Queen", "R$ 39,90", "PIX", "1024", "24/04/2025"),
+        Payment("2", "Burger Queen", "R$ 19,90", "Pago na entrega", "950", "20/04/2025"),
+        Payment("3", "Burger Queen", "R$ 19,90", "Pago na entrega", "950", "24/04/2025"),
+        Payment("4", "Burger Queen", "R$ 39,90", "PIX", "1024", "24/04/2025"),
+        Payment("5", "Burger Queen", "R$ 19,90", "Pago na entrega", "950", "24/04/2025"),
+        Payment("6", "Burger Queen", "R$ 19,90", "Pago na entrega", "950", "24/04/2025"),
+        Payment("7", "Burger Queen", "R$ 19,90", "Pago na entrega", "950", "24/04/2025"),
+        Payment("8", "Burger Queen", "R$ 19,90", "Pago na entrega", "950", "24/04/2025")
+    )
+}
 
 @Composable
 fun PaymentsScreen(
+    payments: List<Payment> = getSamplePayments(),
     onBackClick: () -> Unit = {},
     onHomeClick: () -> Unit = {},
     onSearchClick: () -> Unit = {},
@@ -38,171 +72,88 @@ fun PaymentsScreen(
     onOrdersClick: () -> Unit = {},
     onProfileClick: () -> Unit = {}
 ) {
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
+            .statusBarsPadding()
             .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
-        // Top section with title and back button
-        // Header com fundo arredondado - mais fiel ao Figma
+        // Header seguindo o design do Figma - sem background para manter status bar transparente
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(184.dp)
+                .height(126.dp)
+                .shadow(
+                    elevation = 4.dp,
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp),
+                    ambientColor = Color.Black.copy(alpha = 0.25f),
+                    spotColor = Color.Black.copy(alpha = 0.25f)
+                )
         ) {
-            // Header simples baseado no Figma
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(126.dp)
-                    .background(
-                        LineCutDesignSystem.screenBackgroundColor,
-                        shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
-                    )
-                    .shadow(
-                        elevation = 4.dp,
-                        shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp),
-                        ambientColor = Color.Black.copy(alpha = 0.25f),
-                        spotColor = Color.Black.copy(alpha = 0.25f)
-                    )
-            ) { }
-            
-            // Back button
+            // Botão voltar - posição ajustada para não invadir status bar
             IconButton(
                 onClick = onBackClick,
                 modifier = Modifier
-                    .offset(x = 34.dp, y = 88.dp)
-                    .size(20.dp)
+                    .padding(start = 24.dp, top = 60.dp)
+                    .size(24.dp)
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    painter = painterResource(id = R.drawable.ic_filter_arrow),
                     contentDescription = "Voltar",
-                    tint = Color(0xFF9C0202),
+                    tint = Color.Unspecified,
                     modifier = Modifier.size(20.dp)
                 )
             }
-            
-            // Title
+
+            // Título "Notificações"
             Text(
                 text = "Pagamentos",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF9C0202),
-                modifier = Modifier.offset(x = 80.dp, y = 82.dp)
+                style = MaterialTheme.typography.titleLarge.copy(
+                    color = LineCutRed,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                ),
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = 60.dp, top = 20.dp)
             )
         }
-        
-        // White stripe background
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(88.dp)
-                .offset(y = 123.dp)
-                .background(Color.White)
-        )
-        
-        // History section title
+        // Título "Histórico de Transação" - posição baseada no Figma
         Text(
             text = "Histórico de Transação",
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium,
             color = Color(0xFF9C0202),
-            modifier = Modifier.offset(x = 30.dp, y = 157.dp)
+            modifier = Modifier.padding(start = 30.dp, top = 34.dp)
         )
-        
-        // Scrollable payments list
+        // Lista de pagamentos - seguindo o design do Figma
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(651.dp)
-                .offset(x = 2.5.dp, y = 189.dp)
+                .weight(1f)
+                .background(LineCutDesignSystem.screenBackgroundColor)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 30.dp)
         ) {
             Spacer(modifier = Modifier.height(29.dp))
             
-            PaymentItem(
-                storeName = "Museoh",
-                amount = "R$ 39,90",
-                paymentMethod = "PIX",
-                orderNumber = "1024",
-                date = "24/04/2025"
-            )
-            
-            PaymentDivider()
-            
-            PaymentItem(
-                storeName = "Museoh",
-                amount = "R$ 19,90",
-                paymentMethod = "Pago na entrega",
-                orderNumber = "950",
-                date = "20/04/2025"
-            )
-            
-            PaymentDivider()
-            
-            PaymentItem(
-                storeName = "Museoh",
-                amount = "R$ 19,90",
-                paymentMethod = "Pago na entrega",
-                orderNumber = "950",
-                date = "24/04/2025"
-            )
-            
-            PaymentDivider()
-            
-            PaymentItem(
-                storeName = "Museoh",
-                amount = "R$ 39,90",
-                paymentMethod = "PIX",
-                orderNumber = "1024",
-                date = "24/04/2025"
-            )
-            
-            PaymentDivider()
-            
-            PaymentItem(
-                storeName = "Museoh",
-                amount = "R$ 19,90",
-                paymentMethod = "Pago na entrega",
-                orderNumber = "950",
-                date = "24/04/2025"
-            )
-            
-            PaymentDivider()
-            
-            PaymentItem(
-                storeName = "Museoh",
-                amount = "R$ 19,90",
-                paymentMethod = "Pago na entrega",
-                orderNumber = "950",
-                date = "24/04/2025"
-            )
-            
-            PaymentDivider()
-            
-            PaymentItem(
-                storeName = "Museoh",
-                amount = "R$ 19,90",
-                paymentMethod = "Pago na entrega",
-                orderNumber = "950",
-                date = "24/04/2025"
-            )
-            
-            PaymentDivider()
-            
-            PaymentItem(
-                storeName = "Museoh",
-                amount = "R$ 19,90",
-                paymentMethod = "Pago na entrega",
-                orderNumber = "950",
-                date = "24/04/2025"
-            )
+            payments.forEachIndexed { index, payment ->
+                PaymentItem(
+                    storeName = payment.storeName,
+                    amount = payment.amount,
+                    paymentMethod = payment.paymentMethod,
+                    orderNumber = payment.orderNumber,
+                    date = payment.date
+                )
+                
+                if (index < payments.size - 1) {
+                    PaymentDivider()
+                }
+            }
         }
-        
+
         // Bottom navigation
         LineCutBottomNavigationBar(
-            modifier = Modifier.align(Alignment.BottomCenter),
             selectedItem = NavigationItem.PROFILE,
             onHomeClick = onHomeClick,
             onSearchClick = onSearchClick,
@@ -221,86 +172,84 @@ private fun PaymentItem(
     orderNumber: String,
     date: String
 ) {
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .height(57.dp)
     ) {
-        // Store indicator dot
+        // Store indicator dot - posição baseada no Figma
         Box(
             modifier = Modifier
                 .size(10.dp)
                 .background(Color(0xFFD3D3D3), CircleShape)
+                .padding(top = 5.dp)
+        )
+        
+        // Nome da loja - posição baseada no Figma
+        Text(
+            text = storeName,
+            fontSize = 13.67.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color(0xFF7D7D7D),
+            modifier = Modifier
+                .padding(start = 25.43.dp, top = 0.dp)
+        )
+        
+        // Valor - canto superior direito
+        Text(
+            text = amount,
+            fontSize = 12.81.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color(0xFF7D7D7D),
+            modifier = Modifier
+                .align(Alignment.TopEnd)
                 .padding(end = 16.dp)
         )
         
-        Spacer(modifier = Modifier.width(16.dp))
+        // Método de pagamento
+        Text(
+            text = paymentMethod,
+            fontSize = 11.96.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color(0xFFB3B3B3),
+            modifier = Modifier
+                .padding(start = 25.dp, top = 22.dp)
+        )
         
-        // Payment details
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = storeName,
-                fontSize = 13.67.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color(0xFF7D7D7D)
-            )
-            
-            Spacer(modifier = Modifier.height(4.dp))
-            
-            Text(
-                text = paymentMethod,
-                fontSize = 11.96.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color(0xFFB3B3B3)
-            )
-            
-            Spacer(modifier = Modifier.height(4.dp))
-            
-            Text(
-                text = "Pedido nº $orderNumber",
-                fontSize = 11.96.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color(0xFFB3B3B3)
-            )
-        }
+        // Número do pedido
+        Text(
+            text = "Pedido nº $orderNumber",
+            fontSize = 11.96.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color(0xFFB3B3B3),
+            modifier = Modifier
+                .padding(start = 25.dp, top = 39.dp)
+        )
         
-        // Amount and date
-        Column(
-            horizontalAlignment = Alignment.End
-        ) {
-            Text(
-                text = amount,
-                fontSize = 12.81.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color(0xFF7D7D7D)
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Text(
-                text = date,
-                fontSize = 11.11.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color(0xFFB3B3B3)
-            )
-        }
+        // Data - canto inferior direito
+        Text(
+            text = date,
+            fontSize = 11.11.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color(0xFFB3B3B3),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 16.dp, bottom = 0.dp)
+        )
     }
 }
 
 @Composable
 private fun PaymentDivider() {
-    Spacer(modifier = Modifier.height(8.dp))
+    Spacer(modifier = Modifier.height(15.dp))
     HorizontalDivider(
         color = Color(0xFFE0E0E0),
         thickness = 1.dp,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp)
+            .padding(horizontal = 0.dp)
     )
-    Spacer(modifier = Modifier.height(8.dp))
+    Spacer(modifier = Modifier.height(15.dp))
 }
 
 @Preview(showBackground = true)
@@ -316,7 +265,7 @@ fun PaymentsScreenPreview() {
 fun PaymentItemPreview() {
     LineCutTheme {
         PaymentItem(
-            storeName = "Museoh",
+            storeName = "Burger Queen",
             amount = "R$ 39,90",
             paymentMethod = "PIX",
             orderNumber = "1024",

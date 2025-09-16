@@ -22,11 +22,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -38,9 +35,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -74,8 +68,6 @@ fun AccountDataScreen(
     modifier: Modifier = Modifier,
     authViewModel: AuthViewModel = viewModel()
 ) {
-    var isPasswordVisible by remember { mutableStateOf(false) }
-    
     // Estados dos dados do usuário do Firebase
     val currentUser by authViewModel.currentUser.collectAsState()
     
@@ -228,64 +220,54 @@ fun AccountDataScreen(
                 .padding(horizontal = 45.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-//            if (currentUser == null) {
-//                // Estado de carregamento
-//                Box(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .height(200.dp),
-//                    contentAlignment = Alignment.Center
-//                ) {
-//                    CircularProgressIndicator(
-//                        color = LineCutRed,
-//                        modifier = Modifier.size(40.dp)
-//                    )
-//                }
-//            } else {
-//                // Campos de dados com dados do usuário
-//                Column(
-//                    modifier = Modifier.fillMaxWidth(),
-//                    verticalArrangement = Arrangement.spacedBy(15.dp)
-//                ) {
-//                // Nome completo
-//                AccountDataField(
-//                    icon = Icons.Default.Person,
-//                    value = currentUser?.fullName ?: "",
-//                    placeholder = "Nome completo"
-//                )
-//
-//                // CPF
-//                AccountDataField(
-//                    icon = Icons.Default.CreditCard,
-//                    value = formattedCpf,
-//                    placeholder = "CPF"
-//                )
-//
-//                // Telefone
-//                AccountDataField(
-//                    icon = Icons.Default.Phone,
-//                    value = formattedPhone,
-//                    placeholder = "Telefone"
-//                )
-//
-//                // Email
-//                AccountDataField(
-//                    icon = Icons.Default.Email,
-//                    value = currentUser?.email ?: "",
-//                    placeholder = "Email"
-//                )
-//
-//                // Senha
-//                AccountDataField(
-//                    icon = Icons.Default.Lock,
-//                    value = "••••••••", // Senha mascarada por segurança
-//                    placeholder = "Senha",
-//                    isPassword = true,
-//                    isPasswordVisible = isPasswordVisible,
-//                    onPasswordVisibilityChange = { isPasswordVisible = !isPasswordVisible }
-//                )
-//                }
-//            }
+            if (currentUser == null) {
+                // Estado de carregamento
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        color = LineCutRed,
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
+            } else {
+                // Campos de dados com dados do usuário
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(15.dp)
+                ) {
+                    // Nome completo
+                    AccountDataField(
+                        icon = Icons.Default.Person,
+                        value = currentUser?.fullName ?: "",
+                        placeholder = "Nome completo"
+                    )
+
+                    // CPF
+                    AccountDataField(
+                        icon = Icons.Default.CreditCard,
+                        value = formattedCpf,
+                        placeholder = "CPF"
+                    )
+
+                    // Telefone
+                    AccountDataField(
+                        icon = Icons.Default.Phone,
+                        value = formattedPhone,
+                        placeholder = "Telefone"
+                    )
+
+                    // Email
+                    AccountDataField(
+                        icon = Icons.Default.Email,
+                        value = currentUser?.email ?: "",
+                        placeholder = "Email"
+                    )
+                }
+            }
         }
 
         Spacer(modifier = Modifier.weight(1f))
@@ -306,9 +288,6 @@ private fun AccountDataField(
     icon: ImageVector,
     value: String,
     placeholder: String,
-    isPassword: Boolean = false,
-    isPasswordVisible: Boolean = false,
-    onPasswordVisibilityChange: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -337,32 +316,13 @@ private fun AccountDataField(
             
             // Texto do campo
             Text(
-                text = if (isPassword) {
-                    if (isPasswordVisible) "minhasenha123" else "••••••••"
-                } else {
-                    value
-                },
+                text = value,
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = TextSecondary,
                     fontSize = 14.sp
                 ),
                 modifier = Modifier.weight(1f)
             )
-            
-            // Botão de visibilidade da senha
-            if (isPassword) {
-                IconButton(
-                    onClick = onPasswordVisibilityChange,
-                    modifier = Modifier.size(24.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                        contentDescription = if (isPasswordVisible) "Ocultar senha" else "Mostrar senha",
-                        tint = TextSecondary,
-                        modifier = Modifier.size(15.dp)
-                    )
-                }
-            }
         }
     }
 }
@@ -399,10 +359,9 @@ fun AccountDataFieldPreview() {
             )
             
             AccountDataField(
-                icon = Icons.Default.Lock,
-                value = "**********",
-                placeholder = "Senha",
-                isPassword = true
+                icon = Icons.Default.Email,
+                value = "hannah.montana@gmail.com",
+                placeholder = "Email"
             )
         }
     }
