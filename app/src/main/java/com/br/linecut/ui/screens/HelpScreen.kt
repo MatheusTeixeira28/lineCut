@@ -3,6 +3,7 @@ package com.br.linecut.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -12,13 +13,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.br.linecut.R
 import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
+import com.br.linecut.ui.components.NavigationItem
 import com.br.linecut.ui.theme.*
 
 data class HelpQuestion(
@@ -70,99 +75,100 @@ fun HelpScreen(
         )
     )
 
-    Box(
-        modifier = modifier
+    Column(
+        modifier = Modifier
             .fillMaxSize()
+            .statusBarsPadding()
             .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
+        // Header seguindo o design do Figma - 206dp de altura
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(126.dp)
+                .background(
+                    LineCutDesignSystem.screenBackgroundColor,
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
+                )
+                .shadow(
+                    elevation = 4.dp,
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp),
+                    ambientColor = Color.Black.copy(alpha = 0.25f),
+                    spotColor = Color.Black.copy(alpha = 0.25f)
+                )
         ) {
-            // Header with back button and title
-            Card(
+            // Botão voltar - posição baseada no Figma
+            IconButton(
+                onClick = onBackClick,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(133.dp),
-                shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    .padding(start = 24.dp, top = 60.dp)
+                    .size(24.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 34.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = onBackClick,
-                        modifier = Modifier.size(20.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Voltar",
-                            tint = LineCutRed,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.width(126.dp))
-                    
-                    Text(
-                        text = "Ajuda",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = LineCutRed
-                    )
-                }
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_filter_arrow),
+                    contentDescription = "Voltar",
+                    tint = Color.Unspecified,
+                    modifier = Modifier.size(20.dp)
+                )
             }
             
-            // White band section
-            Box(
+            // Título "Ajuda" - centralizado horizontalmente como no Figma
+            Text(
+                text = "Ajuda",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    color = LineCutRed,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 22.sp
+                ),
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(88.dp)
-                    .background(Color.White)
+                    .align(Alignment.CenterStart)
+                    .padding(start = 60.dp, top = 20.dp)
             )
+        }
+
+        // Lista de perguntas - seguindo o design do Figma com espaçamento menor
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .background(LineCutDesignSystem.screenBackgroundColor)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 34.dp)
+        ) {
+            Spacer(modifier = Modifier.height(28.dp))
             
-            // Main content - Questions list
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 28.dp)
-                    .padding(bottom = 60.dp)
-                    .verticalScroll(rememberScrollState())
-            ) {
-                helpQuestions.forEachIndexed { index, question ->
-                    HelpQuestionRow(
-                        question = question.question,
-                        onClick = question.onClick,
+            helpQuestions.forEachIndexed { index, question ->
+                HelpQuestionRow(
+                    question = question.question,
+                    onClick = question.onClick,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                if (index < helpQuestions.size - 1) {
+                    Spacer(modifier = Modifier.height(9.dp))
+                    
+                    // Divider line
+                    HorizontalDivider(
+                        color = Color(0xFFE0E0E0),
+                        thickness = 0.5.dp,
                         modifier = Modifier.fillMaxWidth()
                     )
                     
-                    if (index < helpQuestions.size - 1) {
-                        Spacer(modifier = Modifier.height(18.dp))
-                        
-                        // Divider line
-                        Divider(
-                            color = Color(0xFFE0E0E0),
-                            thickness = 0.5.dp,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        
-                        Spacer(modifier = Modifier.height(18.dp))
-                    }
+                    Spacer(modifier = Modifier.height(9.dp))
                 }
             }
+            
+            Spacer(modifier = Modifier.height(60.dp)) // Espaço para o bottom navigation
         }
-        
-        // Bottom Navigation Bar
+
+        // Bottom navigation
         LineCutBottomNavigationBar(
+            selectedItem = NavigationItem.PROFILE,
             onHomeClick = onHomeClick,
             onSearchClick = onSearchClick,
             onNotificationClick = onNotificationClick,
             onOrdersClick = onOrdersClick,
-            onProfileClick = onProfileClick,
-            modifier = Modifier.align(Alignment.BottomCenter)
+            onProfileClick = onProfileClick
         )
     }
 }
@@ -176,7 +182,7 @@ private fun HelpQuestionRow(
     Row(
         modifier = modifier
             .clickable { onClick() }
-            .padding(vertical = 12.dp),
+            .height(36.dp), // Altura baseada no espaçamento do Figma
         verticalAlignment = Alignment.CenterVertically
     ) {
         Spacer(modifier = Modifier.width(25.dp))
@@ -193,7 +199,9 @@ private fun HelpQuestionRow(
             imageVector = Icons.Default.ChevronRight,
             contentDescription = null,
             tint = LineCutRed,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier
+                .size(12.dp)
+                .padding(end = 12.dp)
         )
     }
 }
