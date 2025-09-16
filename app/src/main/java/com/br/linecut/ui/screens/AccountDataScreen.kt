@@ -5,15 +5,42 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,8 +50,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -32,10 +57,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.br.linecut.R
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.components.LineCutDesignSystem
-import com.br.linecut.ui.theme.*
+import com.br.linecut.ui.theme.LineCutRed
+import com.br.linecut.ui.theme.LineCutTheme
+import com.br.linecut.ui.theme.TextSecondary
 import com.br.linecut.ui.viewmodel.AuthViewModel
-import com.br.linecut.ui.utils.SimpleCpfVisualTransformation
-import com.br.linecut.ui.utils.SimplePhoneVisualTransformation
 
 @Composable
 fun AccountDataScreen(
@@ -69,7 +94,7 @@ fun AccountDataScreen(
             else -> "${digits.substring(0, 3)}.${digits.substring(3, 6)}.${digits.substring(6, 9)}-${digits.substring(9)}"
         }
     } ?: ""
-    
+
     val formattedPhone = currentUser?.phone?.let { phone ->
         val digits = phone.filter { it.isDigit() }
         when {
@@ -165,11 +190,11 @@ fun AccountDataScreen(
                 )
             }
             
-            // Botão editar posicionado no canto superior direito da foto
+            // Botão editar posicionado entre o canto da tela e a foto
             Box(
                 modifier = Modifier
                     .size(30.dp)
-                    .offset(x = 50.dp, y = (-50).dp) // Posicionamento relativo à foto centralizada
+                    .offset(x = 140.dp, y = (-50).dp) // Movido ainda mais para o canto conforme a imagem
                     .shadow(
                         elevation = 4.dp,
                         shape = RoundedCornerShape(10.dp)
@@ -203,64 +228,64 @@ fun AccountDataScreen(
                 .padding(horizontal = 45.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (currentUser == null) {
-                // Estado de carregamento
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(
-                        color = LineCutRed,
-                        modifier = Modifier.size(40.dp)
-                    )
-                }
-            } else {
-                // Campos de dados com dados do usuário
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(15.dp)
-                ) {
-                // Nome completo
-                AccountDataField(
-                    icon = Icons.Default.Person,
-                    value = currentUser?.fullName ?: "",
-                    placeholder = "Nome completo"
-                )
-
-                // CPF
-                AccountDataField(
-                    icon = Icons.Default.CreditCard,
-                    value = formattedCpf,
-                    placeholder = "CPF"
-                )
-
-                // Telefone
-                AccountDataField(
-                    icon = Icons.Default.Phone,
-                    value = formattedPhone,
-                    placeholder = "Telefone"
-                )
-
-                // Email
-                AccountDataField(
-                    icon = Icons.Default.Email,
-                    value = currentUser?.email ?: "",
-                    placeholder = "Email"
-                )
-
-                // Senha
-                AccountDataField(
-                    icon = Icons.Default.Lock,
-                    value = "••••••••", // Senha mascarada por segurança
-                    placeholder = "Senha",
-                    isPassword = true,
-                    isPasswordVisible = isPasswordVisible,
-                    onPasswordVisibilityChange = { isPasswordVisible = !isPasswordVisible }
-                )
-                }
-            }
+//            if (currentUser == null) {
+//                // Estado de carregamento
+//                Box(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .height(200.dp),
+//                    contentAlignment = Alignment.Center
+//                ) {
+//                    CircularProgressIndicator(
+//                        color = LineCutRed,
+//                        modifier = Modifier.size(40.dp)
+//                    )
+//                }
+//            } else {
+//                // Campos de dados com dados do usuário
+//                Column(
+//                    modifier = Modifier.fillMaxWidth(),
+//                    verticalArrangement = Arrangement.spacedBy(15.dp)
+//                ) {
+//                // Nome completo
+//                AccountDataField(
+//                    icon = Icons.Default.Person,
+//                    value = currentUser?.fullName ?: "",
+//                    placeholder = "Nome completo"
+//                )
+//
+//                // CPF
+//                AccountDataField(
+//                    icon = Icons.Default.CreditCard,
+//                    value = formattedCpf,
+//                    placeholder = "CPF"
+//                )
+//
+//                // Telefone
+//                AccountDataField(
+//                    icon = Icons.Default.Phone,
+//                    value = formattedPhone,
+//                    placeholder = "Telefone"
+//                )
+//
+//                // Email
+//                AccountDataField(
+//                    icon = Icons.Default.Email,
+//                    value = currentUser?.email ?: "",
+//                    placeholder = "Email"
+//                )
+//
+//                // Senha
+//                AccountDataField(
+//                    icon = Icons.Default.Lock,
+//                    value = "••••••••", // Senha mascarada por segurança
+//                    placeholder = "Senha",
+//                    isPassword = true,
+//                    isPasswordVisible = isPasswordVisible,
+//                    onPasswordVisibilityChange = { isPasswordVisible = !isPasswordVisible }
+//                )
+//                }
+//            }
         }
 
         Spacer(modifier = Modifier.weight(1f))
