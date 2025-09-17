@@ -24,6 +24,7 @@ import com.br.linecut.ui.screens.OrdersScreen
 import com.br.linecut.ui.screens.OrderDetailsScreen
 import com.br.linecut.ui.screens.HelpScreen
 import com.br.linecut.ui.screens.SettingsScreen
+import com.br.linecut.ui.screens.TermsAndConditionsScreen
 import com.br.linecut.ui.screens.PrivacyPolicyScreen
 import com.br.linecut.ui.screens.CloseAccountScreen
 import com.br.linecut.ui.screens.AccountClosedScreen
@@ -676,7 +677,7 @@ fun LineCutNavigation(
                     currentScreen = Screen.PROFILE
                 },
                 onTermsClick = {
-                    // TODO: Open terms and conditions
+                    currentScreen = Screen.TERMS_AND_CONDITIONS
                 },
                 onPrivacyClick = {
                     currentScreen = Screen.PRIVACY_POLICY
@@ -687,6 +688,29 @@ fun LineCutNavigation(
                 onLogoutClick = {
                     // TODO: Show logout confirmation and navigate to login
                     currentScreen = Screen.LOGIN
+                },
+                onHomeClick = {
+                    currentScreen = Screen.STORES
+                },
+                onSearchClick = {
+                    currentScreen = Screen.STORES
+                },
+                onNotificationClick = {
+                    currentScreen = Screen.NOTIFICATIONS
+                },
+                onOrdersClick = {
+                    currentScreen = Screen.ORDERS
+                },
+                onProfileClick = {
+                    currentScreen = Screen.PROFILE
+                }
+            )
+        }
+
+        Screen.TERMS_AND_CONDITIONS -> {
+            TermsAndConditionsScreen(
+                onBackClick = {
+                    currentScreen = Screen.SETTINGS
                 },
                 onHomeClick = {
                     currentScreen = Screen.STORES
@@ -1269,6 +1293,18 @@ fun NavigationHelpPreview() {
 fun NavigationSettingsPreview() {
     LineCutTheme {
         LineCutNavigation(startDestination = Screen.SETTINGS)
+    }
+}
+
+@Preview(
+    name = "Terms and Conditions Screen",
+    showBackground = true,
+    group = "Navigation"
+)
+@Composable
+fun NavigationTermsAndConditionsPreview() {
+    LineCutTheme {
+        LineCutNavigation(startDestination = Screen.TERMS_AND_CONDITIONS)
     }
 }
 

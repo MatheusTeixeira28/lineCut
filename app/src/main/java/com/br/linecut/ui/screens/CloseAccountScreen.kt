@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -19,6 +20,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.br.linecut.R
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.components.NavigationItem
@@ -61,13 +63,13 @@ fun CloseAccountScreen(
             IconButton(
                 onClick = onBackClick,
                 modifier = Modifier
-                    .padding(start = 24.dp, top = 50.dp)
+                    .padding(start = 24.dp, top = 60.dp)
                     .size(24.dp)
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    painter = painterResource(id = R.drawable.ic_filter_arrow),
                     contentDescription = "Voltar",
-                    tint = LineCutRed,
+                    tint = Color.Unspecified,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -78,12 +80,13 @@ fun CloseAccountScreen(
                 style = MaterialTheme.typography.titleLarge.copy(
                     color = LineCutRed,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp // Conforme CSS: text-[22px]
+                    fontSize = 20.sp
                 ),
                 modifier = Modifier
                     .align(Alignment.CenterStart)
-                    .padding(start = 30.dp, top = 10.dp) // left-[30px] conforme CSS
+                    .padding(start = 60.dp, top = 12.dp)
             )
+            
         }
 
         // Conteúdo da tela
