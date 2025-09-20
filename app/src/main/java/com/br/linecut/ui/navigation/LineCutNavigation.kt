@@ -23,6 +23,12 @@ import com.br.linecut.ui.screens.PaymentsScreen
 import com.br.linecut.ui.screens.OrdersScreen
 import com.br.linecut.ui.screens.OrderDetailsScreen
 import com.br.linecut.ui.screens.HelpScreen
+import com.br.linecut.ui.screens.HowToOrderScreen
+import com.br.linecut.ui.screens.TrackOrderScreen
+import com.br.linecut.ui.screens.CancelOrderScreen
+import com.br.linecut.ui.screens.NotPickedUpScreen
+import com.br.linecut.ui.screens.ContactSupportScreen
+import com.br.linecut.ui.screens.FAQScreen
 import com.br.linecut.ui.screens.SettingsScreen
 import com.br.linecut.ui.screens.TermsAndConditionsScreen
 import com.br.linecut.ui.screens.PrivacyPolicyScreen
@@ -636,22 +642,160 @@ fun LineCutNavigation(
                     currentScreen = Screen.PROFILE
                 },
                 onHowToOrderClick = {
-                    // TODO: Open how to order help
+                    currentScreen = Screen.HOW_TO_ORDER
                 },
                 onTrackOrderClick = {
-                    // TODO: Open track order help
+                    currentScreen = Screen.TRACK_ORDER
                 },
                 onCancelOrderClick = {
-                    // TODO: Open cancel order help
+                    currentScreen = Screen.CANCEL_ORDER
                 },
                 onNotPickedUpClick = {
-                    // TODO: Open not picked up help
+                    currentScreen = Screen.NOT_PICKED_UP
                 },
                 onContactSupportClick = {
-                    // TODO: Open contact support
+                    currentScreen = Screen.CONTACT_SUPPORT
                 },
                 onFAQClick = {
-                    // TODO: Open FAQ
+                    currentScreen = Screen.FAQ
+                },
+                onHomeClick = {
+                    currentScreen = Screen.STORES
+                },
+                onSearchClick = {
+                    currentScreen = Screen.STORES
+                },
+                onNotificationClick = {
+                    currentScreen = Screen.NOTIFICATIONS
+                },
+                onOrdersClick = {
+                    currentScreen = Screen.ORDERS
+                },
+                onProfileClick = {
+                    currentScreen = Screen.PROFILE
+                }
+            )
+        }
+        
+        Screen.HOW_TO_ORDER -> {
+            HowToOrderScreen(
+                onBackClick = {
+                    currentScreen = Screen.HELP
+                },
+                onHomeClick = {
+                    currentScreen = Screen.STORES
+                },
+                onSearchClick = {
+                    currentScreen = Screen.STORES
+                },
+                onNotificationClick = {
+                    currentScreen = Screen.NOTIFICATIONS
+                },
+                onOrdersClick = {
+                    currentScreen = Screen.ORDERS
+                },
+                onProfileClick = {
+                    currentScreen = Screen.PROFILE
+                }
+            )
+        }
+        
+        Screen.TRACK_ORDER -> {
+            TrackOrderScreen(
+                onBackClick = {
+                    currentScreen = Screen.HELP
+                },
+                onHomeClick = {
+                    currentScreen = Screen.STORES
+                },
+                onSearchClick = {
+                    currentScreen = Screen.STORES
+                },
+                onNotificationClick = {
+                    currentScreen = Screen.NOTIFICATIONS
+                },
+                onOrdersClick = {
+                    currentScreen = Screen.ORDERS
+                },
+                onProfileClick = {
+                    currentScreen = Screen.PROFILE
+                }
+            )
+        }
+        
+        Screen.CANCEL_ORDER -> {
+            CancelOrderScreen(
+                onBackClick = {
+                    currentScreen = Screen.HELP
+                },
+                onHomeClick = {
+                    currentScreen = Screen.STORES
+                },
+                onSearchClick = {
+                    currentScreen = Screen.STORES
+                },
+                onNotificationClick = {
+                    currentScreen = Screen.NOTIFICATIONS
+                },
+                onOrdersClick = {
+                    currentScreen = Screen.ORDERS
+                },
+                onProfileClick = {
+                    currentScreen = Screen.PROFILE
+                }
+            )
+        }
+        
+        Screen.NOT_PICKED_UP -> {
+            NotPickedUpScreen(
+                onBackClick = {
+                    currentScreen = Screen.HELP
+                },
+                onHomeClick = {
+                    currentScreen = Screen.STORES
+                },
+                onSearchClick = {
+                    currentScreen = Screen.STORES
+                },
+                onNotificationClick = {
+                    currentScreen = Screen.NOTIFICATIONS
+                },
+                onOrdersClick = {
+                    currentScreen = Screen.ORDERS
+                },
+                onProfileClick = {
+                    currentScreen = Screen.PROFILE
+                }
+            )
+        }
+        
+        Screen.CONTACT_SUPPORT -> {
+            ContactSupportScreen(
+                onBackClick = {
+                    currentScreen = Screen.HELP
+                },
+                onHomeClick = {
+                    currentScreen = Screen.STORES
+                },
+                onSearchClick = {
+                    currentScreen = Screen.STORES
+                },
+                onNotificationClick = {
+                    currentScreen = Screen.NOTIFICATIONS
+                },
+                onOrdersClick = {
+                    currentScreen = Screen.ORDERS
+                },
+                onProfileClick = {
+                    currentScreen = Screen.PROFILE
+                }
+            )
+        }
+        
+        Screen.FAQ -> {
+            FAQScreen(
+                onBackClick = {
+                    currentScreen = Screen.HELP
                 },
                 onHomeClick = {
                     currentScreen = Screen.STORES

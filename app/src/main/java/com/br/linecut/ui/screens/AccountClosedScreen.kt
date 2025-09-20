@@ -58,7 +58,7 @@ fun AccountClosedScreen(
                 ),
                 modifier = Modifier
                     .align(Alignment.CenterStart)
-                    .padding(start = 30.dp, top = 10.dp) // left-[30px] conforme CSS
+                    .padding(start = 30.dp, top = 50.dp) // left-[30px] conforme CSS
             )
         }
 

@@ -1,14 +1,12 @@
 package com.br.linecut.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,7 +14,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,21 +29,10 @@ import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.components.NavigationItem
 import com.br.linecut.ui.theme.*
 
-data class HelpQuestion(
-    val question: String,
-    val onClick: () -> Unit = {}
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HelpScreen(
+fun ContactSupportScreen(
     onBackClick: () -> Unit = {},
-    onHowToOrderClick: () -> Unit = {},
-    onTrackOrderClick: () -> Unit = {},
-    onCancelOrderClick: () -> Unit = {},
-    onNotPickedUpClick: () -> Unit = {},
-    onContactSupportClick: () -> Unit = {},
-    onFAQClick: () -> Unit = {},
     onHomeClick: () -> Unit = {},
     onSearchClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
@@ -48,40 +40,13 @@ fun HelpScreen(
     onProfileClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val helpQuestions = listOf(
-        HelpQuestion(
-            question = "Como fazer um pedido?",
-            onClick = onHowToOrderClick
-        ),
-        HelpQuestion(
-            question = "Como acompanhar meu pedido?",
-            onClick = onTrackOrderClick
-        ),
-        HelpQuestion(
-            question = "Como cancelar um pedido?",
-            onClick = onCancelOrderClick
-        ),
-        HelpQuestion(
-            question = "O que fazer se meu pedido não for retirado?",
-            onClick = onNotPickedUpClick
-        ),
-        HelpQuestion(
-            question = "Contato com o suporte?",
-            onClick = onContactSupportClick
-        ),
-        HelpQuestion(
-            question = "Dúvidas frequentes (FAQ)",
-            onClick = onFAQClick
-        )
-    )
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
             .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
-        // Header seguindo o design do Figma - 206dp de altura
+        // Header seguindo o design do Figma - mesmo header do HelpScreen
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -126,7 +91,7 @@ fun HelpScreen(
             )
         }
 
-        // Lista de perguntas - seguindo o design do Figma com espaçamento menor
+        // Conteúdo da tela - seguindo o design do Figma
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -135,26 +100,93 @@ fun HelpScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 34.dp)
         ) {
+            Spacer(modifier = Modifier.height(26.dp))
+            
+            // Título "Contato com o suporte" - posição baseada no Figma
+            Text(
+                text = "Contato com o suporte",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = LineCutRed,
+                modifier = Modifier.padding(start = 11.43.dp)
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Linha divisória abaixo do título
+            HorizontalDivider(
+                color = Color(0xFFE0E0E0),
+                thickness = 1.dp,
+                modifier = Modifier
+                    .width(145.dp)
+                    .padding(start = 11.43.dp)
+            )
+            
             Spacer(modifier = Modifier.height(28.dp))
             
-            helpQuestions.forEachIndexed { index, question ->
-                HelpQuestionRow(
-                    question = question.question,
-                    onClick = question.onClick,
-                    modifier = Modifier.fillMaxWidth()
+            // Conteúdo da explicação
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 23.dp, end = 23.dp)
+            ) {
+                // Texto inicial
+                Text(
+                    text = "Precisa de ajuda? Estamos aqui:",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF7D7D7D),
+                    textAlign = TextAlign.Justify,
+                    lineHeight = 18.sp,
+                    modifier = Modifier.width(318.dp)
                 )
                 
-                if (index < helpQuestions.size - 1) {
-                    Spacer(modifier = Modifier.height(9.dp))
-                    
-                    // Divider line
-                    HorizontalDivider(
-                        color = Color(0xFFE0E0E0),
-                        thickness = 0.5.dp,
-                        modifier = Modifier.fillMaxWidth()
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Texto "E-mail:" normal + endereço copiável
+                Row(
+                    modifier = Modifier.width(318.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Texto "E-mail:" normal (não clicável)
+                    Text(
+                        text = "E-mail: ",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF7D7D7D),
+                        lineHeight = 18.sp
                     )
                     
-                    Spacer(modifier = Modifier.height(9.dp))
+                    // Endereço de email copiável
+                    val annotatedText = buildAnnotatedString {
+                        pushStringAnnotation(tag = "EMAIL", annotation = "suporte@linecut.app.br")
+                        withStyle(
+                            style = SpanStyle(
+                                color = LineCutRed,
+                                fontWeight = FontWeight.Medium
+                            )
+                        ) {
+                            append("suporte@linecut.app.br")
+                        }
+                        pop()
+                    }
+                    
+                    ClickableText(
+                        text = annotatedText,
+                        style = androidx.compose.ui.text.TextStyle(
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = LineCutRed,
+                            lineHeight = 18.sp
+                        ),
+                        onClick = { offset ->
+                            annotatedText.getStringAnnotations(tag = "EMAIL", start = offset, end = offset)
+                                .firstOrNull()?.let { annotation ->
+                                    // Aqui poderia copiar o email para clipboard
+                                    // ClipboardManager para copiar o endereço
+                                }
+                        }
+                    )
                 }
             }
             
@@ -173,52 +205,10 @@ fun HelpScreen(
     }
 }
 
-@Composable
-private fun HelpQuestionRow(
-    question: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .clickable { onClick() }
-            .height(36.dp), // Altura baseada no espaçamento do Figma
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Spacer(modifier = Modifier.width(25.dp))
-        
-        Text(
-            text = question,
-            fontSize = 13.67.sp,
-            fontWeight = FontWeight.Medium,
-            color = Color(0xFF7D7D7D),
-            modifier = Modifier.weight(1f)
-        )
-        
-        Icon(
-            imageVector = Icons.Default.ChevronRight,
-            contentDescription = null,
-            tint = LineCutRed,
-            modifier = Modifier.size(17.dp)
-        )
-    }
-}
-
 @Preview(showBackground = true)
 @Composable
-fun HelpScreenPreview() {
+fun ContactSupportScreenPreview() {
     LineCutTheme {
-        HelpScreen()
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun HelpQuestionRowPreview() {
-    LineCutTheme {
-        HelpQuestionRow(
-            question = "Como fazer um pedido?",
-            onClick = {}
-        )
+        ContactSupportScreen()
     }
 }

@@ -1,14 +1,11 @@
 package com.br.linecut.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,6 +14,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,21 +24,10 @@ import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.components.NavigationItem
 import com.br.linecut.ui.theme.*
 
-data class HelpQuestion(
-    val question: String,
-    val onClick: () -> Unit = {}
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HelpScreen(
+fun NotPickedUpScreen(
     onBackClick: () -> Unit = {},
-    onHowToOrderClick: () -> Unit = {},
-    onTrackOrderClick: () -> Unit = {},
-    onCancelOrderClick: () -> Unit = {},
-    onNotPickedUpClick: () -> Unit = {},
-    onContactSupportClick: () -> Unit = {},
-    onFAQClick: () -> Unit = {},
     onHomeClick: () -> Unit = {},
     onSearchClick: () -> Unit = {},
     onNotificationClick: () -> Unit = {},
@@ -48,40 +35,13 @@ fun HelpScreen(
     onProfileClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val helpQuestions = listOf(
-        HelpQuestion(
-            question = "Como fazer um pedido?",
-            onClick = onHowToOrderClick
-        ),
-        HelpQuestion(
-            question = "Como acompanhar meu pedido?",
-            onClick = onTrackOrderClick
-        ),
-        HelpQuestion(
-            question = "Como cancelar um pedido?",
-            onClick = onCancelOrderClick
-        ),
-        HelpQuestion(
-            question = "O que fazer se meu pedido não for retirado?",
-            onClick = onNotPickedUpClick
-        ),
-        HelpQuestion(
-            question = "Contato com o suporte?",
-            onClick = onContactSupportClick
-        ),
-        HelpQuestion(
-            question = "Dúvidas frequentes (FAQ)",
-            onClick = onFAQClick
-        )
-    )
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
             .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
-        // Header seguindo o design do Figma - 206dp de altura
+        // Header seguindo o design do Figma - mesmo header do HelpScreen
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -126,7 +86,7 @@ fun HelpScreen(
             )
         }
 
-        // Lista de perguntas - seguindo o design do Figma com espaçamento menor
+        // Conteúdo da tela - seguindo o design do Figma
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -135,27 +95,69 @@ fun HelpScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 34.dp)
         ) {
+            Spacer(modifier = Modifier.height(26.dp))
+            
+            // Título "O que fazer se meu pedido não for retirado?" - posição baseada no Figma
+            Text(
+                text = "O que fazer se meu pedido não for retirado?",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = LineCutRed,
+                lineHeight = 20.sp,
+                modifier = Modifier
+                    .padding(start = 11.dp)
+                    .width(346.dp)
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Linha divisória abaixo do título
+            HorizontalDivider(
+                color = Color(0xFFE0E0E0),
+                thickness = 1.dp,
+                modifier = Modifier
+                    .width(145.dp)
+                    .padding(start = 11.dp)
+            )
+            
             Spacer(modifier = Modifier.height(28.dp))
             
-            helpQuestions.forEachIndexed { index, question ->
-                HelpQuestionRow(
-                    question = question.question,
-                    onClick = question.onClick,
-                    modifier = Modifier.fillMaxWidth()
+            // Texto introdutório
+            Text(
+                text = "Se você não conseguir retirar o pedido no tempo indicado pela lanchonete:",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF7D7D7D),
+                textAlign = TextAlign.Justify,
+                modifier = Modifier
+                    .padding(start = 23.dp, end = 23.dp)
+                    .width(318.dp)
+            )
+            
+            Spacer(modifier = Modifier.height(20.dp))
+            
+            // Lista de instruções numeradas
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                NotPickedUpItem(
+                    number = "1.",
+                    text = "Verifique se houve algum erro no status ou notificação."
                 )
                 
-                if (index < helpQuestions.size - 1) {
-                    Spacer(modifier = Modifier.height(9.dp))
-                    
-                    // Divider line
-                    HorizontalDivider(
-                        color = Color(0xFFE0E0E0),
-                        thickness = 0.5.dp,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    
-                    Spacer(modifier = Modifier.height(9.dp))
-                }
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                NotPickedUpItem(
+                    number = "2.",
+                    text = "Entre em contato com o suporte ou diretamente com a lanchonete para verificar a situação."
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                NotPickedUpItem(
+                    number = "3.",
+                    text = "Em caso de perda ou descarte do pedido, siga as orientações da política do estabelecimento."
+                )
             }
             
             Spacer(modifier = Modifier.height(60.dp)) // Espaço para o bottom navigation
@@ -174,51 +176,52 @@ fun HelpScreen(
 }
 
 @Composable
-private fun HelpQuestionRow(
-    question: String,
-    onClick: () -> Unit,
+private fun NotPickedUpItem(
+    number: String,
+    text: String,
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier
-            .clickable { onClick() }
-            .height(36.dp), // Altura baseada no espaçamento do Figma
-        verticalAlignment = Alignment.CenterVertically
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top
     ) {
-        Spacer(modifier = Modifier.width(25.dp))
-        
+        // Número da instrução - posição baseada no Figma
         Text(
-            text = question,
-            fontSize = 13.67.sp,
+            text = number,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            color = LineCutRed,
+            modifier = Modifier.padding(start = 43.dp, end = 18.dp)
+        )
+        
+        // Texto da instrução - posição baseada no Figma
+        Text(
+            text = text,
+            fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
             color = Color(0xFF7D7D7D),
-            modifier = Modifier.weight(1f)
-        )
-        
-        Icon(
-            imageVector = Icons.Default.ChevronRight,
-            contentDescription = null,
-            tint = LineCutRed,
-            modifier = Modifier.size(17.dp)
+            textAlign = TextAlign.Justify,
+            lineHeight = 18.sp,
+            modifier = Modifier.width(268.dp)
         )
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun HelpScreenPreview() {
+fun NotPickedUpScreenPreview() {
     LineCutTheme {
-        HelpScreen()
+        NotPickedUpScreen()
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun HelpQuestionRowPreview() {
+fun NotPickedUpItemPreview() {
     LineCutTheme {
-        HelpQuestionRow(
-            question = "Como fazer um pedido?",
-            onClick = {}
+        NotPickedUpItem(
+            number = "1.",
+            text = "Verifique se houve algum erro no status ou notificação."
         )
     }
 }

@@ -1,5 +1,6 @@
 package com.br.linecut.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,10 +19,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.br.linecut.R
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.components.NavigationItem
@@ -131,13 +135,7 @@ fun ProfileScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(59.dp)
-                        .shadow(
-                            elevation = 4.dp,
-                            shape = RoundedCornerShape(8.dp),
-                            spotColor = Color.Black.copy(alpha = 0.25f)
-                        ),
-                    shape = RoundedCornerShape(8.dp),
+                        .height(59.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Row(
@@ -152,16 +150,6 @@ fun ProfileScreen(
                                 .size(61.dp)
                                 .offset(x = (-16).dp)
                         ) {
-                            // Círculo de fundo
-                            Box(
-                                modifier = Modifier
-                                    .size(73.dp)
-                                    .background(
-                                        color = Color(0xFFE0E0E0),
-                                        shape = CircleShape
-                                    )
-                            )
-                            
                             // Foto do usuário (placeholder)
                             Box(
                                 modifier = Modifier
@@ -170,13 +158,11 @@ fun ProfileScreen(
                                     .clip(CircleShape)
                                     .background(Color(0xFFCCCCCC))
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Person,
-                                    contentDescription = "Foto do perfil",
-                                    tint = Color.White,
-                                    modifier = Modifier
-                                        .size(40.dp)
-                                        .align(Alignment.Center)
+                                Image(
+                                    painter = painterResource(id = R.drawable.icon_perfil), // Placeholder
+                                    contentDescription = "Foto do usuário",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
                                 )
                             }
                         }

@@ -47,7 +47,7 @@ fun CloseAccountScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(133.dp) // 206px - 73px = 133dp
+                .height(126.dp)
                 .background(
                     LineCutDesignSystem.screenBackgroundColor,
                     shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
@@ -59,21 +59,6 @@ fun CloseAccountScreen(
                     spotColor = Color.Black.copy(alpha = 0.25f)
                 )
         ) {
-            // Botão voltar
-            IconButton(
-                onClick = onBackClick,
-                modifier = Modifier
-                    .padding(start = 24.dp, top = 60.dp)
-                    .size(24.dp)
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_filter_arrow),
-                    contentDescription = "Voltar",
-                    tint = Color.Unspecified,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            
             // Título "Encerrar sua conta"
             Text(
                 text = "Encerrar sua conta",
@@ -84,7 +69,7 @@ fun CloseAccountScreen(
                 ),
                 modifier = Modifier
                     .align(Alignment.CenterStart)
-                    .padding(start = 60.dp, top = 12.dp)
+                    .padding(start = 30.dp, top = 50.dp)
             )
             
         }

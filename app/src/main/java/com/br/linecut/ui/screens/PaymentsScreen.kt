@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -180,9 +181,10 @@ private fun PaymentItem(
         // Store indicator dot - posição baseada no Figma
         Box(
             modifier = Modifier
+                .offset(x = 0.dp, y = 8.dp)
                 .size(10.dp)
                 .background(Color(0xFFD3D3D3), CircleShape)
-                .padding(top = 5.dp)
+
         )
         
         // Nome da loja - posição baseada no Figma

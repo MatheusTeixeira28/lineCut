@@ -41,7 +41,7 @@ enum class NotificationType(
     val color: Color,
     val icon: ImageVector
 ) {
-    RATING(Color(0x99D9009C02), Icons.Default.Star),
+    RATING(Color(0xFFF2C12E), Icons.Default.Star),
     ORDER_PICKED_UP(Color(0xFF1CB456), Icons.Default.CheckCircle),
     ORDER_READY(Color(0xFFFF9500), Icons.Default.ShoppingBag),
     ORDER_PREPARING(Color(0xFFF2C12E), Icons.Default.Timer),
@@ -176,7 +176,7 @@ private fun NotificationCard(
                 text = notification.time,
                 style = MaterialTheme.typography.bodySmall.copy(
                     color = Color(0x99515050),
-                    fontSize = 11.sp
+                    fontSize = 12.sp
                 ),
                 modifier = Modifier
                     .align(Alignment.TopEnd)
@@ -193,7 +193,7 @@ private fun NotificationCard(
                 Text(
                     text = notification.title,
                     style = MaterialTheme.typography.titleMedium.copy(
-                        color = notification.type.color,
+                        color = if (notification.type == NotificationType.RATING) LineCutRed else notification.type.color,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
                     ),
@@ -208,7 +208,7 @@ private fun NotificationCard(
                     text = notification.message,
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = Color(0x99515050),
-                        fontSize = 12.sp,
+                        fontSize = 14.sp,
                         lineHeight = 16.sp
                     ),
                     maxLines = 2,

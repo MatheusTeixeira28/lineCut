@@ -120,14 +120,7 @@ fun SettingsScreen(
                         .padding(start = 60.dp, top = 20.dp)
                 )
             }
-            
-            // White band section
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(88.dp)
-                    .background(LineCutDesignSystem.screenBackgroundColor)
-            )
+            Spacer(modifier = Modifier.height(28.dp))
             
             // Main content - Settings options list
             Column(

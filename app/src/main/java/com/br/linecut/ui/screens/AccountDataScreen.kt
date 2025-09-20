@@ -68,15 +68,15 @@ fun AccountDataScreen(
     modifier: Modifier = Modifier,
     authViewModel: AuthViewModel = viewModel()
 ) {
-    // Estados dos dados do usuário do Firebase
+     //Estados dos dados do usuário do Firebase
     val currentUser by authViewModel.currentUser.collectAsState()
     
-    // Carregar dados do usuário quando a tela for aberta
+     //Carregar dados do usuário quando a tela for aberta
     LaunchedEffect(Unit) {
         authViewModel.loadCurrentUser()
     }
     
-    // Formatação dos dados para exibição
+     //Formatação dos dados para exibição
     val formattedCpf = currentUser?.cpf?.let { cpf ->
         val digits = cpf.filter { it.isDigit() }
         when {
@@ -175,7 +175,7 @@ fun AccountDataScreen(
             ) {
                 // Foto do usuário (placeholder)
                 Image(
-                    painter = painterResource(id = R.drawable.ic_launcher_foreground), // Placeholder
+                    painter = painterResource(id = R.drawable.icon_perfil), // Placeholder
                     contentDescription = "Foto do usuário",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
@@ -186,7 +186,7 @@ fun AccountDataScreen(
             Box(
                 modifier = Modifier
                     .size(30.dp)
-                    .offset(x = 140.dp, y = (-50).dp) // Movido ainda mais para o canto conforme a imagem
+                    .offset(x = 140.dp, y = (-80).dp) // Movido ainda mais para o canto conforme a imagem
                     .shadow(
                         elevation = 4.dp,
                         shape = RoundedCornerShape(10.dp)
