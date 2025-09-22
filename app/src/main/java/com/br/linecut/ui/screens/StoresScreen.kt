@@ -111,40 +111,49 @@ fun StoresScreen(
                         fontSize = 24.sp
                     )
                 )
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(20.dp))
                 
-                // Endereço centralizado
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Card(
-                        modifier = Modifier
-                            .shadow(
-                                elevation = 4.dp,
-                                shape = RoundedCornerShape(10.dp)
-                            ),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                // Endereço centralizado - visível apenas quando busca não está ativa
+                if (!isSearchVisible) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(end = 23.dp), // Ajusta a distância da borda direita
+                            contentAlignment = Alignment.CenterEnd
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.LocationOn,
-                                contentDescription = "Localização",
-                                tint = TextSecondary,
-                                modifier = Modifier.size(15.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = currentAddress,
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    color = TextSecondary,
-                                    fontSize = 12.sp
-                                )
-                            )
+                            Card(
+                                modifier = Modifier
+                                    .shadow(
+                                        elevation = 4.dp,
+                                        shape = RoundedCornerShape(10.dp)
+                                    ),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.White)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.LocationOn,
+                                        contentDescription = "Localização",
+                                        tint = TextSecondary,
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = currentAddress,
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            color = TextSecondary,
+                                            fontSize = 12.sp
+                                        )
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -271,10 +280,7 @@ fun StoresScreen(
                     .padding(horizontal = 23.dp),
                 verticalArrangement = Arrangement.spacedBy(19.dp)
             ) {
-                // Primeiro item com espaço extra do header
-                item {
-                    Spacer(modifier = Modifier.height(if (isSearchVisible) 36.dp else 4.dp))
-                }
+
                 
                 items(filteredStores) { store ->
                     StoreCard(
@@ -284,10 +290,7 @@ fun StoresScreen(
                     )
                 }
                 
-                // Spacer para o bottom navigation
-                item {
-                    Spacer(modifier = Modifier.height(20.dp))
-                }
+
             }
         }
         
