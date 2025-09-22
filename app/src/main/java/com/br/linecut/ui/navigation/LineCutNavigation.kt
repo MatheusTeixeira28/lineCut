@@ -58,6 +58,7 @@ fun LineCutNavigation(
     var selectedPaymentType by remember { mutableStateOf(PaymentType.PIX) }
     var searchQuery by remember { mutableStateOf("") }
     var availableStores by remember { mutableStateOf(getSampleStoresForSearch()) }
+    var showSearchBarOnStores by remember { mutableStateOf(false) }
     
     // Observar o usuário atual
     val currentUser by authViewModel.currentUser.collectAsState()
@@ -168,6 +169,7 @@ fun LineCutNavigation(
         Screen.STORES -> {
             StoresScreen(
                 stores = getSampleStoresForNavigation(),
+                showSearchBar = showSearchBarOnStores,
                 onStoreClick = { store ->
                     println("Store clicked: ${store.name}") // Debug
                     selectedStore = store
@@ -175,6 +177,7 @@ fun LineCutNavigation(
                 },
                 onHomeClick = {
                     // Stay on stores screen since this is the home
+                    showSearchBarOnStores = false
                 },
                 onSearchClick = {
                     // Search now integrated in StoresScreen
@@ -226,6 +229,7 @@ fun LineCutNavigation(
                     },
                     onSearchClick = {
                         // Search integrated in StoresScreen - navigate to stores
+                        showSearchBarOnStores = true
                         currentScreen = Screen.STORES
                     },
                     onNotificationClick = {
@@ -285,6 +289,7 @@ fun LineCutNavigation(
                     },
                     onSearchClick = {
                         // Search integrated in StoresScreen - navigate to stores
+                        showSearchBarOnStores = true
                         currentScreen = Screen.STORES
                     },
                     onNotificationClick = {
@@ -456,6 +461,7 @@ fun LineCutNavigation(
                 },
                 onSearchClick = {
                     // Search integrated in StoresScreen - navigate to stores
+                    showSearchBarOnStores = true
                     currentScreen = Screen.STORES
                 },
                 onNotificationClick = {
@@ -516,6 +522,7 @@ fun LineCutNavigation(
                 },
                 onSearchClick = {
                     // Search integrated in StoresScreen - navigate to stores
+                    showSearchBarOnStores = true
                     currentScreen = Screen.STORES
                 },
                 onNotificationClick = {
@@ -542,6 +549,7 @@ fun LineCutNavigation(
                 },
                 onSearchClick = {
                     // Search integrated in StoresScreen - navigate to stores
+                    showSearchBarOnStores = true
                     currentScreen = Screen.STORES
                 },
                 onNotificationClick = {
@@ -566,6 +574,7 @@ fun LineCutNavigation(
                 },
                 onSearchClick = {
                     // Search integrated in StoresScreen - navigate to stores
+                    showSearchBarOnStores = true
                     currentScreen = Screen.STORES
                 },
                 onNotificationClick = {

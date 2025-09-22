@@ -221,8 +221,8 @@ fun OrderCardAbsolute(
         // Status circle
         Box(
             modifier = Modifier
-                .size(14.dp)
-                .offset(x = 230.65.dp, y = 11.84.dp)
+                .size(17.dp)
+                .offset(x = 235.dp, y = 17.dp)
                 .shadow(4.31.dp, CircleShape)
                 .background(statusColor, CircleShape),
             contentAlignment = Alignment.Center
@@ -260,9 +260,9 @@ fun OrderCardAbsolute(
             text = statusText,
             fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
             fontWeight = FontWeight.Normal,
-            fontSize = 10.77.sp,
+            fontSize = 11.sp,
             color = Color(0xFF515050),
-            modifier = Modifier.offset(x = 250.dp, y = 14.dp)
+            modifier = Modifier.offset(x = 255.dp, y = 14.dp)
         )
         
         // "Avaliação" label
@@ -299,7 +299,7 @@ fun OrderCardAbsolute(
                 .width(124.9.dp)
                 .height(20.46.dp)
                 .offset(x = 210.dp, y = 129.21.dp)
-                .shadow(2.15.dp, RoundedCornerShape(21.53.dp))
+
                 .background(Color.Transparent, RoundedCornerShape(21.53.dp))
                 .border(1.08.dp, Color(0xFF959595), RoundedCornerShape(21.53.dp))
                 .clickable { onDetailsClick() },

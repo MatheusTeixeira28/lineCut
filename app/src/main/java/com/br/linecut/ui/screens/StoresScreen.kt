@@ -50,9 +50,10 @@ fun StoresScreen(
     onNotificationClick: () -> Unit = {},
     onOrdersClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
+    showSearchBar: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    var isSearchVisible by remember { mutableStateOf(false) }
+    var isSearchVisible by remember { mutableStateOf(showSearchBar) }
     var searchQuery by remember { mutableStateOf("") }
     
     // Filtrar lojas baseado na busca
@@ -76,7 +77,7 @@ fun StoresScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(184.dp)
+                .height(175.dp)
         ) {
             // Header simples baseado no Figma
             Box(
@@ -164,7 +165,7 @@ fun StoresScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 140.dp),
+                        .padding(top = 135.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Card(
@@ -307,7 +308,7 @@ fun StoresScreen(
             },
             onSearchClick = {
                 isSearchVisible = true
-                if (!isSearchVisible) searchQuery = ""
+                onSearchClick()
             },
             onNotificationClick = onNotificationClick,
             onOrdersClick = onOrdersClick,
@@ -526,7 +527,7 @@ private fun StoresScreenWithSearch(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 30.dp, top = 82.dp)
+                    .padding(start = 30.dp, top = 72.dp)
             ) {
                 // Título "Lojas"
                 LineCutTitle(
@@ -577,7 +578,7 @@ private fun StoresScreenWithSearch(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 140.dp),
+                        .padding(top = 130.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Card(
