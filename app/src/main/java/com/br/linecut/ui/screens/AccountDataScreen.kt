@@ -4,6 +4,9 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import java.net.URL
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -61,6 +64,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -71,6 +76,9 @@ import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.theme.LineCutRed
 import com.br.linecut.ui.theme.LineCutTheme
 import com.br.linecut.ui.theme.TextSecondary
+import com.br.linecut.ui.utils.ImageCache
+import com.br.linecut.ui.utils.ImageLoader
+import com.br.linecut.ui.utils.SimplePhoneVisualTransformation
 import com.br.linecut.ui.viewmodel.AuthViewModel
 import java.io.ByteArrayOutputStream
 
@@ -92,10 +100,11 @@ fun AccountDataScreen(
     // Estados para controle de edição
     var isEditing by remember { mutableStateOf(false) }
     var editedName by remember { mutableStateOf("") }
-    var editedPhone by remember { mutableStateOf("") }
+    var editedPhoneDigits by remember { mutableStateOf("") } // Armazenar apenas dígitos
     var isLoading by remember { mutableStateOf(false) }
     var selectedImageUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     var selectedImageBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var profileImageBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var showImageError by remember { mutableStateOf(false) }
     var imageErrorMessage by remember { mutableStateOf("") }
     
@@ -135,6 +144,24 @@ fun AccountDataScreen(
         }
     }
     
+    // Carregar imagem do perfil do Firebase Storage com cache
+    LaunchedEffect(currentUser?.profileImageUrl) {
+        val imageUrl = currentUser?.profileImageUrl
+        if (!imageUrl.isNullOrEmpty()) {
+            // Verificar primeiro no cache
+            val cachedBitmap = ImageCache.get(imageUrl)
+            if (cachedBitmap != null) {
+                profileImageBitmap = cachedBitmap
+            } else {
+                // Se não estiver no cache, carregar com o ImageLoader
+                val bitmap = ImageLoader.loadImage(imageUrl)
+                profileImageBitmap = bitmap
+            }
+        } else {
+            profileImageBitmap = null
+        }
+    }
+    
      //Carregar dados do usuário quando a tela for aberta
     LaunchedEffect(Unit) {
         authViewModel.loadCurrentUser()
@@ -144,7 +171,8 @@ fun AccountDataScreen(
     LaunchedEffect(currentUser) {
         currentUser?.let { user ->
             editedName = user.fullName ?: ""
-            editedPhone = user.phone ?: ""
+            // Extrair apenas os dígitos do telefone
+            editedPhoneDigits = (user.phone ?: "").filter { it.isDigit() }
         }
     }
     
@@ -260,11 +288,9 @@ fun AccountDataScreen(
                             modifier = Modifier.fillMaxSize()
                         )
                     }
-                    !currentUser?.profileImageUrl.isNullOrEmpty() -> {
-                        // Por enquanto usar imagem padrão para URLs do Firebase
-                        // TODO: Implementar carregamento de URL quando necessário
+                    profileImageBitmap != null -> {
                         Image(
-                            painter = painterResource(id = R.drawable.icon_perfil),
+                            bitmap = profileImageBitmap!!.asImageBitmap(),
                             contentDescription = "Foto do usuário",
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
@@ -325,7 +351,7 @@ fun AccountDataScreen(
                             // Restaurar valores originais
                             currentUser?.let { user ->
                                 editedName = user.fullName ?: ""
-                                editedPhone = user.phone ?: ""
+                                editedPhoneDigits = (user.phone ?: "").filter { it.isDigit() }
                             }
                         } else {
                             // Iniciar edição
@@ -398,11 +424,14 @@ fun AccountDataScreen(
                         )
 
                         // Telefone
-                        EditableDataField(
-                            icon = Icons.Default.Phone,
-                            value = editedPhone,
-                            onValueChange = { editedPhone = it },
-                            placeholder = "Telefone"
+                        EditablePhoneField(
+                            value = editedPhoneDigits,
+                            onValueChange = { input ->
+                                // Apenas aceitar dígitos e limitar a 11
+                                val newDigits = input.filter { it.isDigit() }.take(11)
+                                editedPhoneDigits = newDigits
+                            },
+                            placeholder = "(00) 00000-0000"
                         )
 
                         // Email (somente leitura)
@@ -428,7 +457,7 @@ fun AccountDataScreen(
                                     // Restaurar valores originais
                                     currentUser?.let { user ->
                                         editedName = user.fullName ?: ""
-                                        editedPhone = user.phone ?: ""
+                                        editedPhoneDigits = (user.phone ?: "").filter { it.isDigit() }
                                     }
                                 },
                                 modifier = Modifier.weight(1f)
@@ -453,7 +482,7 @@ fun AccountDataScreen(
                                     // Atualizar dados no Firebase (mantendo email atual)
                                     authViewModel.updateUserProfile(
                                         fullName = editedName,
-                                        phone = editedPhone,
+                                        phone = editedPhoneDigits, // Usar apenas os dígitos
                                         email = currentUser?.email ?: "", // Usar email atual do usuário
                                         profileImage = imageByteArray
                                     ) { success ->
@@ -461,6 +490,7 @@ fun AccountDataScreen(
                                         if (success) {
                                             isEditing = false
                                             selectedImageUri = null
+                                            selectedImageBitmap = null
                                             showImageError = false
                                         }
                                     }
@@ -591,6 +621,72 @@ private fun EditableDataField(
                     fontSize = 14.sp
                 ),
                 singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent,
+                    cursorColor = LineCutRed,
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent
+                ),
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun EditablePhoneField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(50.dp),
+        shape = RoundedCornerShape(25.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color(0xFFD1D1D1))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Ícone
+            Icon(
+                imageVector = Icons.Default.Phone,
+                contentDescription = null,
+                tint = TextSecondary,
+                modifier = Modifier.size(20.dp)
+            )
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            // Campo de texto editável com máscara de telefone
+            OutlinedTextField(
+                value = value,
+                onValueChange = onValueChange,
+                placeholder = {
+                    Text(
+                        text = placeholder,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = Color(0xFFBBBBBB),
+                            fontSize = 14.sp
+                        )
+                    )
+                },
+                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                    color = TextSecondary,
+                    fontSize = 14.sp
+                ),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Phone
+                ),
+                visualTransformation = SimplePhoneVisualTransformation(),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color.Transparent,
                     unfocusedBorderColor = Color.Transparent,

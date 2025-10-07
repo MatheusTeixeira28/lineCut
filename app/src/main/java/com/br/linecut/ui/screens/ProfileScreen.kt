@@ -1,5 +1,7 @@
 package com.br.linecut.ui.screens
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -25,11 +28,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import java.net.URL
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.br.linecut.R
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.components.NavigationItem
 import com.br.linecut.ui.theme.*
+import com.br.linecut.ui.utils.ImageCache
+import com.br.linecut.ui.utils.ImageLoader
+import com.br.linecut.ui.viewmodel.AuthViewModel
 
 data class ProfileMenuItem(
     val icon: ImageVector,
@@ -40,8 +50,6 @@ data class ProfileMenuItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    userEmail: String = "Hannah.Montana@gmail.com",
-    userName: String = "Hannah Montana",
     onAccountDataClick: () -> Unit = {},
     onNotificationsClick: () -> Unit = {},
     onPaymentsClick: () -> Unit = {},
@@ -53,8 +61,35 @@ fun ProfileScreen(
     onNotificationClick: () -> Unit = {},
     onOrdersClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    authViewModel: AuthViewModel = viewModel()
 ) {
+    // Estados dos dados do usuário do Firebase
+    val currentUser by authViewModel.currentUser.collectAsState()
+    var profileImageBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    
+    // Carregar dados do usuário quando a tela for aberta
+    LaunchedEffect(Unit) {
+        authViewModel.loadCurrentUser()
+    }
+    
+    // Carregar imagem do perfil do Firebase Storage com cache
+    LaunchedEffect(currentUser?.profileImageUrl) {
+        val imageUrl = currentUser?.profileImageUrl
+        if (!imageUrl.isNullOrEmpty()) {
+            // Verificar primeiro no cache
+            val cachedBitmap = ImageCache.get(imageUrl)
+            if (cachedBitmap != null) {
+                profileImageBitmap = cachedBitmap
+            } else {
+                // Se não estiver no cache, carregar com o ImageLoader
+                val bitmap = ImageLoader.loadImage(imageUrl)
+                profileImageBitmap = bitmap
+            }
+        } else {
+            profileImageBitmap = null
+        }
+    }
     val menuItems = listOf(
         ProfileMenuItem(
             icon = Icons.Outlined.Person,
@@ -158,12 +193,21 @@ fun ProfileScreen(
                                     .clip(CircleShape)
                                     .background(Color(0xFFCCCCCC))
                             ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.icon_perfil), // Placeholder
-                                    contentDescription = "Foto do usuário",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
+                                if (profileImageBitmap != null) {
+                                    Image(
+                                        bitmap = profileImageBitmap!!.asImageBitmap(),
+                                        contentDescription = "Foto do usuário",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                } else {
+                                    Image(
+                                        painter = painterResource(id = R.drawable.icon_perfil),
+                                        contentDescription = "Foto padrão",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
                             }
                         }
                         
@@ -172,7 +216,7 @@ fun ProfileScreen(
                         // Informações do usuário
                         Column {
                             Text(
-                                text = userName,
+                                text = currentUser?.fullName ?: "Carregando...",
                                 style = MaterialTheme.typography.bodyLarge.copy(
                                     color = Color(0xFF7D7D7D),
                                     fontWeight = FontWeight.Bold,
@@ -183,7 +227,7 @@ fun ProfileScreen(
                             Spacer(modifier = Modifier.height(4.dp))
                             
                             Text(
-                                text = userEmail,
+                                text = currentUser?.email ?: "Carregando...",
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     color = Color(0xFF7D7D7D),
                                     fontSize = 13.sp

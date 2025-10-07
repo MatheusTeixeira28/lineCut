@@ -9,6 +9,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
 import android.util.Patterns
+import com.br.linecut.ui.utils.ImageCache
 import com.br.linecut.ui.utils.ValidationUtils
 
 /**
@@ -121,6 +122,8 @@ class AuthRepository {
      */
     fun logoutUser() {
         auth.signOut()
+        // Limpar o cache de imagens ao fazer logout
+        ImageCache.clear()
     }
     
     /**
@@ -286,6 +289,12 @@ class AuthRepository {
                 // Upload da imagem se fornecida
                 var profileImageUrl: String? = null
                 if (profileImage != null) {
+                    // Remover imagem antiga do cache se existir
+                    val currentImageUrl = getCurrentUser()?.profileImageUrl
+                    currentImageUrl?.let { oldUrl ->
+                        ImageCache.remove(oldUrl)
+                    }
+                    
                     val imageRef = storage.reference.child("profile_images/$uid.jpg")
                     val uploadTask = imageRef.putBytes(profileImage).await()
                     profileImageUrl = imageRef.downloadUrl.await().toString()

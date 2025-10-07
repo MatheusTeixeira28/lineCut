@@ -43,6 +43,8 @@ import com.br.linecut.ui.screens.PaymentType
 import com.br.linecut.ui.screens.Store
 import com.br.linecut.ui.screens.getSampleOrderDetail
 import com.br.linecut.ui.theme.LineCutTheme
+import com.br.linecut.ui.utils.ImageCache
+import com.br.linecut.ui.utils.ImageLoader
 import com.br.linecut.ui.viewmodel.AuthViewModel
 
 @Composable
@@ -68,6 +70,16 @@ fun LineCutNavigation(
     LaunchedEffect(currentScreen) {
         if (currentScreen == Screen.PROFILE && currentUser == null) {
             authViewModel.loadCurrentUser()
+        }
+    }
+    
+    // Pré-carregar imagem do perfil quando o usuário for carregado
+    LaunchedEffect(currentUser) {
+        currentUser?.profileImageUrl?.let { url ->
+            if (url.isNotBlank() && !ImageCache.contains(url)) {
+                // Pré-carregar a imagem em background
+                ImageLoader.loadImage(url)
+            }
         }
     }
     var selectedOrderDetail by remember { mutableStateOf<OrderDetail?>(null) }
@@ -440,8 +452,6 @@ fun LineCutNavigation(
         
         Screen.PROFILE -> {
             ProfileScreen(
-                userEmail = currentUser?.email ?: "Usuário não encontrado",
-                userName = currentUser?.fullName ?: "Carregando...",
                 onAccountDataClick = {
                     currentScreen = Screen.ACCOUNT_DATA
                 },
