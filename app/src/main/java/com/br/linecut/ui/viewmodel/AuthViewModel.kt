@@ -129,4 +129,28 @@ class AuthViewModel : ViewModel() {
     fun clearCurrentUser() {
         _currentUser.value = null
     }
+    
+    /**
+     * Atualiza os dados do perfil do usuário
+     */
+    fun updateUserProfile(
+        fullName: String,
+        phone: String,
+        email: String,
+        profileImage: ByteArray? = null,
+        onResult: (Boolean) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val success = authRepository.updateUserProfile(fullName, phone, email, profileImage)
+                if (success) {
+                    // Recarregar dados do usuário após atualização
+                    loadCurrentUser()
+                }
+                onResult(success)
+            } catch (e: Exception) {
+                onResult(false)
+            }
+        }
+    }
 }

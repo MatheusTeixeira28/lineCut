@@ -6,6 +6,7 @@ import com.br.linecut.data.models.User
 import com.br.linecut.data.models.ValidationResult
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
 import android.util.Patterns
 import com.br.linecut.ui.utils.ValidationUtils
@@ -16,6 +17,7 @@ import com.br.linecut.ui.utils.ValidationUtils
 class AuthRepository {
     private val auth: FirebaseAuth = FirebaseConfig.auth
     private val realtimeDatabase: FirebaseDatabase = FirebaseConfig.realtimeDatabase
+    private val storage: FirebaseStorage = FirebaseStorage.getInstance()
     
     /**
      * Cadastra um novo usuário no Firebase
@@ -260,6 +262,68 @@ class AuthRepository {
             }
         } catch (e: Exception) {
             null
+        }
+    }
+    
+    /**
+     * Atualiza os dados do perfil do usuário no Firebase
+     */
+    suspend fun updateUserProfile(
+        fullName: String,
+        phone: String,
+        email: String,
+        profileImage: ByteArray? = null
+    ): Boolean {
+        return try {
+            println("DEBUG: updateUserProfile called with name=$fullName, phone=$phone")
+            val currentFirebaseUser = auth.currentUser
+            if (currentFirebaseUser != null) {
+                val uid = currentFirebaseUser.uid
+                println("DEBUG: User UID = $uid")
+                
+                // Não vamos mais atualizar email no Firebase Auth para evitar erros
+                
+                // Upload da imagem se fornecida
+                var profileImageUrl: String? = null
+                if (profileImage != null) {
+                    val imageRef = storage.reference.child("profile_images/$uid.jpg")
+                    val uploadTask = imageRef.putBytes(profileImage).await()
+                    profileImageUrl = imageRef.downloadUrl.await().toString()
+                }
+                
+                // Preparar dados para atualização no Realtime Database
+                val updates = mutableMapOf<String, Any>(
+                    "fullName" to fullName,
+                    "phone" to phone,
+                    "email" to email
+                )
+                
+                // Adicionar URL da imagem se foi feito upload
+                if (profileImageUrl != null) {
+                    updates["profileImageUrl"] = profileImageUrl
+                }
+                
+                println("DEBUG: Updates to send = $updates")
+                
+                // Atualizar dados no Realtime Database
+                val dbRef = realtimeDatabase.reference
+                    .child("usuarios")
+                    .child(uid)
+                
+                println("DEBUG: Database path = usuarios/$uid")
+                
+                dbRef.updateChildren(updates).await()
+                
+                println("DEBUG: Update completed successfully")
+                true
+            } else {
+                println("DEBUG: No current user found")
+                false
+            }
+        } catch (e: Exception) {
+            println("DEBUG: Error updating profile: ${e.message}")
+            e.printStackTrace()
+            false
         }
     }
 }

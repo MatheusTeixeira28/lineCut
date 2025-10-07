@@ -1,6 +1,7 @@
 package com.br.linecut.ui.navigation
 
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.br.linecut.R
 import androidx.compose.ui.Modifier
@@ -50,15 +51,15 @@ fun LineCutNavigation(
     startDestination: Screen = Screen.LOGIN,
     authViewModel: AuthViewModel = viewModel()
 ) {
-    var currentScreen by remember { mutableStateOf(startDestination) }
-    var userEmail by remember { mutableStateOf("") }
+    var currentScreen by rememberSaveable { mutableStateOf(startDestination) }
+    var userEmail by rememberSaveable { mutableStateOf("") }
     var selectedStore by remember { mutableStateOf<Store?>(null) }
     var cartItems by remember { mutableStateOf(getSampleCartItemsForNavigation()) }
     var selectedPaymentMethod by remember { mutableStateOf(PaymentMethod.PAY_BY_APP) }
     var selectedPaymentType by remember { mutableStateOf(PaymentType.PIX) }
-    var searchQuery by remember { mutableStateOf("") }
-    var availableStores by remember { mutableStateOf(getSampleStoresForSearch()) }
-    var showSearchBarOnStores by remember { mutableStateOf(false) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var availableStores by rememberSaveable { mutableStateOf(getSampleStoresForSearch()) }
+    var showSearchBarOnStores by rememberSaveable { mutableStateOf(false) }
     
     // Observar o usuário atual
     val currentUser by authViewModel.currentUser.collectAsState()
@@ -225,6 +226,7 @@ fun LineCutNavigation(
                         currentScreen = Screen.CART
                     },
                     onHomeClick = {
+                        showSearchBarOnStores = false
                         currentScreen = Screen.STORES
                     },
                     onSearchClick = {
@@ -285,6 +287,7 @@ fun LineCutNavigation(
                         currentScreen = Screen.ORDER_SUMMARY
                     },
                     onHomeClick = {
+                        showSearchBarOnStores = false
                         currentScreen = Screen.STORES
                     },
                     onSearchClick = {
@@ -339,6 +342,7 @@ fun LineCutNavigation(
                         currentScreen = Screen.PAYMENT_METHOD
                     },
                     onHomeClick = {
+                        showSearchBarOnStores = false
                         currentScreen = Screen.STORES
                     },
                     onSearchClick = {
@@ -415,6 +419,7 @@ fun LineCutNavigation(
                     currentScreen = Screen.QR_CODE_PIX
                 },
                 onHomeClick = {
+                    showSearchBarOnStores = false
                     currentScreen = Screen.STORES
                 },
                 onSearchClick = {
@@ -457,6 +462,7 @@ fun LineCutNavigation(
                     currentScreen = Screen.SETTINGS
                 },
                 onHomeClick = {
+                    showSearchBarOnStores = false
                     currentScreen = Screen.STORES
                 },
                 onSearchClick = {
@@ -488,6 +494,7 @@ fun LineCutNavigation(
                     println("Edit account data clicked")
                 },
                 onHomeClick = {
+                    showSearchBarOnStores = false
                     currentScreen = Screen.STORES
                 },
                 onSearchClick = {
@@ -518,6 +525,7 @@ fun LineCutNavigation(
                     println("Rating clicked for notification: $notificationId")
                 },
                 onHomeClick = {
+                    showSearchBarOnStores = false
                     currentScreen = Screen.STORES
                 },
                 onSearchClick = {
@@ -545,6 +553,7 @@ fun LineCutNavigation(
                     currentScreen = Screen.PROFILE
                 },
                 onHomeClick = {
+                    showSearchBarOnStores = false
                     currentScreen = Screen.STORES
                 },
                 onSearchClick = {
@@ -567,9 +576,11 @@ fun LineCutNavigation(
         Screen.ORDERS -> {
             OrdersScreen(
                 onBackClick = {
+                    showSearchBarOnStores = false
                     currentScreen = Screen.STORES
                 },
                 onHomeClick = {
+                    showSearchBarOnStores = false
                     currentScreen = Screen.STORES
                 },
                 onSearchClick = {
@@ -620,6 +631,7 @@ fun LineCutNavigation(
                         currentScreen = Screen.ORDERS
                     },
                     onHomeClick = {
+                        showSearchBarOnStores = false
                         currentScreen = Screen.STORES
                     },
                     onSearchClick = {
@@ -669,6 +681,7 @@ fun LineCutNavigation(
                     currentScreen = Screen.FAQ
                 },
                 onHomeClick = {
+                    showSearchBarOnStores = false
                     currentScreen = Screen.STORES
                 },
                 onSearchClick = {
@@ -692,6 +705,7 @@ fun LineCutNavigation(
                     currentScreen = Screen.HELP
                 },
                 onHomeClick = {
+                    showSearchBarOnStores = false
                     currentScreen = Screen.STORES
                 },
                 onSearchClick = {
@@ -715,6 +729,7 @@ fun LineCutNavigation(
                     currentScreen = Screen.HELP
                 },
                 onHomeClick = {
+                    showSearchBarOnStores = false
                     currentScreen = Screen.STORES
                 },
                 onSearchClick = {
@@ -738,6 +753,7 @@ fun LineCutNavigation(
                     currentScreen = Screen.HELP
                 },
                 onHomeClick = {
+                    showSearchBarOnStores = false
                     currentScreen = Screen.STORES
                 },
                 onSearchClick = {
@@ -761,6 +777,7 @@ fun LineCutNavigation(
                     currentScreen = Screen.HELP
                 },
                 onHomeClick = {
+                    showSearchBarOnStores = false
                     currentScreen = Screen.STORES
                 },
                 onSearchClick = {
@@ -784,6 +801,7 @@ fun LineCutNavigation(
                     currentScreen = Screen.HELP
                 },
                 onHomeClick = {
+                    showSearchBarOnStores = false
                     currentScreen = Screen.STORES
                 },
                 onSearchClick = {
@@ -807,6 +825,7 @@ fun LineCutNavigation(
                     currentScreen = Screen.HELP
                 },
                 onHomeClick = {
+                    showSearchBarOnStores = false
                     currentScreen = Screen.STORES
                 },
                 onSearchClick = {
@@ -843,6 +862,7 @@ fun LineCutNavigation(
                     currentScreen = Screen.LOGIN
                 },
                 onHomeClick = {
+                    showSearchBarOnStores = false
                     currentScreen = Screen.STORES
                 },
                 onSearchClick = {
@@ -866,6 +886,7 @@ fun LineCutNavigation(
                     currentScreen = Screen.SETTINGS
                 },
                 onHomeClick = {
+                    showSearchBarOnStores = false
                     currentScreen = Screen.STORES
                 },
                 onSearchClick = {
@@ -889,6 +910,7 @@ fun LineCutNavigation(
                     currentScreen = Screen.SETTINGS
                 },
                 onHomeClick = {
+                    showSearchBarOnStores = false
                     currentScreen = Screen.STORES
                 },
                 onSearchClick = {
@@ -919,6 +941,7 @@ fun LineCutNavigation(
                     currentScreen = Screen.ACCOUNT_CLOSED
                 },
                 onHomeClick = {
+                    showSearchBarOnStores = false
                     currentScreen = Screen.STORES
                 },
                 onSearchClick = {
