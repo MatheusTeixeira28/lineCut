@@ -1,6 +1,7 @@
 package com.br.linecut.data.repository
 
 import com.br.linecut.data.models.Company
+import com.br.linecut.data.models.Product
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase

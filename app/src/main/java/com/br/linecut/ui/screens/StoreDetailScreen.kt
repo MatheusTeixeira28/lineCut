@@ -29,10 +29,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.theme.*
 import com.br.linecut.R
 import com.br.linecut.ui.utils.ImageLoader
+import com.br.linecut.ui.viewmodel.ProductViewModel
 import kotlinx.coroutines.launch
 
 // Shared layout constant for category filter chip height (from Figma spec)
@@ -45,6 +47,7 @@ data class MenuItem(
     val price: Double,
     val category: String,
     val imageRes: Int = android.R.drawable.ic_menu_gallery,
+    val imageUrl: String = "", // URL da imagem do Firebase
     var quantity: Int = 0
 )
 
@@ -72,8 +75,22 @@ fun StoreDetailScreen(
     onNotificationClick: () -> Unit = {},
     onOrdersClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    productViewModel: ProductViewModel = viewModel()
 ) {
+    // Carregar produtos do Firebase quando o ID da loja mudar
+    LaunchedEffect(store.id) {
+        productViewModel.loadProductsByRestaurant(store.id)
+    }
+    
+    // Observar dados do Firebase
+    val firebaseMenuItems by productViewModel.menuItems.collectAsState()
+    val isLoadingProducts by productViewModel.isLoading.collectAsState()
+    val errorProducts by productViewModel.error.collectAsState()
+    
+    // Usar os dados do Firebase se disponíveis, caso contrário usar os dados passados por parâmetro
+    val displayMenuItems = if (firebaseMenuItems.isNotEmpty()) firebaseMenuItems else menuItems
+    
     Box(modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -94,9 +111,11 @@ fun StoreDetailScreen(
             
             // Lista de produtos
             MenuItemsList(
-                items = menuItems,
+                items = displayMenuItems,
                 onAddItem = onAddItem,
                 onRemoveItem = onRemoveItem,
+                isLoading = isLoadingProducts,
+                error = errorProducts,
                 modifier = Modifier
                     .weight(1f)
                     .padding(top = FiltersChipHeight / 2)
@@ -375,18 +394,96 @@ private fun MenuItemsList(
     items: List<MenuItem>,
     onAddItem: (MenuItem) -> Unit,
     onRemoveItem: (MenuItem) -> Unit,
+    isLoading: Boolean = false,
+    error: String? = null,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(
-        modifier = modifier.padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        items(items) { item ->
-            MenuItemCard(
-                item = item,
-                onAddItem = { onAddItem(item) },
-                onRemoveItem = { onRemoveItem(item) }
-            )
+    when {
+        isLoading -> {
+            // Estado de carregamento
+            Box(
+                modifier = modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    color = LineCutRed,
+                    modifier = Modifier.size(48.dp)
+                )
+            }
+        }
+        error != null -> {
+            // Estado de erro
+            Box(
+                modifier = modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Error,
+                        contentDescription = null,
+                        tint = LineCutRed,
+                        modifier = Modifier.size(64.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Erro ao carregar produtos",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            color = TextPrimary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = error,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = TextSecondary
+                        )
+                    )
+                }
+            }
+        }
+        items.isEmpty() -> {
+            // Estado vazio
+            Box(
+                modifier = modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Restaurant,
+                        contentDescription = null,
+                        tint = TextSecondary,
+                        modifier = Modifier.size(64.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Nenhum produto disponível",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            color = TextSecondary
+                        )
+                    )
+                }
+            }
+        }
+        else -> {
+            // Lista com dados
+            LazyColumn(
+                modifier = modifier.padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(items) { item ->
+                    MenuItemCard(
+                        item = item,
+                        onAddItem = { onAddItem(item) },
+                        onRemoveItem = { onRemoveItem(item) }
+                    )
+                }
+            }
         }
     }
 }
@@ -414,14 +511,56 @@ private fun MenuItemCard(
             verticalAlignment = Alignment.Top
         ) {
             // Imagem do produto - fills the full height of the card
-            Image(
-                painter = painterResource(id = item.imageRes),
-                contentDescription = "Imagem ${item.name}",
-                contentScale = ContentScale.Crop,
+            Box(
                 modifier = Modifier
                     .size(width = 106.dp, height = 104.dp)
-                    .clip(RoundedCornerShape(topStart = 19.dp, bottomStart = 19.dp)) // Round only left corners to match card
-            )
+                    .clip(RoundedCornerShape(topStart = 19.dp, bottomStart = 19.dp))
+            ) {
+                // Carregar imagem do Firebase ou usar placeholder (sem cache)
+                if (item.imageUrl.isNotEmpty()) {
+                    var imageBitmap by remember { mutableStateOf<Bitmap?>(null) }
+                    var isLoading by remember { mutableStateOf(true) }
+                    
+                    LaunchedEffect(item.imageUrl) {
+                        imageBitmap = ImageLoader.loadImage(item.imageUrl, useCache = false)
+                        isLoading = false
+                    }
+                    
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        when {
+                            isLoading -> {
+                                CircularProgressIndicator(
+                                    color = LineCutRed,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            imageBitmap != null -> {
+                                Image(
+                                    bitmap = imageBitmap!!.asImageBitmap(),
+                                    contentDescription = "Imagem ${item.name}",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                            else -> {
+                                Image(
+                                    painter = painterResource(id = item.imageRes),
+                                    contentDescription = "Imagem ${item.name}",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    Image(
+                        painter = painterResource(id = item.imageRes),
+                        contentDescription = "Imagem ${item.name}",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
             
             // Content area with padding
             Column(
