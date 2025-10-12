@@ -137,7 +137,7 @@ fun ProfileScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(133.dp),
+                    .height(120.dp),
                 shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -223,9 +223,9 @@ fun ProfileScreen(
                                     fontSize = 15.sp
                                 )
                             )
-                            
+
                             Spacer(modifier = Modifier.height(4.dp))
-                            
+
                             Text(
                                 text = currentUser?.email ?: "Carregando...",
                                 style = MaterialTheme.typography.bodyMedium.copy(

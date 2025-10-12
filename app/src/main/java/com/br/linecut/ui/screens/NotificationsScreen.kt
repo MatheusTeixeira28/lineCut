@@ -85,7 +85,8 @@ fun NotificationsScreen(
             IconButton(
                 onClick = onBackClick,
                 modifier = Modifier
-                    .padding(start = 24.dp, top = 60.dp)
+                    .align(Alignment.BottomStart)
+                    .padding(start = 24.dp, bottom = 16.dp)
                     .size(24.dp)
             ) {
                 Icon(
@@ -95,6 +96,7 @@ fun NotificationsScreen(
                     modifier = Modifier.size(20.dp)
                 )
             }
+
             
             // Título "Notificações"
             Text(
@@ -105,8 +107,8 @@ fun NotificationsScreen(
                     fontSize = 20.sp
                 ),
                 modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .padding(start = 60.dp, top = 20.dp)
+                    .align(Alignment.BottomStart)
+                    .padding(start = 50.dp, end = 34.dp, bottom = 16.dp),
             )
         }
 

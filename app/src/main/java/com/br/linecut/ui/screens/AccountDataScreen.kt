@@ -223,7 +223,7 @@ fun AccountDataScreen(
             Row(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(start = 34.dp, end = 34.dp, bottom = 16.dp),
+                    .padding(start = 20.dp, end = 34.dp, bottom = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
@@ -237,7 +237,7 @@ fun AccountDataScreen(
                         modifier = Modifier.size(20.dp)
                     )
                 }
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(5.dp))
                 Text(
                     text = "Meus dados",
                     style = MaterialTheme.typography.titleLarge.copy(

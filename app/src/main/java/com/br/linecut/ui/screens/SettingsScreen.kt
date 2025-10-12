@@ -96,7 +96,8 @@ fun SettingsScreen(
                 IconButton(
                     onClick = onBackClick,
                     modifier = Modifier
-                        .padding(start = 24.dp, top = 60.dp)
+                        .align(Alignment.BottomStart)
+                        .padding(start = 24.dp, bottom = 16.dp)
                         .size(24.dp)
                 ) {
                     Icon(
@@ -116,8 +117,8 @@ fun SettingsScreen(
                         fontSize = 22.sp
                     ),
                     modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .padding(start = 60.dp, top = 20.dp)
+                        .align(Alignment.BottomStart)
+                        .padding(start = 50.dp, end = 34.dp, bottom = 16.dp),
                 )
             }
             Spacer(modifier = Modifier.height(28.dp))

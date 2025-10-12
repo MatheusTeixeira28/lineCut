@@ -68,8 +68,8 @@ fun CloseAccountScreen(
                     fontSize = 20.sp
                 ),
                 modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .padding(start = 30.dp, top = 50.dp)
+                    .align(Alignment.BottomStart)
+                    .padding(start = 30.dp, end = 34.dp, bottom = 16.dp),
             )
             
         }
