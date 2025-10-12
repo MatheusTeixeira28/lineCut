@@ -1,9 +1,13 @@
 package com.br.linecut.ui.screens
 
+import android.Manifest
 import android.graphics.Bitmap
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,9 +25,11 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.br.linecut.R
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
@@ -61,6 +67,23 @@ fun StoresScreen(
 ) {
     var isSearchVisible by remember { mutableStateOf(showSearchBar) }
     var searchQuery by remember { mutableStateOf("") }
+    var showLocationDialog by remember { mutableStateOf(false) }
+    
+    // Launcher para solicitar permissão de localização
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val fineLocationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+        val coarseLocationGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+        
+        if (fineLocationGranted || coarseLocationGranted) {
+            // Permissão concedida - aqui você pode adicionar lógica futura
+            showLocationDialog = false
+        } else {
+            // Permissão negada
+            showLocationDialog = false
+        }
+    }
     
     // Observar dados do Firebase
     val stores by companyViewModel.stores.collectAsState()
@@ -142,7 +165,10 @@ fun StoresScreen(
                                     .shadow(
                                         elevation = 4.dp,
                                         shape = RoundedCornerShape(10.dp)
-                                    ),
+                                    )
+                                    .clickable {
+                                        showLocationDialog = true
+                                    },
                                 shape = RoundedCornerShape(10.dp),
                                 colors = CardDefaults.cardColors(containerColor = Color.White)
                             ) {
@@ -385,6 +411,21 @@ fun StoresScreen(
             onProfileClick = onProfileClick
         )
     }
+    
+    // Dialog de solicitação de localização
+    if (showLocationDialog) {
+        LocationPermissionDialog(
+            onDismiss = { showLocationDialog = false },
+            onAllowAccess = {
+                locationPermissionLauncher.launch(
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    )
+                )
+            }
+        )
+    }
 }
 
 @Composable
@@ -545,6 +586,122 @@ private fun StoreCard(
                     tint = if (store.isFavorite) LineCutRed else TextSecondary,
                     modifier = Modifier.size(22.dp)
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LocationPermissionDialog(
+    onDismiss: () -> Unit,
+    onAllowAccess: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = modifier
+                .width(380.dp)
+                .height(260.dp)
+                .shadow(
+                    elevation = 4.dp,
+                    shape = RoundedCornerShape(12.dp),
+                    ambientColor = Color.Black.copy(alpha = 0.25f),
+                    spotColor = Color.Black.copy(alpha = 0.25f)
+                ),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // Título com ícone
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = null,
+                        tint = LineCutRed,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Defina sua Localização",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            color = Color(0xFF7D7D7D),
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 18.sp
+                        )
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(20.dp))
+                
+                // Descrição
+                Text(
+                    text = "Permita o acesso à sua localização para encontrar lojas próximas.",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = Color(0xFF7D7D7D),
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Justify,
+                        lineHeight = 20.sp
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                Spacer(modifier = Modifier.height(32.dp))
+                
+                // Botão "Permitir acesso"
+                Button(
+                    onClick = onAllowAccess,
+                    modifier = Modifier
+                        .width(200.dp)
+                        .height(44.dp),
+                    shape = RoundedCornerShape(86.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF1CB456)
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(
+                        defaultElevation = 0.dp,
+                        pressedElevation = 0.dp
+                    )
+                ) {
+                    Text(
+                        text = "Permitir acesso",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = Color.White,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Botão "Cancelar"
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.height(32.dp)
+                ) {
+                    Text(
+                        text = "Cancelar",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = LineCutRed,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(20.dp))
             }
         }
     }
