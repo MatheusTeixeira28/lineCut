@@ -1,5 +1,6 @@
 package com.br.linecut.ui.screens
 
+import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -30,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.theme.*
 import com.br.linecut.R
+import com.br.linecut.ui.utils.ImageLoader
 import kotlinx.coroutines.launch
 
 // Shared layout constant for category filter chip height (from Figma spec)
@@ -100,7 +103,7 @@ fun StoreDetailScreen(
             )
             
             // Espaço para o carrinho e bottom nav
-            Spacer(modifier = Modifier.height(126.dp))
+            Spacer(modifier = Modifier.height(116.dp))
         }
         
         // Área do carrinho e bottom nav
@@ -114,7 +117,7 @@ fun StoreDetailScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(82.dp)
+                        .height(72.dp)
                         .background(Color.White)
                 ) {
                     CartSummary(
@@ -170,12 +173,50 @@ private fun StoreHeader(
                         .size(119.dp)
                         .shadow(4.dp, CircleShape)
                 ) {
-                    Image(
-                        painter = painterResource(id = store.imageRes),
-                        contentDescription = "Logo ${store.name}",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    // Carregar imagem do Firebase ou usar placeholder (sem cache)
+                    if (store.imageUrl.isNotEmpty()) {
+                        var imageBitmap by remember { mutableStateOf<Bitmap?>(null) }
+                        var isLoading by remember { mutableStateOf(true) }
+                        
+                        LaunchedEffect(store.imageUrl) {
+                            imageBitmap = ImageLoader.loadImage(store.imageUrl, useCache = false)
+                            isLoading = false
+                        }
+                        
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            when {
+                                isLoading -> {
+                                    CircularProgressIndicator(
+                                        color = LineCutRed,
+                                        modifier = Modifier.size(32.dp)
+                                    )
+                                }
+                                imageBitmap != null -> {
+                                    Image(
+                                        bitmap = imageBitmap!!.asImageBitmap(),
+                                        contentDescription = "Logo ${store.name}",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
+                                else -> {
+                                    Image(
+                                        painter = painterResource(id = store.imageRes),
+                                        contentDescription = "Logo ${store.name}",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        Image(
+                            painter = painterResource(id = store.imageRes),
+                            contentDescription = "Logo ${store.name}",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
                 }
                 
                 Spacer(modifier = Modifier.width(19.dp))
@@ -421,10 +462,10 @@ private fun MenuItemCard(
                     text = item.description,
                     style = MaterialTheme.typography.bodySmall.copy(
                         color = Color(0xFF515050),
-                        fontSize = 9.sp,
-                        lineHeight = 11.sp
+                        fontSize = 11.sp,
+                        lineHeight = 12.sp
                     ),
-                    maxLines = 3,
+                    maxLines =4,
                     overflow = TextOverflow.Ellipsis
                 )
             }
@@ -435,7 +476,7 @@ private fun MenuItemCard(
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(end = 8.dp) // Increased padding to ensure buttons have enough margin from edge
+                modifier = Modifier.padding(top = 13.dp, end = 8.dp) // Increased padding to ensure buttons have enough margin from edge
             ) {
                 // Botão adicionar (sempre visível)
                 Box(
@@ -502,7 +543,7 @@ private fun CartSummary(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 44.dp)
-            .height(82.dp),
+            .height(65.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Informações do total
