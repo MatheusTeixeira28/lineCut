@@ -1,6 +1,7 @@
 package com.br.linecut.ui.screens
 
 import android.graphics.Bitmap
+import android.os.Parcelable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,16 +31,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.br.linecut.ui.components.CachedAsyncImage
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.theme.*
 import com.br.linecut.R
 import com.br.linecut.ui.utils.ImageLoader
 import com.br.linecut.ui.viewmodel.ProductViewModel
 import kotlinx.coroutines.launch
+import kotlinx.parcelize.Parcelize
 
 // Shared layout constant for category filter chip height (from Figma spec)
 private val FiltersChipHeight = 23.07.dp
 
+@Parcelize
 data class MenuItem(
     val id: String,
     val name: String,
@@ -49,7 +53,7 @@ data class MenuItem(
     val imageRes: Int = android.R.drawable.ic_menu_gallery,
     val imageUrl: String = "", // URL da imagem do Firebase
     var quantity: Int = 0
-)
+) : Parcelable
 
 data class MenuCategory(
     val id: String,
@@ -63,8 +67,7 @@ fun StoreDetailScreen(
     store: Store,
     menuItems: List<MenuItem> = emptyList(),
     categories: List<MenuCategory> = emptyList(),
-    cartTotal: Double = 0.0,
-    cartItemCount: Int = 0,
+    initialCartItems: List<MenuItem> = emptyList(), // Itens do carrinho para restaurar estado
     onBackClick: () -> Unit = {},
     onCategoryClick: (MenuCategory) -> Unit = {},
     onAddItem: (MenuItem) -> Unit = {},
@@ -88,8 +91,94 @@ fun StoreDetailScreen(
     val isLoadingProducts by productViewModel.isLoading.collectAsState()
     val errorProducts by productViewModel.error.collectAsState()
     
-    // Usar os dados do Firebase se disponíveis, caso contrário usar os dados passados por parâmetro
-    val displayMenuItems = if (firebaseMenuItems.isNotEmpty()) firebaseMenuItems else menuItems
+    // Lista completa de produtos para exibição com quantidades
+    var displayMenuItems by remember { mutableStateOf<List<MenuItem>>(emptyList()) }
+    
+    // Criar uma chave única baseada no conteúdo do carrinho para detectar mudanças
+    val cartStateKey = remember(initialCartItems) {
+        initialCartItems.joinToString(",") { "${it.id}:${it.quantity}" }
+    }
+    
+    // Mapa de quantidades por ID de produto (gerenciado localmente para UI)
+    var itemQuantities by remember(store.id) { 
+        mutableStateOf<Map<String, Int>>(emptyMap())
+    }
+    
+    // Sincronizar itemQuantities quando initialCartItems mudar
+    LaunchedEffect(cartStateKey) {
+        if (initialCartItems.isNotEmpty()) {
+            val newQuantities = initialCartItems.associate { it.id to it.quantity }
+            newQuantities.forEach { (id, qty) ->
+                val item = initialCartItems.find { it.id == id }
+                println("    - ${item?.name ?: id}: ${qty}x")
+            }
+            itemQuantities = newQuantities
+        } else {
+            println("initialCartItems está vazio, mantendo estado atual")
+        }
+    }
+    
+    // Atualizar lista de produtos quando dados do Firebase mudarem
+    LaunchedEffect(firebaseMenuItems, itemQuantities) {
+        if (firebaseMenuItems.isNotEmpty()) {
+            displayMenuItems = firebaseMenuItems.map { item ->
+                item.copy(quantity = itemQuantities[item.id] ?: 0)
+            }
+        } else if (menuItems.isNotEmpty()) {
+            displayMenuItems = menuItems.map { item ->
+                item.copy(quantity = itemQuantities[item.id] ?: 0)
+            }
+        }
+    }
+    
+    // Calcular total e quantidade de itens baseado nas quantidades locais
+    val cartTotal = remember(itemQuantities) {
+        displayMenuItems.filter { itemQuantities[it.id] ?: 0 > 0 }
+            .sumOf { it.price * (itemQuantities[it.id] ?: 0) }
+    }
+    
+    val cartItemCount = remember(itemQuantities) {
+        itemQuantities.values.sum()
+    }
+    
+    // Funções para gerenciar o carrinho
+    val handleAddItem: (MenuItem) -> Unit = { item ->
+        // Atualizar quantidades locais
+        val newQuantity = (itemQuantities[item.id] ?: 0) + 1
+        itemQuantities = itemQuantities + (item.id to newQuantity)
+        
+        // Atualizar a lista de exibição
+        displayMenuItems = displayMenuItems.map { 
+            if (it.id == item.id) it.copy(quantity = newQuantity) else it 
+        }
+        
+        // Chamar callback para atualizar carrinho na navegação
+        onAddItem(item)
+    }
+    
+    val handleRemoveItem: (MenuItem) -> Unit = { item ->
+        // Atualizar quantidades locais
+        val newQuantity = ((itemQuantities[item.id] ?: 0) - 1).coerceAtLeast(0)
+        itemQuantities = if (newQuantity > 0) {
+            itemQuantities + (item.id to newQuantity)
+        } else {
+            itemQuantities - item.id
+        }
+        
+        // Atualizar a lista de exibição
+        displayMenuItems = displayMenuItems.map { 
+            if (it.id == item.id) it.copy(quantity = newQuantity) else it 
+        }
+        
+        // Chamar callback para atualizar carrinho na navegação
+        onRemoveItem(item)
+    }
+    
+    // Função para navegar para a tela do carrinho com os dados
+    val handleViewCartClick: () -> Unit = {
+        // Chama o callback que já possui a lógica de conversão na navegação
+        onViewCartClick()
+    }
     
     Box(modifier = modifier.fillMaxSize()) {
         Column(
@@ -112,8 +201,8 @@ fun StoreDetailScreen(
             // Lista de produtos
             MenuItemsList(
                 items = displayMenuItems,
-                onAddItem = onAddItem,
-                onRemoveItem = onRemoveItem,
+                onAddItem = handleAddItem,
+                onRemoveItem = handleRemoveItem,
                 isLoading = isLoadingProducts,
                 error = errorProducts,
                 modifier = Modifier
@@ -142,7 +231,7 @@ fun StoreDetailScreen(
                     CartSummary(
                         total = cartTotal,
                         itemCount = cartItemCount,
-                        onViewCartClick = onViewCartClick
+                        onViewCartClick = handleViewCartClick
                     )
                 }
             }
@@ -168,7 +257,7 @@ private fun StoreHeader(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(250.dp + topInset)
+            .height(220.dp + topInset)
             .offset(y = -topInset)
             .shadow(
                 elevation = 4.dp,
@@ -192,50 +281,14 @@ private fun StoreHeader(
                         .size(119.dp)
                         .shadow(4.dp, CircleShape)
                 ) {
-                    // Carregar imagem do Firebase ou usar placeholder (sem cache)
-                    if (store.imageUrl.isNotEmpty()) {
-                        var imageBitmap by remember { mutableStateOf<Bitmap?>(null) }
-                        var isLoading by remember { mutableStateOf(true) }
-                        
-                        LaunchedEffect(store.imageUrl) {
-                            imageBitmap = ImageLoader.loadImage(store.imageUrl, useCache = false)
-                            isLoading = false
-                        }
-                        
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            when {
-                                isLoading -> {
-                                    CircularProgressIndicator(
-                                        color = LineCutRed,
-                                        modifier = Modifier.size(32.dp)
-                                    )
-                                }
-                                imageBitmap != null -> {
-                                    Image(
-                                        bitmap = imageBitmap!!.asImageBitmap(),
-                                        contentDescription = "Logo ${store.name}",
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier.fillMaxSize()
-                                    )
-                                }
-                                else -> {
-                                    Image(
-                                        painter = painterResource(id = store.imageRes),
-                                        contentDescription = "Logo ${store.name}",
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier.fillMaxSize()
-                                    )
-                                }
-                            }
-                        }
-                    } else {
-                        Image(
-                            painter = painterResource(id = store.imageRes),
-                            contentDescription = "Logo ${store.name}",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    }
+                    CachedAsyncImage(
+                        imageUrl = store.imageUrl,
+                        contentDescription = "Logo ${store.name}",
+                        contentScale = ContentScale.Crop,
+                        placeholderRes = store.imageRes,
+                        loadingIndicatorSize = 32.dp,
+                        modifier = Modifier.fillMaxSize()
+                    )
                 }
                 
                 Spacer(modifier = Modifier.width(19.dp))
@@ -498,7 +551,7 @@ private fun MenuItemCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(104.dp)
+            .height(107.dp)
             .shadow(
                 elevation = 4.dp,
                 shape = RoundedCornerShape(19.dp)
@@ -516,50 +569,14 @@ private fun MenuItemCard(
                     .size(width = 106.dp, height = 104.dp)
                     .clip(RoundedCornerShape(topStart = 19.dp, bottomStart = 19.dp))
             ) {
-                // Carregar imagem do Firebase ou usar placeholder (sem cache)
-                if (item.imageUrl.isNotEmpty()) {
-                    var imageBitmap by remember { mutableStateOf<Bitmap?>(null) }
-                    var isLoading by remember { mutableStateOf(true) }
-                    
-                    LaunchedEffect(item.imageUrl) {
-                        imageBitmap = ImageLoader.loadImage(item.imageUrl, useCache = false)
-                        isLoading = false
-                    }
-                    
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        when {
-                            isLoading -> {
-                                CircularProgressIndicator(
-                                    color = LineCutRed,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                            imageBitmap != null -> {
-                                Image(
-                                    bitmap = imageBitmap!!.asImageBitmap(),
-                                    contentDescription = "Imagem ${item.name}",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
-                            else -> {
-                                Image(
-                                    painter = painterResource(id = item.imageRes),
-                                    contentDescription = "Imagem ${item.name}",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
-                        }
-                    }
-                } else {
-                    Image(
-                        painter = painterResource(id = item.imageRes),
-                        contentDescription = "Imagem ${item.name}",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
+                CachedAsyncImage(
+                    imageUrl = item.imageUrl,
+                    contentDescription = "Imagem ${item.name}",
+                    contentScale = ContentScale.Crop,
+                    placeholderRes = item.imageRes,
+                    loadingIndicatorSize = 24.dp,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
             
             // Content area with padding
@@ -601,10 +618,10 @@ private fun MenuItemCard(
                     text = item.description,
                     style = MaterialTheme.typography.bodySmall.copy(
                         color = Color(0xFF515050),
-                        fontSize = 11.sp,
+                        fontSize = 12.sp,
                         lineHeight = 12.sp
                     ),
-                    maxLines =4,
+                    maxLines = 4,
                     overflow = TextOverflow.Ellipsis
                 )
             }
@@ -615,7 +632,7 @@ private fun MenuItemCard(
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(top = 13.dp, end = 8.dp) // Increased padding to ensure buttons have enough margin from edge
+                modifier = Modifier.padding(top = 11.dp, end = 8.dp) // Increased padding to ensure buttons have enough margin from edge
             ) {
                 // Botão adicionar (sempre visível)
                 Box(
@@ -774,9 +791,7 @@ fun StoreDetailScreenPreview() {
                 distance = "150m"
             ),
             menuItems = getSampleMenuItems(),
-            categories = getSampleCategories(),
-            cartTotal = 39.90,
-            cartItemCount = 4
+            categories = getSampleCategories()
         )
     }
 }

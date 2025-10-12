@@ -16,16 +16,13 @@ object ImageLoader {
     /**
      * Carrega uma imagem da URL, usando cache quando disponível
      * @param url URL da imagem a ser carregada
-     * @param useCache Se deve usar cache (true para fotos de perfil, false para imagens de lojas)
      * @return Bitmap da imagem ou null se houver erro
      */
-    suspend fun loadImage(url: String, useCache: Boolean = true): Bitmap? = withContext(Dispatchers.IO) {
+    suspend fun loadImage(url: String): Bitmap? = withContext(Dispatchers.IO) {
         try {
-            // Verificar se a imagem já está no cache (apenas se useCache for true)
-            if (useCache) {
-                ImageCache.get(url)?.let { cachedBitmap ->
-                    return@withContext cachedBitmap
-                }
+            // Verificar se a imagem já está no cache
+            ImageCache.get(url)?.let { cachedBitmap ->
+                return@withContext cachedBitmap
             }
             
             var imageUrl = url
@@ -54,7 +51,7 @@ object ImageLoader {
             }
             
             // Tentar baixar a imagem
-            val bitmap = downloadImage(imageUrl, useCache)
+            val bitmap = downloadImage(imageUrl)
             
             // Se falhar por token expirado e a URL tiver um caminho de storage, tentar novamente
             if (bitmap == null && imageUrl.contains("firebasestorage.googleapis.com")) {
@@ -66,7 +63,7 @@ object ImageLoader {
                         val storage = FirebaseStorage.getInstance()
                         val storageRef = storage.reference.child(path)
                         val freshUrl = storageRef.downloadUrl.await().toString()
-                        return@withContext downloadImage(freshUrl, useCache)
+                        return@withContext downloadImage(freshUrl)
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
@@ -80,7 +77,7 @@ object ImageLoader {
         }
     }
     
-    private suspend fun downloadImage(url: String, useCache: Boolean = true): Bitmap? = withContext(Dispatchers.IO) {
+    private suspend fun downloadImage(url: String): Bitmap? = withContext(Dispatchers.IO) {
         try {
             val connection = URL(url).openConnection()
             connection.doInput = true
@@ -90,10 +87,8 @@ object ImageLoader {
             val bitmap = BitmapFactory.decodeStream(inputStream)
             inputStream.close()
             
-            // Salvar no cache apenas se useCache for true
-            if (useCache) {
-                bitmap?.let { ImageCache.put(url, it) }
-            }
+            // Salvar no cache
+            bitmap?.let { ImageCache.put(url, it) }
             
             bitmap
         } catch (e: Exception) {

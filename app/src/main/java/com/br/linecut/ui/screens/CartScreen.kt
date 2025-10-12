@@ -1,5 +1,6 @@
 package com.br.linecut.ui.screens
 
+import android.os.Parcelable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,17 +28,21 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.br.linecut.R
+import com.br.linecut.ui.components.CachedAsyncImage
 import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.theme.*
+import kotlinx.parcelize.Parcelize
 
+@Parcelize
 data class CartItem(
     val id: String,
     val name: String,
     val price: Double,
     val imageRes: Int = android.R.drawable.ic_menu_gallery,
+    val imageUrl: String = "", // URL da imagem do Firebase
     var quantity: Int = 1
-)
+) : Parcelable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -188,10 +193,12 @@ private fun CartHeader(
                     .size(70.dp)
                     .shadow(4.dp, CircleShape)
             ) {
-                Image(
-                    painter = painterResource(id = store.imageRes),
+                CachedAsyncImage(
+                    imageUrl = store.imageUrl,
                     contentDescription = "Logo ${store.name}",
                     contentScale = ContentScale.Crop,
+                    placeholderRes = store.imageRes,
+                    loadingIndicatorSize = 24.dp,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -317,10 +324,12 @@ private fun CartItemCard(
                 shape = RoundedCornerShape(10.dp),
                 modifier = Modifier.size(50.dp)
             ) {
-                Image(
-                    painter = painterResource(id = item.imageRes),
+                CachedAsyncImage(
+                    imageUrl = item.imageUrl,
                     contentDescription = "Imagem ${item.name}",
                     contentScale = ContentScale.Crop,
+                    placeholderRes = item.imageRes,
+                    loadingIndicatorSize = 16.dp,
                     modifier = Modifier.fillMaxSize()
                 )
             }

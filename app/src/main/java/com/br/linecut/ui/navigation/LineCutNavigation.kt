@@ -57,6 +57,7 @@ fun LineCutNavigation(
     var userEmail by rememberSaveable { mutableStateOf("") }
     var selectedStore by remember { mutableStateOf<Store?>(null) }
     var cartItems by remember { mutableStateOf(getSampleCartItemsForNavigation()) }
+    var shoppingCart by remember { mutableStateOf<List<com.br.linecut.ui.screens.MenuItem>>(emptyList()) }
     var selectedPaymentMethod by remember { mutableStateOf(PaymentMethod.PAY_BY_APP) }
     var selectedPaymentType by remember { mutableStateOf(PaymentType.PIX) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
@@ -212,13 +213,20 @@ fun LineCutNavigation(
             val store = selectedStore ?: getSampleStoresForNavigation().firstOrNull()
             if (store != null) {
                 println("Rendering StoreDetailScreen for: ${store.name}") // Debug
+                println("  shoppingCart has ${shoppingCart.size} items:")
+                shoppingCart.forEach { item ->
+                    println("    - ${item.name}: ${item.quantity}x @ R$ ${item.price}")
+                }
+                println("  Passing initialCartItems with ${shoppingCart.size} items to StoreDetailScreen")
+                
                 StoreDetailScreen(
                     store = store,
                     menuItems = getSampleMenuItemsForNavigation(),
                     categories = getSampleCategoriesForNavigation(),
-                    cartTotal = 39.90,
-                    cartItemCount = 4,
+                    initialCartItems = shoppingCart, // Passar itens do carrinho para restaurar estado
                     onBackClick = {
+                        // Limpar carrinho ao voltar
+                        shoppingCart = emptyList()
                         currentScreen = Screen.STORES
                     },
                     onCategoryClick = { category ->
@@ -226,14 +234,36 @@ fun LineCutNavigation(
                         println("Category clicked: ${category.name}")
                     },
                     onAddItem = { item ->
-                        // TODO: Add item to cart
-                        println("Add item: ${item.name}")
+                        // Atualizar shoppingCart no nível da navegação
+                        val existingItem = shoppingCart.find { it.id == item.id }
+                        if (existingItem != null) {
+                            shoppingCart = shoppingCart.map {
+                                if (it.id == item.id) it.copy(quantity = it.quantity + 1) else it
+                            }
+                        } else {
+                            shoppingCart = shoppingCart + item.copy(quantity = 1)
+                        }
+                        println("Add item: ${item.name}, total items: ${shoppingCart.size}")
                     },
                     onRemoveItem = { item ->
-                        // TODO: Remove item from cart
-                        println("Remove item: ${item.name}")
+                        // Remover ou decrementar do shoppingCart
+                        shoppingCart = shoppingCart.mapNotNull {
+                            if (it.id == item.id) {
+                                val newQuantity = it.quantity - 1
+                                if (newQuantity > 0) it.copy(quantity = newQuantity) else null
+                            } else {
+                                it
+                            }
+                        }
+                        println("Remove item: ${item.name}, total items: ${shoppingCart.size}")
                     },
                     onViewCartClick = {
+                        // Converter MenuItem para CartItem e navegar
+                        cartItems = shoppingCart
+                            .filter { it.quantity > 0 }
+                            .map { convertMenuItemToCartItem(it) }
+                        
+                        println("Navigating to CART with ${cartItems.size} items")
                         currentScreen = Screen.CART
                     },
                     onHomeClick = {
@@ -268,6 +298,12 @@ fun LineCutNavigation(
         Screen.CART -> {
             val store = selectedStore ?: getSampleStoresForNavigation().firstOrNull()
             if (store != null) {
+                println("Rendering CartScreen for: ${store.name} with ${cartItems.size} items")
+                println("  Store data: id=${store.id}, name=${store.name}, imageUrl=${store.imageUrl}, category=${store.category}")
+                cartItems.forEach { item ->
+                    println("  - ${item.name}: ${item.quantity}x @ R$ ${item.price} (imageUrl: ${item.imageUrl})")
+                }
+                
                 CartScreen(
                     store = store,
                     cartItems = cartItems,
@@ -276,6 +312,7 @@ fun LineCutNavigation(
                     },
                     onClearCartClick = {
                         cartItems = emptyList()
+                        shoppingCart = emptyList()
                     },
                     onAddMoreItemsClick = {
                         currentScreen = Screen.STORE_DETAIL
@@ -284,6 +321,10 @@ fun LineCutNavigation(
                         cartItems = cartItems.map { 
                             if (it.id == item.id) it.copy(quantity = it.quantity + 1) else it
                         }
+                        // Sincronizar com shoppingCart
+                        shoppingCart = shoppingCart.map { menuItem ->
+                            if (menuItem.id == item.id) menuItem.copy(quantity = menuItem.quantity + 1) else menuItem
+                        }
                     },
                     onRemoveItem = { item ->
                         cartItems = cartItems.mapNotNull { 
@@ -291,6 +332,15 @@ fun LineCutNavigation(
                                 it.id == item.id && it.quantity > 1 -> it.copy(quantity = it.quantity - 1)
                                 it.id == item.id && it.quantity == 1 -> null
                                 else -> it
+                            }
+                        }
+                        // Sincronizar com shoppingCart
+                        shoppingCart = shoppingCart.mapNotNull { menuItem ->
+                            if (menuItem.id == item.id) {
+                                val newQuantity = menuItem.quantity - 1
+                                if (newQuantity > 0) menuItem.copy(quantity = newQuantity) else null
+                            } else {
+                                menuItem
                             }
                         }
                     },
@@ -1056,8 +1106,6 @@ fun NavigationStoreDetailPreview() {
                         store = store,
                         menuItems = getSampleMenuItemsForNavigation(),
                         categories = getSampleCategoriesForNavigation(),
-                        cartTotal = 39.90,
-                        cartItemCount = 4,
                         onBackClick = { currentScreen = Screen.STORES },
                         onCategoryClick = { },
                         onAddItem = { },
@@ -1229,6 +1277,18 @@ private fun getSampleCartItemsForNavigation() = listOf(
         quantity = 1
     )
 )
+
+// Função auxiliar para converter MenuItem em CartItem
+private fun convertMenuItemToCartItem(menuItem: com.br.linecut.ui.screens.MenuItem): com.br.linecut.ui.screens.CartItem {
+    return com.br.linecut.ui.screens.CartItem(
+        id = menuItem.id,
+        name = menuItem.name,
+        price = menuItem.price,
+        quantity = menuItem.quantity,
+        imageRes = menuItem.imageRes,
+        imageUrl = menuItem.imageUrl // Preserva a URL da imagem do Firebase
+    )
+}
 
 @Preview(
     name = "Order Summary Screen",

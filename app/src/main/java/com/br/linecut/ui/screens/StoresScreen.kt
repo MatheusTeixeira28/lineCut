@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.br.linecut.R
+import com.br.linecut.ui.components.CachedAsyncImage
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.components.LineCutTitle
@@ -39,7 +40,10 @@ import com.br.linecut.ui.components.NavigationItem
 import com.br.linecut.ui.theme.*
 import com.br.linecut.ui.utils.ImageLoader
 import com.br.linecut.ui.viewmodel.CompanyViewModel
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 
+@Parcelize
 data class Store(
     val id: String,
     val name: String,
@@ -49,7 +53,7 @@ data class Store(
     val imageRes: Int = android.R.drawable.ic_menu_gallery, // placeholder
     val imageUrl: String = "", // URL da imagem do Firebase
     val isFavorite: Boolean = false
-)
+) : Parcelable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -459,50 +463,14 @@ private fun StoreCard(
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.size(width = 94.dp, height = 68.dp)
                 ) {
-                    // Carregar imagem do Firebase ou usar placeholder (sem cache)
-                    if (store.imageUrl.isNotEmpty()) {
-                        var imageBitmap by remember { mutableStateOf<Bitmap?>(null) }
-                        var isLoading by remember { mutableStateOf(true) }
-                        
-                        LaunchedEffect(store.imageUrl) {
-                            imageBitmap = ImageLoader.loadImage(store.imageUrl, useCache = false)
-                            isLoading = false
-                        }
-                        
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            when {
-                                isLoading -> {
-                                    CircularProgressIndicator(
-                                        color = LineCutRed,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                }
-                                imageBitmap != null -> {
-                                    Image(
-                                        bitmap = imageBitmap!!.asImageBitmap(),
-                                        contentDescription = "Imagem do ${store.name}",
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier.fillMaxSize()
-                                    )
-                                }
-                                else -> {
-                                    Image(
-                                        painter = painterResource(id = store.imageRes),
-                                        contentDescription = "Imagem do ${store.name}",
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier.fillMaxSize()
-                                    )
-                                }
-                            }
-                        }
-                    } else {
-                        Image(
-                            painter = painterResource(id = store.imageRes),
-                            contentDescription = "Imagem do ${store.name}",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    }
+                    CachedAsyncImage(
+                        imageUrl = store.imageUrl,
+                        contentDescription = "Imagem do ${store.name}",
+                        contentScale = ContentScale.Crop,
+                        placeholderRes = store.imageRes,
+                        loadingIndicatorSize = 24.dp,
+                        modifier = Modifier.fillMaxSize()
+                    )
                 }
                 
                 Spacer(modifier = Modifier.width(16.dp))
