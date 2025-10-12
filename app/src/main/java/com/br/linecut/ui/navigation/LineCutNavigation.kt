@@ -181,7 +181,6 @@ fun LineCutNavigation(
         
         Screen.STORES -> {
             StoresScreen(
-                stores = getSampleStoresForNavigation(),
                 showSearchBar = showSearchBarOnStores,
                 onStoreClick = { store ->
                     println("Store clicked: ${store.name}") // Debug

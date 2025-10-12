@@ -2,7 +2,9 @@ package com.br.linecut.ui.utils
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.net.URL
 
@@ -14,26 +16,84 @@ object ImageLoader {
     /**
      * Carrega uma imagem da URL, usando cache quando disponível
      * @param url URL da imagem a ser carregada
+     * @param useCache Se deve usar cache (true para fotos de perfil, false para imagens de lojas)
      * @return Bitmap da imagem ou null se houver erro
      */
-    suspend fun loadImage(url: String): Bitmap? = withContext(Dispatchers.IO) {
+    suspend fun loadImage(url: String, useCache: Boolean = true): Bitmap? = withContext(Dispatchers.IO) {
         try {
-            // Verificar se a imagem já está no cache
-            ImageCache.get(url)?.let { cachedBitmap ->
-                return@withContext cachedBitmap
+            // Verificar se a imagem já está no cache (apenas se useCache for true)
+            if (useCache) {
+                ImageCache.get(url)?.let { cachedBitmap ->
+                    return@withContext cachedBitmap
+                }
             }
             
-            // Se não estiver no cache, baixar da internet
+            var imageUrl = url
+            
+            // Se a URL não começar com http/https/gs, é um caminho relativo
+            if (!url.startsWith("http") && !url.startsWith("gs://")) {
+                try {
+                    val storage = FirebaseStorage.getInstance()
+                    val storageRef = storage.reference.child(url)
+                    imageUrl = storageRef.downloadUrl.await().toString()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    return@withContext null
+                }
+            }
+            // Se a URL for uma referência do Storage (gs://), obter URL de download atual
+            else if (url.startsWith("gs://")) {
+                try {
+                    val storage = FirebaseStorage.getInstance()
+                    val storageRef = storage.getReferenceFromUrl(url)
+                    imageUrl = storageRef.downloadUrl.await().toString()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    return@withContext null
+                }
+            }
+            
+            // Tentar baixar a imagem
+            val bitmap = downloadImage(imageUrl, useCache)
+            
+            // Se falhar por token expirado e a URL tiver um caminho de storage, tentar novamente
+            if (bitmap == null && imageUrl.contains("firebasestorage.googleapis.com")) {
+                // Extrair o caminho do arquivo da URL
+                val pathMatch = Regex("/o/(.+?)\\?").find(imageUrl)
+                if (pathMatch != null) {
+                    val path = pathMatch.groupValues[1].replace("%2F", "/")
+                    try {
+                        val storage = FirebaseStorage.getInstance()
+                        val storageRef = storage.reference.child(path)
+                        val freshUrl = storageRef.downloadUrl.await().toString()
+                        return@withContext downloadImage(freshUrl, useCache)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+            
+            bitmap
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+    
+    private suspend fun downloadImage(url: String, useCache: Boolean = true): Bitmap? = withContext(Dispatchers.IO) {
+        try {
             val connection = URL(url).openConnection()
             connection.doInput = true
             connection.connect()
             
             val inputStream = connection.getInputStream()
             val bitmap = BitmapFactory.decodeStream(inputStream)
-            inputStream?.close()
+            inputStream.close()
             
-            // Salvar no cache se o bitmap foi criado com sucesso
-            bitmap?.let { ImageCache.put(url, it) }
+            // Salvar no cache apenas se useCache for true
+            if (useCache) {
+                bitmap?.let { ImageCache.put(url, it) }
+            }
             
             bitmap
         } catch (e: Exception) {

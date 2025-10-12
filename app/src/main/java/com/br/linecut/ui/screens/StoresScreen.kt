@@ -1,5 +1,6 @@
 package com.br.linecut.ui.screens
 
+import android.graphics.Bitmap
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -16,18 +17,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.br.linecut.R
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.components.LineCutTitle
 import com.br.linecut.ui.components.NavigationItem
 import com.br.linecut.ui.theme.*
+import com.br.linecut.ui.utils.ImageLoader
+import com.br.linecut.ui.viewmodel.CompanyViewModel
 
 data class Store(
     val id: String,
@@ -36,13 +41,13 @@ data class Store(
     val location: String,
     val distance: String,
     val imageRes: Int = android.R.drawable.ic_menu_gallery, // placeholder
+    val imageUrl: String = "", // URL da imagem do Firebase
     val isFavorite: Boolean = false
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StoresScreen(
-    stores: List<Store> = emptyList(),
     currentAddress: String = "Av. Eng. Eusébio Stevaux, 823",
     onStoreClick: (Store) -> Unit = {},
     onHomeClick: () -> Unit = {},
@@ -51,10 +56,16 @@ fun StoresScreen(
     onOrdersClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     showSearchBar: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    companyViewModel: CompanyViewModel = viewModel()
 ) {
     var isSearchVisible by remember { mutableStateOf(showSearchBar) }
     var searchQuery by remember { mutableStateOf("") }
+    
+    // Observar dados do Firebase
+    val stores by companyViewModel.stores.collectAsState()
+    val isLoading by companyViewModel.isLoading.collectAsState()
+    val error by companyViewModel.error.collectAsState()
     
     // Filtrar lojas baseado na busca
     val filteredStores = remember(stores, searchQuery) {
@@ -241,57 +252,116 @@ fun StoresScreen(
         }
         
         // Lista de lojas
-        if (filteredStores.isEmpty()) {
-            // Estado vazio
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
+        when {
+            isLoading -> {
+                // Estado de carregamento
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.StoreMallDirectory,
-                        contentDescription = null,
-                        tint = TextSecondary,
-                        modifier = Modifier.size(64.dp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = if (searchQuery.isNotEmpty()) "Nenhuma loja encontrada" else "Nenhuma loja encontrada",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            color = TextSecondary
-                        )
-                    )
-                    Text(
-                        text = if (searchQuery.isNotEmpty()) "Tente buscar por outro termo" else "Tente ajustar os filtros ou sua localização",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = TextPlaceholder
-                        )
+                    CircularProgressIndicator(
+                        color = LineCutRed,
+                        modifier = Modifier.size(48.dp)
                     )
                 }
             }
-        } else {
-            // Lista com dados
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 23.dp),
-                verticalArrangement = Arrangement.spacedBy(19.dp)
-            ) {
-
-                
-                items(filteredStores) { store ->
-                    StoreCard(
-                        store = store,
-                        onStoreClick = { onStoreClick(store) },
-                        onFavoriteClick = { /* TODO: Toggle favorite */ }
-                    )
+            error != null -> {
+                // Estado de erro
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Error,
+                            contentDescription = null,
+                            tint = LineCutRed,
+                            modifier = Modifier.size(64.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Erro ao carregar lojas",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                color = TextPrimary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = error ?: "",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = TextSecondary
+                            )
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { companyViewModel.refresh() },
+                            colors = ButtonDefaults.buttonColors(containerColor = LineCutRed)
+                        ) {
+                            Text("Tentar novamente")
+                        }
+                    }
                 }
-                
+            }
+            filteredStores.isEmpty() -> {
+                // Estado vazio
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.StoreMallDirectory,
+                            contentDescription = null,
+                            tint = TextSecondary,
+                            modifier = Modifier.size(64.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = if (searchQuery.isNotEmpty()) "Nenhuma loja encontrada" else "Nenhuma loja encontrada",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                color = TextSecondary
+                            )
+                        )
+                        Text(
+                            text = if (searchQuery.isNotEmpty()) "Tente buscar por outro termo" else "Tente ajustar os filtros ou sua localização",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = TextPlaceholder
+                            )
+                        )
+                    }
+                }
+            }
+            else -> {
+                // Lista com dados
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 23.dp),
+                    verticalArrangement = Arrangement.spacedBy(19.dp)
+                ) {
 
+                    
+                    items(filteredStores) { store ->
+                        StoreCard(
+                            store = store,
+                            onStoreClick = { onStoreClick(store) },
+                            onFavoriteClick = { /* TODO: Toggle favorite */ }
+                        )
+                    }
+                    
+
+                }
             }
         }
         
@@ -348,12 +418,50 @@ private fun StoreCard(
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.size(width = 94.dp, height = 68.dp)
                 ) {
-                    Image(
-                        painter = painterResource(id = store.imageRes),
-                        contentDescription = "Imagem do ${store.name}",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    // Carregar imagem do Firebase ou usar placeholder (sem cache)
+                    if (store.imageUrl.isNotEmpty()) {
+                        var imageBitmap by remember { mutableStateOf<Bitmap?>(null) }
+                        var isLoading by remember { mutableStateOf(true) }
+                        
+                        LaunchedEffect(store.imageUrl) {
+                            imageBitmap = ImageLoader.loadImage(store.imageUrl, useCache = false)
+                            isLoading = false
+                        }
+                        
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            when {
+                                isLoading -> {
+                                    CircularProgressIndicator(
+                                        color = LineCutRed,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                                imageBitmap != null -> {
+                                    Image(
+                                        bitmap = imageBitmap!!.asImageBitmap(),
+                                        contentDescription = "Imagem do ${store.name}",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
+                                else -> {
+                                    Image(
+                                        painter = painterResource(id = store.imageRes),
+                                        contentDescription = "Imagem do ${store.name}",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        Image(
+                            painter = painterResource(id = store.imageRes),
+                            contentDescription = "Imagem do ${store.name}",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
                 }
                 
                 Spacer(modifier = Modifier.width(16.dp))
@@ -441,396 +549,3 @@ private fun StoreCard(
         }
     }
 }
-
-// Previews
-@Preview(
-    name = "Stores Screen - Com Dados",
-    showBackground = true,
-    showSystemUi = true
-)
-@Composable
-fun StoresScreenPreview() {
-    LineCutTheme {
-        StoresScreen(
-            stores = getSampleStores()
-        )
-    }
-}
-
-@Preview(
-    name = "Stores Screen - Com Busca",
-    showBackground = true,
-    showSystemUi = true
-)
-@Composable
-fun StoresScreenSearchPreview() {
-    LineCutTheme {
-        StoresScreenWithSearch(
-            stores = getSampleStores()
-        )
-    }
-}
-
-// Componente auxiliar para preview com busca visível
-@Composable
-private fun StoresScreenWithSearch(
-    stores: List<Store> = emptyList(),
-    currentAddress: String = "Senac Campinas",
-    onStoreClick: (Store) -> Unit = {},
-    onHomeClick: () -> Unit = {},
-    onNotificationClick: () -> Unit = {},
-    onOrdersClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {},
-    modifier: Modifier = Modifier
-) {
-    var isSearchVisible by remember { mutableStateOf(true) } // Forçado como true para preview
-    var searchQuery by remember { mutableStateOf("lanches") } // Exemplo de busca
-    
-    // Filtrar lojas baseado na busca
-    val filteredStores = remember(stores, searchQuery) {
-        if (searchQuery.isBlank()) {
-            stores
-        } else {
-            stores.filter { store ->
-                store.name.contains(searchQuery, ignoreCase = true) ||
-                store.category.contains(searchQuery, ignoreCase = true)
-            }
-        }
-    }
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
-        // Header com fundo arredondado - mais fiel ao Figma
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(184.dp)
-        ) {
-            // Fundo branco arredondado que se estende além das bordas
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(133.dp)
-                    .offset(y = (-73).dp)
-                    .shadow(
-                        elevation = 4.dp,
-                        shape = RoundedCornerShape(30.dp)
-                    ),
-                shape = RoundedCornerShape(30.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {}
-            
-            // Conteúdo do header
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 30.dp, top = 72.dp)
-            ) {
-                // Título "Lojas"
-                LineCutTitle(
-                    text = "Lojas"
-                )
-                
-                Spacer(modifier = Modifier.height(32.dp))
-                
-                // Endereço centralizado
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Card(
-                        modifier = Modifier
-                            .shadow(
-                                elevation = 4.dp,
-                                shape = RoundedCornerShape(10.dp)
-                            ),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.LocationOn,
-                                contentDescription = "Localização",
-                                tint = TextSecondary,
-                                modifier = Modifier.size(15.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = currentAddress,
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    color = TextSecondary,
-                                    fontSize = 12.sp
-                                )
-                            )
-                        }
-                    }
-                }
-            }
-            
-            // Barra de busca - posicionada com CSS especificado
-            if (isSearchVisible) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 130.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Card(
-                        modifier = Modifier
-                            .width(343.dp)
-                            .height(28.1.dp)
-                            .shadow(
-                                elevation = 2.dp,
-                                shape = RoundedCornerShape(15.dp)
-                            ),
-                        shape = RoundedCornerShape(15.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        border = BorderStroke(
-                            width = 1.dp,
-                            color = Color(0xFFE0E0E0)
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = "Buscar",
-                                tint = TextPlaceholder,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            
-                            Spacer(modifier = Modifier.width(8.dp))
-                            
-                            BasicTextField(
-                                value = searchQuery,
-                                onValueChange = { searchQuery = it },
-                                modifier = Modifier.weight(1f),
-                                textStyle = MaterialTheme.typography.bodyMedium.copy(
-                                    color = TextPrimary,
-                                    fontSize = 13.sp
-                                ),
-                                singleLine = true,
-                                decorationBox = { innerTextField ->
-                                    if (searchQuery.isEmpty()) {
-                                        Text(
-                                            text = "Buscar lojas...",
-                                            style = MaterialTheme.typography.bodyMedium.copy(
-                                                color = TextPlaceholder,
-                                                fontSize = 13.sp
-                                            )
-                                        )
-                                    }
-                                    innerTextField()
-                                }
-                            )
-                            
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(
-                                    onClick = { searchQuery = "" },
-                                    modifier = Modifier.size(20.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Close,
-                                        contentDescription = "Limpar busca",
-                                        tint = TextPlaceholder,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        // Lista de lojas
-        if (filteredStores.isEmpty()) {
-            // Estado vazio
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.StoreMallDirectory,
-                        contentDescription = null,
-                        tint = TextSecondary,
-                        modifier = Modifier.size(64.dp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = if (searchQuery.isNotEmpty()) "Nenhuma loja encontrada" else "Nenhuma loja encontrada",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            color = TextSecondary
-                        )
-                    )
-                    Text(
-                        text = if (searchQuery.isNotEmpty()) "Tente buscar por outro termo" else "Tente ajustar os filtros ou sua localização",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = TextPlaceholder
-                        )
-                    )
-                }
-            }
-        } else {
-            // Lista com dados
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 23.dp),
-                verticalArrangement = Arrangement.spacedBy(19.dp)
-            ) {
-                // Primeiro item com espaço extra do header
-                item {
-                    Spacer(modifier = Modifier.height(if (isSearchVisible) 36.dp else 4.dp))
-                }
-                
-                items(filteredStores) { store ->
-                    StoreCard(
-                        store = store,
-                        onStoreClick = { onStoreClick(store) },
-                        onFavoriteClick = { /* TODO: Toggle favorite */ }
-                    )
-                }
-                
-                // Spacer para o bottom navigation
-                item {
-                    Spacer(modifier = Modifier.height(20.dp))
-                }
-            }
-        }
-    }
-}
-
-@Preview(
-    name = "Stores Screen - Vazio",
-    showBackground = true,
-    showSystemUi = true
-)
-@Composable
-fun StoresScreenEmptyPreview() {
-    LineCutTheme {
-        StoresScreen(
-            stores = emptyList()
-        )
-    }
-}
-
-@Preview(
-    name = "Store Card",
-    showBackground = true
-)
-@Composable
-fun StoreCardPreview() {
-    LineCutTheme {
-        StoreCard(
-            store = Store(
-                id = "1",
-                name = "Museoh",
-                category = "Lanches e Salgados",
-                location = "Praça 3 - Senac",
-                distance = "150m"
-            ),
-            onStoreClick = {},
-            onFavoriteClick = {}
-        )
-    }
-}
-
-@Preview(
-    name = "Store Card - Favorito",
-    showBackground = true
-)
-@Composable
-fun StoreCardFavoritePreview() {
-    LineCutTheme {
-        StoreCard(
-            store = Store(
-                id = "1",
-                name = "Vila Sabor",
-                category = "Refeições variadas",
-                location = "Praça 1 - Senac",
-                distance = "300m",
-                isFavorite = true
-            ),
-            onStoreClick = {},
-            onFavoriteClick = {}
-        )
-    }
-}
-
-// Função auxiliar para dados de exemplo
-private fun getSampleStores(): List<Store> = listOf(
-    Store(
-        id = "1",
-        name = "Burger Queen",
-        category = "Lanches e Salgados",
-        location = "Praça 3 - Senac",
-        distance = "150m",
-        imageRes = R.drawable.burger_queen
-    ),
-    Store(
-        id = "2",
-        name = "Sabor & Cia",
-        category = "Refeições variadas",
-        location = "Praça 3 - Senac",
-        distance = "200m",
-        imageRes = R.drawable.sabor_e_cia
-    ),
-    Store(
-        id = "3",
-        name = "Cafezin",
-        category = "Café gourmet",
-        location = "Praça 2 - Senac",
-        distance = "240m",
-        imageRes = R.drawable.cafezin
-    ),
-    Store(
-        id = "4",
-        name = "Sanduba Burger",
-        category = "Lanches variados",
-        location = "Praça 2 - Senac",
-        distance = "260m",
-        isFavorite = true,
-        imageRes = R.drawable.sanduba_burger
-    ),
-    Store(
-        id = "5",
-        name = "Vila Sabor",
-        category = "Refeições variadas",
-        location = "Praça 1 - Senac",
-        distance = "300m",
-        isFavorite = true,
-        imageRes = R.drawable.vila_sabor
-    ),
-    Store(
-        id = "6",
-        name = "Varanda",
-        category = "Snacks",
-        location = "Praça 1 - Senac",
-        distance = "320m",
-        imageRes = R.drawable.varanda
-    ),
-    Store(
-        id = "7",
-        name = "Urban Food",
-        category = "Refeição rápida",
-        location = "Praça 1 - Senac",
-        distance = "400m",
-        imageRes = R.drawable.urban_food
-    )
-)
