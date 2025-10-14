@@ -14,17 +14,50 @@ import java.net.URL
 object ImageLoader {
     
     /**
+     * Normaliza a URL para o formato que será salvo no cache
+     * Converte caminhos relativos em URLs completas do Firebase Storage
+     */
+    suspend fun normalizeUrl(url: String): String = withContext(Dispatchers.IO) {
+        try {
+            var imageUrl = url
+            
+            // Se a URL não começar com http/https/gs, é um caminho relativo
+            if (!url.startsWith("http") && !url.startsWith("gs://")) {
+                try {
+                    val storage = FirebaseStorage.getInstance()
+                    val storageRef = storage.reference.child(url)
+                    imageUrl = storageRef.downloadUrl.await().toString()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    return@withContext url
+                }
+            }
+            // Se a URL for uma referência do Storage (gs://), obter URL de download atual
+            else if (url.startsWith("gs://")) {
+                try {
+                    val storage = FirebaseStorage.getInstance()
+                    val storageRef = storage.getReferenceFromUrl(url)
+                    imageUrl = storageRef.downloadUrl.await().toString()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    return@withContext url
+                }
+            }
+            
+            imageUrl
+        } catch (e: Exception) {
+            e.printStackTrace()
+            url
+        }
+    }
+    
+    /**
      * Carrega uma imagem da URL, usando cache quando disponível
      * @param url URL da imagem a ser carregada
      * @return Bitmap da imagem ou null se houver erro
      */
     suspend fun loadImage(url: String): Bitmap? = withContext(Dispatchers.IO) {
         try {
-            // Verificar se a imagem já está no cache
-            ImageCache.get(url)?.let { cachedBitmap ->
-                return@withContext cachedBitmap
-            }
-            
             var imageUrl = url
             
             // Se a URL não começar com http/https/gs, é um caminho relativo
@@ -48,6 +81,11 @@ object ImageLoader {
                     e.printStackTrace()
                     return@withContext null
                 }
+            }
+            
+            // Verificar se a imagem já está no cache COM A URL NORMALIZADA
+            ImageCache.get(imageUrl)?.let { cachedBitmap ->
+                return@withContext cachedBitmap
             }
             
             // Tentar baixar a imagem

@@ -31,16 +31,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.br.linecut.R
-import com.br.linecut.ui.components.CachedAsyncImage
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.components.LineCutDesignSystem
-import com.br.linecut.ui.components.LineCutTitle
 import com.br.linecut.ui.components.NavigationItem
 import com.br.linecut.ui.theme.*
 import com.br.linecut.ui.utils.ImageLoader
 import com.br.linecut.ui.viewmodel.CompanyViewModel
 import android.os.Parcelable
+import com.br.linecut.ui.utils.ImageCache
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
@@ -439,6 +437,41 @@ private fun StoreCard(
     onFavoriteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Carregar imagem com cache - busca inteligente para evitar placeholder
+    // Tentar obter do cache ANTES do LaunchedEffect (busca síncrona)
+    val initialBitmap = if (store.imageUrl.isNotEmpty()) {
+        ImageCache.findByPath(store.imageUrl)
+    } else null
+    
+    var storeImageBitmap by remember(store.imageUrl) { mutableStateOf<Bitmap?>(initialBitmap) }
+    var isLoading by remember(store.imageUrl) { mutableStateOf(false) }
+    
+    LaunchedEffect(store.imageUrl) {
+        if (store.imageUrl.isNotEmpty() && storeImageBitmap == null) {
+            // Só carregar se ainda não temos a imagem
+            // Normalizar a URL para o formato do cache
+            val normalizedUrl = ImageLoader.normalizeUrl(store.imageUrl)
+            
+            // Verificar cache com a URL normalizada
+            val cachedBitmap = ImageCache.get(normalizedUrl)
+            
+            if (cachedBitmap != null) {
+                // Imagem no cache - usar diretamente sem loading
+                storeImageBitmap = cachedBitmap
+                isLoading = false
+            } else {
+                // Não está no cache - mostrar loading e carregar
+                isLoading = true
+                val bitmap = ImageLoader.loadImage(store.imageUrl)
+                storeImageBitmap = bitmap
+                isLoading = false
+            }
+        } else if (store.imageUrl.isEmpty()) {
+            storeImageBitmap = null
+            isLoading = false
+        }
+    }
+    
     Card(
         onClick = onStoreClick,
         modifier = modifier
@@ -463,14 +496,21 @@ private fun StoreCard(
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.size(width = 94.dp, height = 68.dp)
                 ) {
-                    CachedAsyncImage(
-                        imageUrl = store.imageUrl,
-                        contentDescription = "Imagem do ${store.name}",
-                        contentScale = ContentScale.Crop,
-                        placeholderRes = store.imageRes,
-                        loadingIndicatorSize = 24.dp,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        if (storeImageBitmap != null) {
+                            Image(
+                                bitmap = storeImageBitmap!!.asImageBitmap(),
+                                contentDescription = "Imagem do ${store.name}",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = LineCutRed
+                            )
+                        }
+                    }
                 }
                 
                 Spacer(modifier = Modifier.width(16.dp))

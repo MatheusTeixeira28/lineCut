@@ -31,7 +31,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.br.linecut.ui.components.CachedAsyncImage
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.theme.*
 import com.br.linecut.R
@@ -253,6 +252,41 @@ private fun StoreHeader(
     store: Store,
     modifier: Modifier = Modifier
 ) {
+    // Carregar imagem com cache - busca inteligente para evitar placeholder
+    // Tentar obter do cache ANTES do LaunchedEffect (busca síncrona)
+    val initialBitmap = if (store.imageUrl.isNotEmpty()) {
+        com.br.linecut.ui.utils.ImageCache.findByPath(store.imageUrl)
+    } else null
+    
+    var storeLogoImageBitmap by remember(store.imageUrl) { mutableStateOf<Bitmap?>(initialBitmap) }
+    var isLoading by remember(store.imageUrl) { mutableStateOf(false) }
+    
+    LaunchedEffect(store.imageUrl) {
+        if (store.imageUrl.isNotEmpty() && storeLogoImageBitmap == null) {
+            // Só carregar se ainda não temos a imagem
+            // Normalizar a URL para o formato do cache
+            val normalizedUrl = ImageLoader.normalizeUrl(store.imageUrl)
+            
+            // Verificar cache com a URL normalizada
+            val cachedBitmap = com.br.linecut.ui.utils.ImageCache.get(normalizedUrl)
+            
+            if (cachedBitmap != null) {
+                // Imagem no cache - usar diretamente sem loading
+                storeLogoImageBitmap = cachedBitmap
+                isLoading = false
+            } else {
+                // Não está no cache - mostrar loading e carregar
+                isLoading = true
+                val bitmap = ImageLoader.loadImage(store.imageUrl)
+                storeLogoImageBitmap = bitmap
+                isLoading = false
+            }
+        } else if (store.imageUrl.isEmpty()) {
+            storeLogoImageBitmap = null
+            isLoading = false
+        }
+    }
+    
     val topInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Card(
         modifier = modifier
@@ -281,14 +315,21 @@ private fun StoreHeader(
                         .size(119.dp)
                         .shadow(4.dp, CircleShape)
                 ) {
-                    CachedAsyncImage(
-                        imageUrl = store.imageUrl,
-                        contentDescription = "Logo ${store.name}",
-                        contentScale = ContentScale.Crop,
-                        placeholderRes = store.imageRes,
-                        loadingIndicatorSize = 32.dp,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        if (storeLogoImageBitmap != null) {
+                            Image(
+                                bitmap = storeLogoImageBitmap!!.asImageBitmap(),
+                                contentDescription = "Logo ${store.name}",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(32.dp),
+                                color = LineCutRed
+                            )
+                        }
+                    }
                 }
                 
                 Spacer(modifier = Modifier.width(19.dp))
@@ -548,6 +589,41 @@ private fun MenuItemCard(
     onRemoveItem: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Carregar imagem com cache - busca inteligente para evitar placeholder
+    // Tentar obter do cache ANTES do LaunchedEffect (busca síncrona)
+    val initialBitmap = if (item.imageUrl.isNotEmpty()) {
+        com.br.linecut.ui.utils.ImageCache.findByPath(item.imageUrl)
+    } else null
+    
+    var menuItemImageBitmap by remember(item.imageUrl) { mutableStateOf<Bitmap?>(initialBitmap) }
+    var isLoading by remember(item.imageUrl) { mutableStateOf(false) }
+    
+    LaunchedEffect(item.imageUrl) {
+        if (item.imageUrl.isNotEmpty() && menuItemImageBitmap == null) {
+            // Só carregar se ainda não temos a imagem
+            // Normalizar a URL para o formato do cache
+            val normalizedUrl = ImageLoader.normalizeUrl(item.imageUrl)
+            
+            // Verificar cache com a URL normalizada
+            val cachedBitmap = com.br.linecut.ui.utils.ImageCache.get(normalizedUrl)
+            
+            if (cachedBitmap != null) {
+                // Imagem no cache - usar diretamente sem loading
+                menuItemImageBitmap = cachedBitmap
+                isLoading = false
+            } else {
+                // Não está no cache - mostrar loading e carregar
+                isLoading = true
+                val bitmap = ImageLoader.loadImage(item.imageUrl)
+                menuItemImageBitmap = bitmap
+                isLoading = false
+            }
+        } else if (item.imageUrl.isEmpty()) {
+            menuItemImageBitmap = null
+            isLoading = false
+        }
+    }
+    
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -567,16 +643,22 @@ private fun MenuItemCard(
             Box(
                 modifier = Modifier
                     .size(width = 106.dp, height = 104.dp)
-                    .clip(RoundedCornerShape(topStart = 19.dp, bottomStart = 19.dp))
+                    .clip(RoundedCornerShape(topStart = 19.dp, bottomStart = 19.dp)),
+                contentAlignment = Alignment.Center
             ) {
-                CachedAsyncImage(
-                    imageUrl = item.imageUrl,
-                    contentDescription = "Imagem ${item.name}",
-                    contentScale = ContentScale.Crop,
-                    placeholderRes = item.imageRes,
-                    loadingIndicatorSize = 24.dp,
-                    modifier = Modifier.fillMaxSize()
-                )
+                if (menuItemImageBitmap != null) {
+                    Image(
+                        bitmap = menuItemImageBitmap!!.asImageBitmap(),
+                        contentDescription = "Imagem ${item.name}",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = LineCutRed
+                    )
+                }
             }
             
             // Content area with padding
@@ -632,7 +714,7 @@ private fun MenuItemCard(
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(top = 11.dp, end = 8.dp) // Increased padding to ensure buttons have enough margin from edge
+                modifier = Modifier.padding(top = 14.dp, end = 8.dp) // Increased padding to ensure buttons have enough margin from edge
             ) {
                 // Botão adicionar (sempre visível)
                 Box(

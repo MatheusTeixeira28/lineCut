@@ -39,4 +39,28 @@ object ImageCache {
      * Verifica se uma URL está no cache
      */
     fun contains(url: String): Boolean = cache.containsKey(url)
+    
+    /**
+     * Busca no cache por URL completa ou por caminho parcial
+     * Útil quando a URL vem como caminho relativo mas foi salva como URL completa
+     */
+    fun findByPath(urlOrPath: String): Bitmap? {
+        // Tentar busca direta primeiro
+        cache[urlOrPath]?.let { return it }
+        
+        // Se não encontrou e é um caminho relativo, buscar por correspondência parcial
+        if (!urlOrPath.startsWith("http")) {
+            // Normalizar o caminho para comparação
+            val normalizedPath = urlOrPath.replace("%2F", "/")
+            
+            cache.entries.forEach { (key, bitmap) ->
+                // Verificar se a chave contém o caminho
+                if (key.contains(normalizedPath) || key.contains(urlOrPath)) {
+                    return bitmap
+                }
+            }
+        }
+        
+        return null
+    }
 }
