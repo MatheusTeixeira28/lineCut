@@ -184,7 +184,6 @@ fun LineCutNavigation(
             StoresScreen(
                 showSearchBar = showSearchBarOnStores,
                 onStoreClick = { store ->
-                    println("Store clicked: ${store.name}") // Debug
                     selectedStore = store
                     currentScreen = Screen.STORE_DETAIL
                 },
@@ -209,15 +208,11 @@ fun LineCutNavigation(
         }
         
         Screen.STORE_DETAIL -> {
-            println("Navigating to STORE_DETAIL. Selected store: ${selectedStore?.name}") // Debug
             val store = selectedStore ?: getSampleStoresForNavigation().firstOrNull()
             if (store != null) {
-                println("Rendering StoreDetailScreen for: ${store.name}") // Debug
-                println("  shoppingCart has ${shoppingCart.size} items:")
                 shoppingCart.forEach { item ->
                     println("    - ${item.name}: ${item.quantity}x @ R$ ${item.price}")
                 }
-                println("  Passing initialCartItems with ${shoppingCart.size} items to StoreDetailScreen")
                 
                 StoreDetailScreen(
                     store = store,

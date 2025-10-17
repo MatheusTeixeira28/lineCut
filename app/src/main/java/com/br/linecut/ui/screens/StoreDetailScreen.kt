@@ -34,6 +34,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.theme.*
 import com.br.linecut.R
+import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.utils.ImageLoader
 import com.br.linecut.ui.viewmodel.ProductViewModel
 import kotlinx.coroutines.launch
@@ -291,21 +292,24 @@ private fun StoreHeader(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(220.dp + topInset)
+            .statusBarsPadding()
+            .height(170.dp + topInset)
             .offset(y = -topInset)
             .shadow(
                 elevation = 4.dp,
-                shape = RoundedCornerShape(30.dp)
+                shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
             ),
-        shape = RoundedCornerShape(30.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp),
+        colors = CardDefaults.cardColors(containerColor = LineCutDesignSystem.screenBackgroundColor)
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier.fillMaxWidth()
+        ) {
             // Conteúdo principal
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 35.dp, top = 110.dp, end = 35.dp),
+                    .padding(start = 35.dp, top = 60.dp, end = 35.dp),
                 verticalAlignment = Alignment.Top
             ) {
                 // Logo circular da loja
@@ -374,7 +378,7 @@ private fun StoreHeader(
             StatusBadge(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = 78.dp, end = 16.dp)
+                    .padding(top = 40.dp, end = 16.dp)
             )
         }
     }

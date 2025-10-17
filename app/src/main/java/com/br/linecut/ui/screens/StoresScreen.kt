@@ -104,16 +104,18 @@ fun StoresScreen(
         }
     }
 
+    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+
     Column(
         modifier = modifier
-            .fillMaxSize()
+            .fillMaxWidth()
             .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
         // Header com fundo arredondado - mais fiel ao Figma
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(175.dp)
+                .height(175.dp +statusBarHeight )
         ) {
             // Header simples baseado no Figma
             Box(

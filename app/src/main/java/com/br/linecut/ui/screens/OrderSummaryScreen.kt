@@ -1,24 +1,53 @@
 package com.br.linecut.ui.screens
 
+import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.*
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -28,9 +57,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.br.linecut.R
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
-import com.br.linecut.ui.theme.*
+import com.br.linecut.ui.components.LineCutDesignSystem
+import com.br.linecut.ui.theme.LineCutRed
+import com.br.linecut.ui.theme.LineCutTheme
+import com.br.linecut.ui.utils.ImageCache
+import com.br.linecut.ui.utils.ImageLoader
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderSummaryScreen(
     store: Store,
@@ -61,13 +93,12 @@ fun OrderSummaryScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
+                .background(LineCutDesignSystem.screenBackgroundColor)
         ) {
             // Header da loja
             OrderSummaryHeader(
                 store = store,
-                onAddMoreItemsClick = onAddMoreItemsClick,
-                modifier = Modifier.padding(bottom = 16.dp)
+                onAddMoreItemsClick = onAddMoreItemsClick
             )
             
             // Título e botão voltar
@@ -157,16 +188,44 @@ private fun OrderSummaryHeader(
     onAddMoreItemsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Carregar imagem com cache - busca inteligente para evitar placeholder
+    val initialBitmap = if (store.imageUrl.isNotEmpty()) {
+        ImageCache.findByPath(store.imageUrl)
+    } else null
+
+    var storeImageBitmap by remember(store.imageUrl) { mutableStateOf<Bitmap?>(initialBitmap) }
+    var isLoading by remember(store.imageUrl) { mutableStateOf(false) }
+
+    LaunchedEffect(store.imageUrl) {
+        if (store.imageUrl.isNotEmpty() && storeImageBitmap == null) {
+            // Só carregar se ainda não temos a imagem
+            val normalizedUrl = ImageLoader.normalizeUrl(store.imageUrl)
+            val cachedBitmap = ImageCache.get(normalizedUrl)
+
+            if (cachedBitmap != null) {
+                storeImageBitmap = cachedBitmap
+                isLoading = false
+            } else {
+                isLoading = true
+                val bitmap = ImageLoader.loadImage(store.imageUrl)
+                storeImageBitmap = bitmap
+                isLoading = false
+            }
+        } else if (store.imageUrl.isEmpty()) {
+            storeImageBitmap = null
+            isLoading = false
+        }
+    }
+    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(225.dp)
-            .offset(y = (-20).dp)
+            .height(145.dp + statusBarHeight)
             .shadow(
                 elevation = 4.dp,
-                shape = RoundedCornerShape(30.dp)
+                shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
             ),
-        shape = RoundedCornerShape(30.dp),
+        shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -174,8 +233,8 @@ private fun OrderSummaryHeader(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 35.dp, top = 76.dp, end = 35.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(start = 35.dp, top = 60.dp, end = 35.dp),
+                verticalAlignment = Alignment.Top
             ) {
                 // Logo circular da loja
                 Card(
@@ -184,16 +243,25 @@ private fun OrderSummaryHeader(
                         .size(70.dp)
                         .shadow(4.dp, CircleShape)
                 ) {
-                    Image(
-                        painter = painterResource(id = store.imageRes),
-                        contentDescription = "Logo ${store.name}",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        if (storeImageBitmap != null) {
+                            Image(
+                                bitmap = storeImageBitmap!!.asImageBitmap(),
+                                contentDescription = "Logo ${store.name}",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = LineCutRed
+                            )
+                        }
+                    }
                 }
-                
+
                 Spacer(modifier = Modifier.width(19.dp))
-                
+
                 // Informações da loja
                 Column {
                     Text(
@@ -204,9 +272,9 @@ private fun OrderSummaryHeader(
                             fontSize = 24.sp
                         )
                     )
-                    
+
                     Spacer(modifier = Modifier.height(4.dp))
-                    
+
                     Text(
                         text = store.category,
                         style = MaterialTheme.typography.bodyLarge.copy(
@@ -216,13 +284,13 @@ private fun OrderSummaryHeader(
                     )
                 }
             }
-            
+
             // Botão "Adicionar mais itens" no canto inferior direito
             Button(
                 onClick = onAddMoreItemsClick,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(end = 20.dp, bottom = 24.dp)
+                    .padding(end = 20.dp, bottom = 20.dp)
                     .height(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                 shape = RoundedCornerShape(15.dp),

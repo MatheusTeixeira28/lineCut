@@ -1,5 +1,6 @@
 package com.br.linecut.ui.screens
 
+import android.graphics.Bitmap
 import android.os.Parcelable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -20,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -28,10 +30,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.br.linecut.R
-import com.br.linecut.ui.components.CachedAsyncImage
 import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.theme.*
+import com.br.linecut.ui.utils.ImageCache
+import com.br.linecut.ui.utils.ImageLoader
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
@@ -73,8 +76,7 @@ fun CartScreen(
         ) {
             // Header da loja
             CartHeader(
-                store = store,
-                modifier = Modifier.padding(bottom = 8.dp) // Reduced from 24dp to 8dp
+                store = store
             )
             
             // Título e botão voltar
@@ -168,23 +170,53 @@ private fun CartHeader(
     store: Store,
     modifier: Modifier = Modifier
 ) {
+    // Carregar imagem com cache - busca inteligente para evitar placeholder
+    val initialBitmap = if (store.imageUrl.isNotEmpty()) {
+        ImageCache.findByPath(store.imageUrl)
+    } else null
+    
+    var storeImageBitmap by remember(store.imageUrl) { mutableStateOf<Bitmap?>(initialBitmap) }
+    var isLoading by remember(store.imageUrl) { mutableStateOf(false) }
+    
+    LaunchedEffect(store.imageUrl) {
+        if (store.imageUrl.isNotEmpty() && storeImageBitmap == null) {
+            // Só carregar se ainda não temos a imagem
+            val normalizedUrl = ImageLoader.normalizeUrl(store.imageUrl)
+            val cachedBitmap = ImageCache.get(normalizedUrl)
+            
+            if (cachedBitmap != null) {
+                storeImageBitmap = cachedBitmap
+                isLoading = false
+            } else {
+                isLoading = true
+                val bitmap = ImageLoader.loadImage(store.imageUrl)
+                storeImageBitmap = bitmap
+                isLoading = false
+            }
+        } else if (store.imageUrl.isEmpty()) {
+            storeImageBitmap = null
+            isLoading = false
+        }
+    }
+    
+    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(206.dp)
-            .offset(y = (-18).dp)
+            .height(145.dp + statusBarHeight)
             .shadow(
                 elevation = 4.dp,
-                shape = RoundedCornerShape(30.dp)
+                shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
             ),
-        shape = RoundedCornerShape(30.dp),
+        shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 35.dp, top = 76.dp, end = 35.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(start = 35.dp, top = 60.dp, end = 35.dp),
+            verticalAlignment = Alignment.Top
         ) {
             // Logo circular da loja
             Card(
@@ -193,14 +225,21 @@ private fun CartHeader(
                     .size(70.dp)
                     .shadow(4.dp, CircleShape)
             ) {
-                CachedAsyncImage(
-                    imageUrl = store.imageUrl,
-                    contentDescription = "Logo ${store.name}",
-                    contentScale = ContentScale.Crop,
-                    placeholderRes = store.imageRes,
-                    loadingIndicatorSize = 24.dp,
-                    modifier = Modifier.fillMaxSize()
-                )
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    if (storeImageBitmap != null) {
+                        Image(
+                            bitmap = storeImageBitmap!!.asImageBitmap(),
+                            contentDescription = "Logo ${store.name}",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = LineCutRed
+                        )
+                    }
+                }
             }
             
             Spacer(modifier = Modifier.width(19.dp))
@@ -302,6 +341,35 @@ private fun CartItemCard(
     onRemoveItem: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Carregar imagem com cache - busca inteligente para evitar placeholder
+    val initialBitmap = if (item.imageUrl.isNotEmpty()) {
+        ImageCache.findByPath(item.imageUrl)
+    } else null
+    
+    var itemImageBitmap by remember(item.imageUrl) { mutableStateOf<Bitmap?>(initialBitmap) }
+    var isLoading by remember(item.imageUrl) { mutableStateOf(false) }
+    
+    LaunchedEffect(item.imageUrl) {
+        if (item.imageUrl.isNotEmpty() && itemImageBitmap == null) {
+            // Só carregar se ainda não temos a imagem
+            val normalizedUrl = ImageLoader.normalizeUrl(item.imageUrl)
+            val cachedBitmap = ImageCache.get(normalizedUrl)
+            
+            if (cachedBitmap != null) {
+                itemImageBitmap = cachedBitmap
+                isLoading = false
+            } else {
+                isLoading = true
+                val bitmap = ImageLoader.loadImage(item.imageUrl)
+                itemImageBitmap = bitmap
+                isLoading = false
+            }
+        } else if (item.imageUrl.isEmpty()) {
+            itemImageBitmap = null
+            isLoading = false
+        }
+    }
+    
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -324,14 +392,21 @@ private fun CartItemCard(
                 shape = RoundedCornerShape(10.dp),
                 modifier = Modifier.size(50.dp)
             ) {
-                CachedAsyncImage(
-                    imageUrl = item.imageUrl,
-                    contentDescription = "Imagem ${item.name}",
-                    contentScale = ContentScale.Crop,
-                    placeholderRes = item.imageRes,
-                    loadingIndicatorSize = 16.dp,
-                    modifier = Modifier.fillMaxSize()
-                )
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    if (itemImageBitmap != null) {
+                        Image(
+                            bitmap = itemImageBitmap!!.asImageBitmap(),
+                            contentDescription = "Imagem ${item.name}",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            color = LineCutRed
+                        )
+                    }
+                }
             }
             
             Spacer(modifier = Modifier.width(12.dp))
