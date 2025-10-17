@@ -13,6 +13,7 @@ enum class Screen {
     CART,
     ORDER_SUMMARY,
     PAYMENT_METHOD,
+    LOADING,
     QR_CODE_PIX,
     PICKUP_QR,
     PROFILE,

@@ -17,6 +17,7 @@ import com.br.linecut.ui.screens.OrderSummaryScreen
 import com.br.linecut.ui.screens.PaymentMethodScreen
 import com.br.linecut.ui.screens.QRCodePixScreen
 import com.br.linecut.ui.screens.PickupQRScreen
+import com.br.linecut.ui.screens.LoadingScreen
 import com.br.linecut.ui.screens.ProfileScreen
 import com.br.linecut.ui.screens.AccountDataScreen
 import com.br.linecut.ui.screens.NotificationsScreen
@@ -63,6 +64,7 @@ fun LineCutNavigation(
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var availableStores by rememberSaveable { mutableStateOf(getSampleStoresForSearch()) }
     var showSearchBarOnStores by rememberSaveable { mutableStateOf(false) }
+    var currentPedidoId by rememberSaveable { mutableStateOf<String?>(null) }
     
     // Observar o usuário atual
     val currentUser by authViewModel.currentUser.collectAsState()
@@ -308,6 +310,7 @@ fun LineCutNavigation(
                     onClearCartClick = {
                         cartItems = emptyList()
                         shoppingCart = emptyList()
+                        currentPedidoId = null // Limpar pedido quando limpar carrinho
                     },
                     onAddMoreItemsClick = {
                         currentScreen = Screen.STORE_DETAIL
@@ -382,6 +385,7 @@ fun LineCutNavigation(
                     },
                     onClearCartClick = {
                         cartItems = emptyList()
+                        currentPedidoId = null // Limpar pedido quando limpar carrinho
                     },
                     onAddMoreItemsClick = {
                         currentScreen = Screen.STORE_DETAIL
@@ -428,6 +432,7 @@ fun LineCutNavigation(
             PaymentMethodScreen(
                 selectedPaymentMethod = selectedPaymentMethod,
                 selectedPaymentType = selectedPaymentType,
+                hasItemsInCart = cartItems.isNotEmpty(),
                 onBackClick = {
                     currentScreen = Screen.ORDER_SUMMARY
                 },
@@ -438,10 +443,10 @@ fun LineCutNavigation(
                     selectedPaymentType = type
                 },
                 onConfirmClick = {
-                    if (selectedPaymentMethod == PaymentMethod.PAY_BY_APP) {
-                        // Navegar para tela de QR Code PIX
-                        currentScreen = Screen.QR_CODE_PIX
-                    } else {
+                    if (selectedPaymentMethod == PaymentMethod.PAY_BY_APP && cartItems.isNotEmpty()) {
+                        // Navegar para tela de loading
+                        currentScreen = Screen.LOADING
+                    } else if (cartItems.isNotEmpty()) {
                         // Para pagamento na retirada, finalizar pedido
                         cartItems = emptyList() // Clear cart after payment confirmation
                         currentScreen = Screen.STORES // Navigate back to stores for now
@@ -449,6 +454,46 @@ fun LineCutNavigation(
                 },
                 modifier = modifier
             )
+        }
+        
+        Screen.LOADING -> {
+            LoadingScreen(modifier = modifier)
+            
+            // Criar ou atualizar o pedido e navegar após 10 segundos
+            LaunchedEffect(Unit) {
+                try {
+                    val pedido: com.br.linecut.data.models.Pedido
+                    val resultado: Result<String>
+                    
+                    if (currentPedidoId != null) {
+                        // Já existe um pedido - atualizar com os novos dados do carrinho
+                        pedido = com.br.linecut.data.models.Pedido(
+                            id_pedido = currentPedidoId!!,
+                            itens = cartItems,
+                            total = cartItems.sumOf { it.price * it.quantity }
+                        )
+                        resultado = pedido.atualizar_pedido()
+                    } else {
+                        // Criar novo pedido a partir do carrinho
+                        pedido = com.br.linecut.data.models.Pedido.fromCarrinho(cartItems)
+                        resultado = pedido.criar_pedido()
+                        
+                        // Salvar o ID do pedido criado
+                        resultado.onSuccess { id ->
+                            currentPedidoId = id
+                        }
+                    }
+                    
+                    // Aguardar 10 segundos
+                    kotlinx.coroutines.delay(10000)
+                    
+                    // Navegar para tela de QR Code PIX
+                    currentScreen = Screen.QR_CODE_PIX
+                } catch (e: Exception) {
+                    // Em caso de erro, voltar para payment method
+                    currentScreen = Screen.PAYMENT_METHOD
+                }
+            }
         }
         
         Screen.QR_CODE_PIX -> {
@@ -461,6 +506,8 @@ fun LineCutNavigation(
                 onFinishPaymentClick = {
                     // Clear cart after payment completion
                     cartItems = emptyList()
+                    // Clear pedido ID as the payment is completed
+                    currentPedidoId = null
                     // Navigate to pickup QR screen
                     currentScreen = Screen.PICKUP_QR
                 },

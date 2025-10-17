@@ -28,6 +28,7 @@ import com.br.linecut.ui.theme.*
 fun PaymentMethodScreen(
     selectedPaymentMethod: PaymentMethod = PaymentMethod.PAY_BY_APP,
     selectedPaymentType: PaymentType = PaymentType.PIX,
+    hasItemsInCart: Boolean = true,
     onBackClick: () -> Unit = {},
     onPaymentMethodChange: (PaymentMethod) -> Unit = {},
     onPaymentTypeChange: (PaymentType) -> Unit = {},
@@ -253,15 +254,21 @@ fun PaymentMethodScreen(
         ) {
             Button(
                 onClick = {
-                    if (selectedPaymentMethod == PaymentMethod.PAY_BY_APP) {
-                        // Navegar para a tela de QR Code PIX
-                        onConfirmClick()
-                    } else {
-                        // Para pagamento na retirada, apenas confirmar
-                        onConfirmClick()
+                    if (hasItemsInCart) {
+                        if (selectedPaymentMethod == PaymentMethod.PAY_BY_APP) {
+                            // Navegar para a tela de QR Code PIX
+                            onConfirmClick()
+                        } else {
+                            // Para pagamento na retirada, apenas confirmar
+                            onConfirmClick()
+                        }
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = LineCutRed), // bg-[#9c0202]
+                enabled = hasItemsInCart,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = LineCutRed,
+                    disabledContainerColor = Color.Gray
+                ),
                 shape = RoundedCornerShape(20.dp), // rounded-[20px] conforme CSS
                 modifier = Modifier
                     .width(343.dp) // w-[343px] conforme CSS
