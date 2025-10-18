@@ -6,6 +6,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.br.linecut.R
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import kotlinx.coroutines.async
 import com.br.linecut.ui.screens.auth.EmailSentScreen
 import com.br.linecut.ui.screens.auth.ForgotPasswordScreen
 import com.br.linecut.ui.screens.auth.LoginScreen
@@ -65,6 +66,7 @@ fun LineCutNavigation(
     var availableStores by rememberSaveable { mutableStateOf(getSampleStoresForSearch()) }
     var showSearchBarOnStores by rememberSaveable { mutableStateOf(false) }
     var currentPedidoId by rememberSaveable { mutableStateOf<String?>(null) }
+    var pixResponse by remember { mutableStateOf<com.br.linecut.data.models.PixResponse?>(null) }
     
     // Observar o usuário atual
     val currentUser by authViewModel.currentUser.collectAsState()
@@ -445,7 +447,7 @@ fun LineCutNavigation(
                 },
                 onConfirmClick = {
                     if (selectedPaymentMethod == PaymentMethod.PAY_BY_APP && cartItems.isNotEmpty()) {
-                        // Navegar para tela de loading
+                        // Navegar para tela de loading imediatamente
                         currentScreen = Screen.LOADING
                     } else if (cartItems.isNotEmpty()) {
                         // Para pagamento na retirada, finalizar pedido
@@ -462,23 +464,64 @@ fun LineCutNavigation(
         Screen.LOADING -> {
             LoadingScreen(modifier = modifier)
             
-            // Criar ou atualizar o pedido e navegar após 10 segundos
+            // Disparar requisição PIX e criar/atualizar pedido
             LaunchedEffect(Unit) {
                 try {
+                    // Verificar se temos usuário e loja selecionados
+                    val userId = currentUser?.uid ?: ""
+                    val storeId = selectedStore?.id ?: ""
+                    
+                    if (userId.isEmpty() || storeId.isEmpty()) {
+                        // Sem dados necessários, voltar para payment method
+                        currentScreen = Screen.PAYMENT_METHOD
+                        return@LaunchedEffect
+                    }
+                    
+                    // Disparar requisição PIX em paralelo com criação do pedido
+                    val pixJob = async(kotlinx.coroutines.Dispatchers.IO) {
+                        val pix = com.br.linecut.data.api.Pix()
+                        val valorTotal = cartItems.sumOf { it.price * it.quantity }
+                        val chavePix = "sua_chave_pix_aqui" // TODO: Definir chave PIX correta
+                        
+                        pix.gerarQRCodePix(valorTotal, chavePix)
+                    }
+                    
                     val pedido: com.br.linecut.data.models.Pedido
                     val resultado: Result<String>
                     
                     if (currentPedidoId != null) {
                         // Já existe um pedido - atualizar com os novos dados do carrinho
+                        val items = cartItems.map {
+                            com.br.linecut.data.models.PedidoItem(
+                                id_produto = it.id,
+                                nome_produto = it.name,
+                                preco_unitario = it.price,
+                                quantidade = it.quantity,
+                                subtotal = it.price * it.quantity
+                            )
+                        }
+                        val total = items.sumOf { it.subtotal }
+                        val now = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).apply {
+                            timeZone = java.util.TimeZone.getTimeZone("UTC")
+                        }.format(java.util.Date())
+                        
                         pedido = com.br.linecut.data.models.Pedido(
                             id_pedido = currentPedidoId!!,
-                            itens = cartItems,
-                            total = cartItems.sumOf { it.price * it.quantity }
+                            id_usuario = userId,
+                            id_lanchonete = storeId,
+                            status_pedido = "pendente",
+                            preco_total = total,
+                            datahora_criacao = now,
+                            items = items
                         )
                         resultado = pedido.atualizar_pedido()
                     } else {
                         // Criar novo pedido a partir do carrinho
-                        pedido = com.br.linecut.data.models.Pedido.fromCarrinho(cartItems)
+                        pedido = com.br.linecut.data.models.Pedido.fromCarrinho(
+                            carrinho = cartItems,
+                            idUsuario = userId,
+                            idLanchonete = storeId
+                        )
                         resultado = pedido.criar_pedido()
                         
                         // Salvar o ID do pedido criado
@@ -487,12 +530,17 @@ fun LineCutNavigation(
                         }
                     }
                     
-                    // Aguardar 10 segundos
-                    kotlinx.coroutines.delay(10000)
+                    // Aguardar retorno da API PIX
+                    val pixResponseData = pixJob.await()
+                    android.util.Log.d("PIX_RESPONSE", "Resposta da API PIX: $pixResponseData")
                     
-                    // Navegar para tela de QR Code PIX
+                    // Salvar o response do PIX
+                    pixResponse = pixResponseData
+                    
+                    // Navegar para tela de QR Code PIX após obter resposta
                     currentScreen = Screen.QR_CODE_PIX
                 } catch (e: Exception) {
+                    android.util.Log.e("PIX_ERROR", "Erro ao processar PIX", e)
                     // Em caso de erro, voltar para payment method
                     currentScreen = Screen.PAYMENT_METHOD
                 }
@@ -503,6 +551,7 @@ fun LineCutNavigation(
             val totalAmount = cartItems.sumOf { it.price * it.quantity }
             QRCodePixScreen(
                 totalAmount = totalAmount,
+                qrCodeBase64 = pixResponse?.qrCodeImage,
                 onBackClick = {
                     currentScreen = Screen.PAYMENT_METHOD
                 },
@@ -512,6 +561,8 @@ fun LineCutNavigation(
                     shoppingCart = emptyList() // Limpar também o shoppingCart
                     // Clear pedido ID as the payment is completed
                     currentPedidoId = null
+                    // Clear PIX response
+                    pixResponse = null
                     // Navigate to pickup QR screen
                     currentScreen = Screen.PICKUP_QR
                 },

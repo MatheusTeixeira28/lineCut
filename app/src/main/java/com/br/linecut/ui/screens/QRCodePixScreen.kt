@@ -1,5 +1,7 @@
 package com.br.linecut.ui.screens
 
+import android.graphics.BitmapFactory
+import android.util.Base64
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.Image
@@ -14,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -30,6 +33,7 @@ import com.br.linecut.R
 @Composable
 fun QRCodePixScreen(
     totalAmount: Double = 39.90,
+    qrCodeBase64: String? = null,
     onBackClick: () -> Unit = {},
     onFinishPaymentClick: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -114,12 +118,45 @@ fun QRCodePixScreen(
             .align(Alignment.TopCenter),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.qr_code),
-                    contentDescription = "QR Code PIX",
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Fit
-                )
+                // Processar QR Code base64
+                val qrBitmap = remember(qrCodeBase64) {
+                    if (qrCodeBase64 != null && qrCodeBase64.isNotEmpty()) {
+                        try {
+                            // Remover prefixo data:image/png;base64, se existir
+                            val base64String = if (qrCodeBase64.contains("base64,")) {
+                                qrCodeBase64.substringAfter("base64,")
+                            } else {
+                                qrCodeBase64
+                            }
+                            
+                            val imageBytes = Base64.decode(base64String, Base64.DEFAULT)
+                            BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                        } catch (e: Exception) {
+                            android.util.Log.e("QRCodePixScreen", "Erro ao decodificar base64", e)
+                            null
+                        }
+                    } else {
+                        null
+                    }
+                }
+                
+                // Exibir QR Code
+                if (qrBitmap != null) {
+                    Image(
+                        bitmap = qrBitmap.asImageBitmap(),
+                        contentDescription = "QR Code PIX",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit
+                    )
+                } else {
+                    // Fallback para imagem padrão
+                    Image(
+                        painter = painterResource(id = R.drawable.qr_code),
+                        contentDescription = "QR Code PIX",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit
+                    )
+                }
             }
             
             // Card com valor a ser pago - centralizado
