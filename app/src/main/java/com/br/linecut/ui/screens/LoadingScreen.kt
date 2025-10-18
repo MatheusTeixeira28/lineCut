@@ -12,6 +12,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.br.linecut.ui.components.LineCutDesignSystem
+import com.br.linecut.ui.theme.LineCutRed
 import com.br.linecut.ui.theme.LineCutTheme
 
 /**
@@ -40,7 +42,7 @@ fun LoadingScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFFFFF8F7)), // bg-[#fff8f7]
+            .background(LineCutDesignSystem.screenBackgroundColor),
         contentAlignment = Alignment.Center
     ) {
         // Círculo de loading animado
@@ -49,7 +51,7 @@ fun LoadingScreen(
         ) {
             // Desenhar círculo de fundo (mais claro)
             drawArc(
-                color = Color(0xFFE8B4A8), // Tom mais claro do vermelho
+                color = LineCutRed.copy(alpha = 0.3f), // Tom mais claro do vermelho
                 startAngle = 0f,
                 sweepAngle = 360f,
                 useCenter = false,
@@ -61,7 +63,7 @@ fun LoadingScreen(
             
             // Desenhar arco animado (mais escuro)
             drawArc(
-                color = Color(0xFFBE4A3D), // Tom mais escuro do vermelho LineCut
+                color = LineCutRed, // Tom mais escuro do vermelho LineCut
                 startAngle = rotation,
                 sweepAngle = 270f,
                 useCenter = false,

@@ -108,13 +108,10 @@ fun StoreDetailScreen(
     LaunchedEffect(cartStateKey) {
         if (initialCartItems.isNotEmpty()) {
             val newQuantities = initialCartItems.associate { it.id to it.quantity }
-            newQuantities.forEach { (id, qty) ->
-                val item = initialCartItems.find { it.id == id }
-                println("    - ${item?.name ?: id}: ${qty}x")
-            }
             itemQuantities = newQuantities
         } else {
-            println("initialCartItems está vazio, mantendo estado atual")
+            // Se initialCartItems está vazio, limpar todas as quantidades (zerar carrinho)
+            itemQuantities = emptyMap()
         }
     }
     

@@ -385,6 +385,7 @@ fun LineCutNavigation(
                     },
                     onClearCartClick = {
                         cartItems = emptyList()
+                        shoppingCart = emptyList() // Limpar também o shoppingCart
                         currentPedidoId = null // Limpar pedido quando limpar carrinho
                     },
                     onAddMoreItemsClick = {
@@ -449,6 +450,8 @@ fun LineCutNavigation(
                     } else if (cartItems.isNotEmpty()) {
                         // Para pagamento na retirada, finalizar pedido
                         cartItems = emptyList() // Clear cart after payment confirmation
+                        shoppingCart = emptyList() // Limpar também o shoppingCart
+                        currentPedidoId = null // Limpar pedido ID
                         currentScreen = Screen.STORES // Navigate back to stores for now
                     }
                 },
@@ -506,6 +509,7 @@ fun LineCutNavigation(
                 onFinishPaymentClick = {
                     // Clear cart after payment completion
                     cartItems = emptyList()
+                    shoppingCart = emptyList() // Limpar também o shoppingCart
                     // Clear pedido ID as the payment is completed
                     currentPedidoId = null
                     // Navigate to pickup QR screen
