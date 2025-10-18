@@ -16,10 +16,12 @@ data class Pedido(
     val id_usuario: String = "",
     val id_lanchonete: String = "",
     var status_pedido: String = "pendente", // pendente, em_preparo, pronto_para_retirada, finalizado, cancelado
+    var metodo_pagamento: String = "pix", // pix, local
+    var status_pagamento: String = "pendente", // pendente, pago
     var preco_total: Double = 0.0,
     var datahora_criacao: String = "",
     var datahora_pagamento: String = "",
-    var cod_transacao_pagamento: String = "",
+    var cod_transacao_pagamento: String = "", // txid do PIX (cobData.txid)
     var qr_code_pedido: String = "",
     val items: List<PedidoItem> = emptyList(),
     var avaliacao: Avaliacao? = null
@@ -37,9 +39,9 @@ data class Pedido(
     suspend fun criar_pedido(): Result<String> {
         return try {
             val database = FirebaseDatabase.getInstance()
-            // Gerar pushId do Firebase
-            val pedidoRef = database.getReference("pedidos").push()
-            val pedidoId = pedidoRef.key ?: UUID.randomUUID().toString()
+            // Usar o id_pedido do objeto (já foi definido antes)
+            val pedidoId = id_pedido
+            val pedidoRef = database.getReference("pedidos").child(pedidoId)
 
             // Montar snapshot dos itens
             val itemsMap = items.associateBy({ UUID.randomUUID().toString() }, { item ->
@@ -68,6 +70,8 @@ data class Pedido(
                 "id_usuario" to id_usuario,
                 "id_lanchonete" to id_lanchonete,
                 "status_pedido" to status_pedido,
+                "metodo_pagamento" to metodo_pagamento,
+                "status_pagamento" to status_pagamento,
                 "preco_total" to preco_total,
                 "datahora_criacao" to datahora_criacao,
                 "datahora_pagamento" to datahora_pagamento,
@@ -134,6 +138,8 @@ data class Pedido(
                 "id_usuario" to id_usuario,
                 "id_lanchonete" to id_lanchonete,
                 "status_pedido" to status_pedido,
+                "metodo_pagamento" to metodo_pagamento,
+                "status_pagamento" to status_pagamento,
                 "preco_total" to preco_total,
                 "datahora_criacao" to datahora_criacao,
                 "datahora_pagamento" to datahora_pagamento,
@@ -171,7 +177,8 @@ data class Pedido(
         fun fromCarrinho(
             carrinho: List<CartItem>,
             idUsuario: String,
-            idLanchonete: String
+            idLanchonete: String,
+            metodoPagamento: String = "pix" // pix ou local
         ): Pedido {
             val items = carrinho.map {
                 PedidoItem(
@@ -186,10 +193,16 @@ data class Pedido(
             val now = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).apply {
                 timeZone = java.util.TimeZone.getTimeZone("UTC")
             }.format(java.util.Date())
+            
+            // Define status_pagamento baseado no método
+            val statusPagamento = if (metodoPagamento == "local") "pendente" else "pendente"
+            
             return Pedido(
                 id_usuario = idUsuario,
                 id_lanchonete = idLanchonete,
                 status_pedido = "pendente",
+                metodo_pagamento = metodoPagamento,
+                status_pagamento = statusPagamento,
                 preco_total = total,
                 datahora_criacao = now,
                 items = items

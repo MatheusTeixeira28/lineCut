@@ -38,6 +38,11 @@ fun QRCodePixScreen(
     onFinishPaymentClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    // Log para debug - verificar se qrCodeBase64 está chegando
+    LaunchedEffect(qrCodeBase64) {
+        android.util.Log.d("QRCodePixScreen", "Tela recomposta - qrCodeBase64: ${if (qrCodeBase64.isNullOrEmpty()) "VAZIO" else "${qrCodeBase64.length} chars"}")
+    }
+    
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -118,9 +123,13 @@ fun QRCodePixScreen(
             .align(Alignment.TopCenter),
                 contentAlignment = Alignment.Center
             ) {
-                // Processar QR Code base64
+                // Processar QR Code base64 - usar key mais específica para evitar recomputação
+                val hasQrCode = remember(qrCodeBase64) { 
+                    !qrCodeBase64.isNullOrEmpty() 
+                }
+                
                 val qrBitmap = remember(qrCodeBase64) {
-                    if (qrCodeBase64 != null && qrCodeBase64.isNotEmpty()) {
+                    if (!qrCodeBase64.isNullOrEmpty()) {
                         try {
                             // Remover prefixo data:image/png;base64, se existir
                             val base64String = if (qrCodeBase64.contains("base64,")) {
@@ -129,19 +138,23 @@ fun QRCodePixScreen(
                                 qrCodeBase64
                             }
                             
+                            android.util.Log.d("QRCodePixScreen", "Decodificando QR Code base64 (${base64String.length} chars)")
                             val imageBytes = Base64.decode(base64String, Base64.DEFAULT)
-                            BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                            val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                            android.util.Log.d("QRCodePixScreen", "QR Code decodificado com sucesso: ${bitmap != null}")
+                            bitmap
                         } catch (e: Exception) {
                             android.util.Log.e("QRCodePixScreen", "Erro ao decodificar base64", e)
                             null
                         }
                     } else {
+                        android.util.Log.d("QRCodePixScreen", "Nenhum QR Code base64 fornecido")
                         null
                     }
                 }
                 
-                // Exibir QR Code
-                if (qrBitmap != null) {
+                // Exibir QR Code - priorizar bitmap se disponível
+                if (hasQrCode && qrBitmap != null) {
                     Image(
                         bitmap = qrBitmap.asImageBitmap(),
                         contentDescription = "QR Code PIX",
@@ -149,13 +162,15 @@ fun QRCodePixScreen(
                         contentScale = ContentScale.Fit
                     )
                 } else {
-                    // Fallback para imagem padrão
-                    Image(
-                        painter = painterResource(id = R.drawable.qr_code),
-                        contentDescription = "QR Code PIX",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Fit
-                    )
+                    // Fallback para imagem padrão apenas se não houver base64
+                    if (!hasQrCode) {
+                        Image(
+                            painter = painterResource(id = R.drawable.qr_code),
+                            contentDescription = "QR Code PIX",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Fit
+                        )
+                    }
                 }
             }
             
