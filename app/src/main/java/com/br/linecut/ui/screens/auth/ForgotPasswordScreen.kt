@@ -17,12 +17,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,19 +40,27 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.br.linecut.ui.components.*
 import com.br.linecut.ui.theme.*
 import com.br.linecut.ui.theme.LineCutRed
 import com.br.linecut.ui.theme.LineCutTheme
 import com.br.linecut.ui.theme.TextSecondary
+import com.br.linecut.ui.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun ForgotPasswordScreen(
     modifier: Modifier = Modifier,
     onSendEmailClick: (String) -> Unit = { _ -> },
-    onCancelClick: () -> Unit = {}
+    onCancelClick: () -> Unit = {},
+    authViewModel: AuthViewModel = viewModel()
 ) {
     var email by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+    var successMessage by remember { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
     
     val isEmailValid = email.isNotBlank() && email.contains("@")
 
@@ -132,24 +142,96 @@ fun ForgotPasswordScreen(
                         // Email Field
                         LineCutTextField(
                             value = email,
-                            onValueChange = { email = it },
+                            onValueChange = { 
+                                email = it
+                                // Limpar mensagens quando o usuário digitar
+                                if (errorMessage.isNotEmpty()) errorMessage = ""
+                                if (successMessage.isNotEmpty()) successMessage = ""
+                            },
                             placeholder = "Email",
                             leadingIcon = Icons.Outlined.Email,
                             keyboardType = KeyboardType.Email,
                             modifier = Modifier.fillMaxWidth()
                         )
+                        
+                        LineCutSpacer(LineCutSpacing.Small)
+                        
+                        // Mensagem de erro
+                        if (errorMessage.isNotEmpty()) {
+                            Text(
+                                text = errorMessage,
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    color = LineCutRed,
+                                    fontSize = 11.sp
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                        
+                        // Mensagem de sucesso
+                        if (successMessage.isNotEmpty()) {
+                            Text(
+                                text = successMessage,
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    color = Color(0xFF4CAF50), // Verde
+                                    fontSize = 11.sp
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                     
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Send Button
+                        // Send Button com loading
                         LineCutPrimaryButton(
-                            text = "Enviar",
-                            onClick = { onSendEmailClick(email) },
-                            enabled = isEmailValid,
+                            text = if (isLoading) "" else "Enviar",
+                            onClick = {
+                                android.util.Log.d("PASSWORD_RESET", "Screen: Botão 'Enviar' clicado para email: $email")
+                                coroutineScope.launch {
+                                    isLoading = true
+                                    errorMessage = ""
+                                    successMessage = ""
+                                    
+                                    android.util.Log.d("PASSWORD_RESET", "Screen: Chamando authViewModel.sendPasswordResetEmail()")
+                                    android.util.Log.d("PASSWORD_RESET", "email " + email )
+                                    val result = authViewModel.sendPasswordResetEmail(email)
+                                    
+                                    result.onSuccess { message ->
+                                        android.util.Log.d("PASSWORD_RESET", "Screen: ✅ Sucesso - Mensagem: $message")
+                                        successMessage = message
+                                        // Chamar callback de sucesso
+                                        onSendEmailClick(email)
+                                    }.onFailure { error ->
+                                        android.util.Log.e("PASSWORD_RESET", "Screen: ❌ Erro - ${error.message}")
+                                        errorMessage = error.message ?: "Erro ao enviar email"
+                                    }
+                                    
+                                    isLoading = false
+                                    android.util.Log.d("PASSWORD_RESET", "Screen: Processo finalizado")
+                                }
+                            },
+                            enabled = isEmailValid && !isLoading,
                             modifier = Modifier.width(196.dp)
                         )
+                        
+                        // Loading indicator dentro do botão
+                        if (isLoading) {
+                            Box(
+                                modifier = Modifier
+                                    .width(196.dp)
+                                    .height(48.dp)
+                                    .offset(y = (-48).dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                            }
+                        }
                         
                         LineCutSpacer(LineCutSpacing.Medium)
                         

@@ -1,16 +1,20 @@
 package com.br.linecut.data.repository
 
+import android.util.Log
+import android.util.Patterns
 import com.br.linecut.data.firebase.FirebaseConfig
 import com.br.linecut.data.models.AuthResult
 import com.br.linecut.data.models.User
 import com.br.linecut.data.models.ValidationResult
+import com.br.linecut.ui.utils.ImageCache
+import com.br.linecut.ui.utils.ValidationUtils
+import com.google.firebase.Firebase
+import com.google.firebase.auth.ActionCodeSettings
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.auth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
-import android.util.Patterns
-import com.br.linecut.ui.utils.ImageCache
-import com.br.linecut.ui.utils.ValidationUtils
 
 /**
  * Repositório para gerenciar operações de autenticação e usuários no Firebase
@@ -127,6 +131,72 @@ class AuthRepository {
     }
     
     /**
+     * Envia email de redefinição de senha
+     * O Firebase só envia o email se a conta existir
+     */
+    suspend fun sendPasswordResetEmail(email: String): Result<String> {
+        return try {
+            Log.d("PASSWORD_RESET", "Iniciando processo de reset de senha para: $email")
+            
+            // Validar email
+            if (email.isBlank()) {
+                Log.e("PASSWORD_RESET", "Email vazio")
+                return Result.failure(Exception("Email não pode estar vazio"))
+            }
+            
+            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                Log.e("PASSWORD_RESET", "Email inválido: $email")
+                return Result.failure(Exception("Email inválido"))
+            }
+            
+            Log.d("PASSWORD_RESET", "Email validado, enviando requisição para Firebase Auth...")
+            
+            // Configurar idioma do email para Português
+            auth.setLanguageCode("pt")
+            Log.d("PASSWORD_RESET", "Idioma configurado: Português (pt)")
+            
+
+
+            // Tentar enviar email de redefinição com configurações customizadas
+            auth.sendPasswordResetEmail(email)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        Log.d("PASSWORD_RESET", "Email sent.")
+                    }
+                }
+
+            Result.success("Se este email estiver cadastrado, você receberá um link para redefinir sua senha")
+        } catch (e: Exception) {
+            android.util.Log.e("PASSWORD_RESET", "❌ Erro ao enviar email de reset: ${e.message}", e)
+            android.util.Log.e("PASSWORD_RESET", "Tipo de exceção: ${e.javaClass.simpleName}")
+            
+            // Capturar erros específicos
+            when {
+                e.message?.contains("user-not-found") == true -> {
+                    android.util.Log.e("PASSWORD_RESET", "Erro: Usuário não encontrado")
+                    Result.failure(Exception("Nenhuma conta encontrada com este email"))
+                }
+                e.message?.contains("invalid-email") == true -> {
+                    android.util.Log.e("PASSWORD_RESET", "Erro: Email inválido")
+                    Result.failure(Exception("Email inválido"))
+                }
+                e.message?.contains("too-many-requests") == true -> {
+                    android.util.Log.e("PASSWORD_RESET", "Erro: Muitas tentativas")
+                    Result.failure(Exception("Muitas tentativas. Tente novamente mais tarde"))
+                }
+                e.message?.contains("network") == true -> {
+                    android.util.Log.e("PASSWORD_RESET", "Erro: Problema de rede")
+                    Result.failure(Exception("Erro de conexão. Verifique sua internet"))
+                }
+                else -> {
+                    android.util.Log.e("PASSWORD_RESET", "Erro desconhecido: ${e.message}")
+                    Result.failure(Exception(e.message ?: "Erro ao enviar email de redefinição"))
+                }
+            }
+        }
+    }
+    
+    /**
      * Verifica se o email já existe no banco de dados
      */
     private suspend fun checkEmailExists(email: String): Boolean {
@@ -223,6 +293,23 @@ class AuthRepository {
             exception.message?.contains("network") == true -> 
                 "Erro de conexão. Verifique sua internet"
             else -> exception.message ?: "Erro desconhecido ao criar conta"
+        }
+    }
+    
+    /**
+     * Converte exceções de reset de senha Firebase em mensagens de erro amigáveis
+     */
+    private fun getPasswordResetErrorMessage(exception: Exception): String {
+        return when {
+            exception.message?.contains("user-not-found") == true -> 
+                "Nenhuma conta encontrada com este email"
+            exception.message?.contains("invalid-email") == true -> 
+                "Email inválido"
+            exception.message?.contains("too-many-requests") == true -> 
+                "Muitas tentativas. Tente novamente mais tarde"
+            exception.message?.contains("network") == true -> 
+                "Erro de conexão. Verifique sua internet"
+            else -> exception.message ?: "Erro ao enviar email de redefinição"
         }
     }
     

@@ -97,6 +97,31 @@ class AuthViewModel : ViewModel() {
     }
     
     /**
+     * Envia email de redefinição de senha
+     * Retorna true se o email foi enviado com sucesso, false caso contrário
+     */
+    suspend fun sendPasswordResetEmail(email: String): Result<String> {
+        return try {
+            android.util.Log.d("PASSWORD_RESET", "ViewModel: Iniciando envio de email de reset")
+            _isLoading.value = true
+            val result = authRepository.sendPasswordResetEmail(email)
+            _isLoading.value = false
+            
+            if (result.isSuccess) {
+                android.util.Log.d("PASSWORD_RESET", "ViewModel: ✅ Email enviado com sucesso")
+            } else {
+                android.util.Log.e("PASSWORD_RESET", "ViewModel: ❌ Falha ao enviar email: ${result.exceptionOrNull()?.message}")
+            }
+            
+            result
+        } catch (e: Exception) {
+            android.util.Log.e("PASSWORD_RESET", "ViewModel: ❌ Exceção capturada: ${e.message}", e)
+            _isLoading.value = false
+            Result.failure(e)
+        }
+    }
+    
+    /**
      * Faz logout do usuário
      */
     fun logoutUser() {
