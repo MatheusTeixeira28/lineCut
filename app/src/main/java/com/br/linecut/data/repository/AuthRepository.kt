@@ -137,62 +137,41 @@ class AuthRepository {
     suspend fun sendPasswordResetEmail(email: String): Result<String> {
         return try {
             Log.d("PASSWORD_RESET", "Iniciando processo de reset de senha para: $email")
-            
+
             // Validar email
             if (email.isBlank()) {
                 Log.e("PASSWORD_RESET", "Email vazio")
                 return Result.failure(Exception("Email não pode estar vazio"))
             }
-            
+
             if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
                 Log.e("PASSWORD_RESET", "Email inválido: $email")
                 return Result.failure(Exception("Email inválido"))
             }
-            
+
             Log.d("PASSWORD_RESET", "Email validado, enviando requisição para Firebase Auth...")
-            
+
             // Configurar idioma do email para Português
             auth.setLanguageCode("pt")
             Log.d("PASSWORD_RESET", "Idioma configurado: Português (pt)")
-            
 
+            // --- CORREÇÃO PRINCIPAL ---
+            // 1. Adicionamos .await() para esperar a tarefa do Firebase terminar
+            // 2. Removemos o .addOnCompleteListener, pois o await() já faz isso
+            auth.sendPasswordResetEmail(email).await()
 
-            // Tentar enviar email de redefinição com configurações customizadas
-            auth.sendPasswordResetEmail(email)
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        Log.d("PASSWORD_RESET", "Email sent.")
-                    }
-                }
-
+            // 3. Esta linha SÓ será executada se o .await() acima for concluído sem erros
+            Log.d("PASSWORD_RESET", "✅ Firebase task concluída com sucesso.")
             Result.success("Se este email estiver cadastrado, você receberá um link para redefinir sua senha")
+
         } catch (e: Exception) {
-            android.util.Log.e("PASSWORD_RESET", "❌ Erro ao enviar email de reset: ${e.message}", e)
+            // 4. O .await() joga uma exceção se o Firebase falhar (ex: user-not-found)
+            //    Agora o bloco catch vai funcionar e usar sua função auxiliar
+            android.util.Log.e("PASSWORD_RESET", "❌ Erro ao enviar email de reset (capturado pelo await): ${e.message}", e)
             android.util.Log.e("PASSWORD_RESET", "Tipo de exceção: ${e.javaClass.simpleName}")
-            
-            // Capturar erros específicos
-            when {
-                e.message?.contains("user-not-found") == true -> {
-                    android.util.Log.e("PASSWORD_RESET", "Erro: Usuário não encontrado")
-                    Result.failure(Exception("Nenhuma conta encontrada com este email"))
-                }
-                e.message?.contains("invalid-email") == true -> {
-                    android.util.Log.e("PASSWORD_RESET", "Erro: Email inválido")
-                    Result.failure(Exception("Email inválido"))
-                }
-                e.message?.contains("too-many-requests") == true -> {
-                    android.util.Log.e("PASSWORD_RESET", "Erro: Muitas tentativas")
-                    Result.failure(Exception("Muitas tentativas. Tente novamente mais tarde"))
-                }
-                e.message?.contains("network") == true -> {
-                    android.util.Log.e("PASSWORD_RESET", "Erro: Problema de rede")
-                    Result.failure(Exception("Erro de conexão. Verifique sua internet"))
-                }
-                else -> {
-                    android.util.Log.e("PASSWORD_RESET", "Erro desconhecido: ${e.message}")
-                    Result.failure(Exception(e.message ?: "Erro ao enviar email de redefinição"))
-                }
-            }
+
+            // Usando a sua função auxiliar (linha 285) para tratar a mensagem de erro
+            Result.failure(Exception(getPasswordResetErrorMessage(e)))
         }
     }
     
