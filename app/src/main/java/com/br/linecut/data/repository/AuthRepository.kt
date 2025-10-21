@@ -8,10 +8,8 @@ import com.br.linecut.data.models.User
 import com.br.linecut.data.models.ValidationResult
 import com.br.linecut.ui.utils.ImageCache
 import com.br.linecut.ui.utils.ValidationUtils
-import com.google.firebase.Firebase
 import com.google.firebase.auth.ActionCodeSettings
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.auth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
@@ -129,67 +127,55 @@ class AuthRepository {
         // Limpar o cache de imagens ao fazer logout
         ImageCache.clear()
     }
-    
+
     /**
      * Envia email de redefinição de senha
      * O Firebase só envia o email se a conta existir
      */
     suspend fun sendPasswordResetEmail(email: String): Result<String> {
         return try {
-            Log.d("PASSWORD_RESET", "Iniciando processo de reset de senha para: $email")
-
-            // Validar email
-            if (email.isBlank()) {
-                Log.e("PASSWORD_RESET", "Email vazio")
+            if (email.isBlank())
                 return Result.failure(Exception("Email não pode estar vazio"))
-            }
 
-            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                Log.e("PASSWORD_RESET", "Email inválido: $email")
+            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches())
                 return Result.failure(Exception("Email inválido"))
-            }
 
-            Log.d("PASSWORD_RESET", "Email validado, enviando requisição para Firebase Auth...")
-
-            // Configurar idioma do email para Português
             auth.setLanguageCode("pt")
-            Log.d("PASSWORD_RESET", "Idioma configurado: Português (pt)")
 
-            // --- CORREÇÃO PRINCIPAL ---
-            // 1. Adicionamos .await() para esperar a tarefa do Firebase terminar
-            // 2. Removemos o .addOnCompleteListener, pois o await() já faz isso
-            auth.sendPasswordResetEmail(email).await()
+            val actionCodeSettings = ActionCodeSettings.newBuilder()
+                .setUrl("https://linecut-3bf2b.firebaseapp.com/__/auth/action")
+                .setHandleCodeInApp(false)
+                .setAndroidPackageName("com.br.linecut", false, null)
+                .build()
+            auth.sendPasswordResetEmail(email, actionCodeSettings).await()
 
-            // 3. Esta linha SÓ será executada se o .await() acima for concluído sem erros
-            Log.d("PASSWORD_RESET", "✅ Firebase task concluída com sucesso.")
             Result.success("Se este email estiver cadastrado, você receberá um link para redefinir sua senha")
-
         } catch (e: Exception) {
-            // 4. O .await() joga uma exceção se o Firebase falhar (ex: user-not-found)
-            //    Agora o bloco catch vai funcionar e usar sua função auxiliar
-            android.util.Log.e("PASSWORD_RESET", "❌ Erro ao enviar email de reset (capturado pelo await): ${e.message}", e)
-            android.util.Log.e("PASSWORD_RESET", "Tipo de exceção: ${e.javaClass.simpleName}")
-
-            // Usando a sua função auxiliar (linha 285) para tratar a mensagem de erro
             Result.failure(Exception(getPasswordResetErrorMessage(e)))
         }
-    }
-    
+}
     /**
      * Verifica se o email já existe no banco de dados
      */
     private suspend fun checkEmailExists(email: String): Boolean {
-        return try {
-            val query = realtimeDatabase.getReference("usuarios")
-                .orderByChild("email")
-                .equalTo(email)
-            
-            val snapshot = query.get().await()
-            snapshot.exists()
-        } catch (e: Exception) {
-            false // Em caso de erro, permite continuar
-        }
+    return try {
+        Log.d("AUTH_REPOSITORY", "Verificando se email existe: $email")
+        
+        // Verificar no Firebase Auth (não no Realtime Database!)
+        val signInMethods = auth.fetchSignInMethodsForEmail(email).await()
+        val exists = !signInMethods.signInMethods.isNullOrEmpty()
+        
+        Log.d("AUTH_REPOSITORY", "Email $email existe no Firebase Auth? $exists")
+        Log.d("AUTH_REPOSITORY", "Métodos de login: ${signInMethods.signInMethods}")
+        
+        exists
+        
+    } catch (e: Exception) {
+        Log.e("AUTH_REPOSITORY", "Erro ao verificar email: ${e.message}", e)
+        // Em caso de erro de rede, permite continuar (não bloqueia cadastro)
+        false
     }
+}
     
     /**
      * Valida os dados do formulário de cadastro

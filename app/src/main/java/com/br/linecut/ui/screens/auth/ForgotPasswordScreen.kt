@@ -193,23 +193,16 @@ fun ForgotPasswordScreen(
                                     isLoading = true
                                     errorMessage = ""
                                     successMessage = ""
-                                    
-                                    android.util.Log.d("PASSWORD_RESET", "Screen: Chamando authViewModel.sendPasswordResetEmail()")
-                                    android.util.Log.d("PASSWORD_RESET", "email " + email )
+
                                     val result = authViewModel.sendPasswordResetEmail(email)
                                     
                                     result.onSuccess { message ->
-                                        android.util.Log.d("PASSWORD_RESET", "Screen: ✅ Sucesso - Mensagem: $message")
                                         successMessage = message
-                                        // Chamar callback de sucesso
                                         onSendEmailClick(email)
                                     }.onFailure { error ->
-                                        android.util.Log.e("PASSWORD_RESET", "Screen: ❌ Erro - ${error.message}")
                                         errorMessage = error.message ?: "Erro ao enviar email"
                                     }
-                                    
                                     isLoading = false
-                                    android.util.Log.d("PASSWORD_RESET", "Screen: Processo finalizado")
                                 }
                             },
                             enabled = isEmailValid && !isLoading,
