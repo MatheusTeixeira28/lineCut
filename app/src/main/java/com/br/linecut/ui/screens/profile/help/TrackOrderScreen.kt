@@ -1,4 +1,4 @@
-package com.br.linecut.ui.screens
+package com.br.linecut.ui.screens.profile.help
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -26,7 +26,7 @@ import com.br.linecut.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HowToOrderScreen(
+fun TrackOrderScreen(
     onBackClick: () -> Unit = {},
     onHomeClick: () -> Unit = {},
     onSearchClick: () -> Unit = {},
@@ -35,10 +35,10 @@ fun HowToOrderScreen(
     onProfileClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
+    Box(
+        modifier = modifier
             .statusBarsPadding()
+            .fillMaxSize()
             .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
         // Header seguindo o design do Figma - mesmo header do HelpScreen
@@ -46,15 +46,13 @@ fun HowToOrderScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(126.dp)
-                .background(
-                    LineCutDesignSystem.screenBackgroundColor,
-                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
-                )
                 .shadow(
                     elevation = 4.dp,
-                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp),
-                    ambientColor = Color.Black.copy(alpha = 0.25f),
-                    spotColor = Color.Black.copy(alpha = 0.25f)
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
+                )
+                .background(
+                    color = Color.White,
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
                 )
         ) {
             // Botão voltar - posição baseada no Figma
@@ -90,17 +88,17 @@ fun HowToOrderScreen(
         // Conteúdo da tela - seguindo o design do Figma
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .background(LineCutDesignSystem.screenBackgroundColor)
+                .fillMaxSize()
+                .padding(top = 126.dp) // Padding para não sobrepor o header
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 34.dp)
+                .padding(bottom = 80.dp) // Bottom padding para o navigation
         ) {
             Spacer(modifier = Modifier.height(26.dp))
             
-            // Título "Como fazer um pedido?" - posição baseada no Figma
+            // Título "Como acompanhar meu pedido?" - posição baseada no Figma
             Text(
-                text = "Como fazer um pedido?",
+                text = "Como acompanhar meu pedido?",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 color = LineCutRed,
@@ -120,31 +118,36 @@ fun HowToOrderScreen(
             
             Spacer(modifier = Modifier.height(28.dp))
             
-            // Lista de instruções numeradas
+            // Conteúdo da explicação
             Column(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 23.dp, end = 23.dp)
             ) {
-                InstructionItem(
-                    number = "1.",
-                    text = "Acesse a lanchonete desejada na lista."
+                // Texto introdutório
+                Text(
+                    text = "Após fazer o pedido, vá até a aba \"Pedidos\".\nVocê verá o status atualizado em tempo real, incluindo:",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF7D7D7D),
+                    textAlign = TextAlign.Justify,
+                    lineHeight = 18.sp,
+                    modifier = Modifier.width(306.dp)
                 )
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                InstructionItem(
-                    number = "2.",
-                    text = "Escolha os itens do cardápio e adicione ao carrinho."
-                )
+                // Lista de itens com bullets
+                TrackOrderBulletItem(text = "Posição na fila")
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                InstructionItem(
-                    number = "3.",
-                    text = "Finalize o pedido e aguarde a confirmação."
-                )
+                TrackOrderBulletItem(text = "Tempo estimado de preparo")
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                TrackOrderBulletItem(text = "Notification sobre o andamento (ex: \"em preparo\", \"pronto para retirada\")")
             }
-            
-            Spacer(modifier = Modifier.height(60.dp)) // Espaço para o bottom navigation
         }
 
         // Bottom navigation
@@ -154,14 +157,14 @@ fun HowToOrderScreen(
             onSearchClick = onSearchClick,
             onNotificationClick = onNotificationClick,
             onOrdersClick = onOrdersClick,
-            onProfileClick = onProfileClick
+            onProfileClick = onProfileClick,
+            modifier = Modifier.align(Alignment.BottomCenter)
         )
     }
 }
 
 @Composable
-private fun InstructionItem(
-    number: String,
+private fun TrackOrderBulletItem(
     text: String,
     modifier: Modifier = Modifier
 ) {
@@ -169,42 +172,42 @@ private fun InstructionItem(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Top
     ) {
-        // Número da instrução - posição baseada no Figma
+        // Bullet point
         Text(
-            text = number,
+            text = "•",
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
-            color = LineCutRed,
-            modifier = Modifier.padding(start = 19.dp, end = 28.dp)
+            color = Color(0xFF7D7D7D),
+            modifier = Modifier.padding(end = 8.dp)
         )
         
-        // Texto da instrução - posição baseada no Figma
+        // Texto do item
         Text(
             text = text,
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
             color = Color(0xFF7D7D7D),
             textAlign = TextAlign.Justify,
-            modifier = Modifier.width(291.dp)
+            lineHeight = 18.sp,
+            modifier = Modifier.weight(1f)
         )
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun HowToOrderScreenPreview() {
+fun TrackOrderScreenPreview() {
     LineCutTheme {
-        HowToOrderScreen()
+        TrackOrderScreen()
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun InstructionItemPreview() {
+fun TrackOrderBulletItemPreview() {
     LineCutTheme {
-        InstructionItem(
-            number = "1.",
-            text = "Acesse a lanchonete desejada na lista."
+        TrackOrderBulletItem(
+            text = "Posição na fila"
         )
     }
 }

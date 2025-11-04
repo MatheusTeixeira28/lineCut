@@ -1,12 +1,10 @@
-package com.br.linecut.ui.screens
+package com.br.linecut.ui.screens.profile.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.br.linecut.R
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
+import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.components.NavigationItem
 import com.br.linecut.ui.theme.*
 
@@ -34,25 +33,24 @@ fun PrivacyPolicyScreen(
     onProfileClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    Column(
+    Box(
         modifier = modifier
+            .statusBarsPadding()
             .fillMaxSize()
-            .background(Color.White)
+            .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
         // Header com fundo branco e sombra
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(126.dp)
-                .background(
-                    Color.White,
-                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
-                )
                 .shadow(
                     elevation = 4.dp,
-                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp),
-                    ambientColor = Color.Black.copy(alpha = 0.25f),
-                    spotColor = Color.Black.copy(alpha = 0.25f)
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
+                )
+                .background(
+                    color = LineCutDesignSystem.screenBackgroundColor,
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
                 )
         ) {
             // Botão voltar
@@ -88,10 +86,11 @@ fun PrivacyPolicyScreen(
         // Conteúdo da Política de Privacidade
         Column(
             modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
+                .fillMaxSize()
+                .padding(top = 126.dp) // Padding para não sobrepor o header
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 34.dp, vertical = 24.dp)
+                .padding(horizontal = 34.dp)
+                .padding(top = 24.dp, bottom = 100.dp) // Bottom padding para o navigation
         ) {
             // Seção 1: Dados Coletados
             PrivacySection(
@@ -134,9 +133,6 @@ fun PrivacyPolicyScreen(
                 title = "7. Contato",
                 content = "Em caso de dúvidas sobre esta Política de Privacidade, entre em contato pelo e-mail:\nprivacidade@linecut.app.br"
             )
-
-            // Espaço extra para o bottom navigation
-            Spacer(modifier = Modifier.height(20.dp))
         }
 
         // Bottom Navigation
@@ -146,7 +142,8 @@ fun PrivacyPolicyScreen(
             onSearchClick = onSearchClick,
             onNotificationClick = onNotificationClick,
             onOrdersClick = onOrdersClick,
-            onProfileClick = onProfileClick
+            onProfileClick = onProfileClick,
+            modifier = Modifier.align(Alignment.BottomCenter)
         )
     }
 }

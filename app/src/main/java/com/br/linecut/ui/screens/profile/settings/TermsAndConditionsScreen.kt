@@ -1,4 +1,4 @@
-package com.br.linecut.ui.screens
+package com.br.linecut.ui.screens.profile.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

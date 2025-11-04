@@ -1,4 +1,4 @@
-package com.br.linecut.ui.screens
+package com.br.linecut.ui.screens.profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -61,7 +61,8 @@ fun NotificationsScreen(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier
+        modifier = Modifier
+            .statusBarsPadding()
             .fillMaxSize()
             .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
@@ -70,15 +71,13 @@ fun NotificationsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(126.dp)
-                .background(
-                    LineCutDesignSystem.screenBackgroundColor,
-                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
-                )
                 .shadow(
                     elevation = 4.dp,
-                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp),
-                    ambientColor = Color.Black.copy(alpha = 0.25f),
-                    spotColor = Color.Black.copy(alpha = 0.25f)
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
+                )
+                .background(
+                    color = Color.White,
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
                 )
         ) {
             // Botão voltar

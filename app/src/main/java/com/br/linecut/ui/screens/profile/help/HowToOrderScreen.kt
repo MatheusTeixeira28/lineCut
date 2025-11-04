@@ -1,4 +1,4 @@
-package com.br.linecut.ui.screens
+package com.br.linecut.ui.screens.profile.help
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -26,7 +26,7 @@ import com.br.linecut.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FAQScreen(
+fun HowToOrderScreen(
     onBackClick: () -> Unit = {},
     onHomeClick: () -> Unit = {},
     onSearchClick: () -> Unit = {},
@@ -35,10 +35,10 @@ fun FAQScreen(
     onProfileClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
+    Box(
+        modifier = modifier
             .statusBarsPadding()
+            .fillMaxSize()
             .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
         // Header seguindo o design do Figma - mesmo header do HelpScreen
@@ -46,15 +46,13 @@ fun FAQScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(126.dp)
-                .background(
-                    LineCutDesignSystem.screenBackgroundColor,
-                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
-                )
                 .shadow(
                     elevation = 4.dp,
-                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp),
-                    ambientColor = Color.Black.copy(alpha = 0.25f),
-                    spotColor = Color.Black.copy(alpha = 0.25f)
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
+                )
+                .background(
+                    color = Color.White,
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
                 )
         ) {
             // Botão voltar - posição baseada no Figma
@@ -90,17 +88,17 @@ fun FAQScreen(
         // Conteúdo da tela - seguindo o design do Figma
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .background(LineCutDesignSystem.screenBackgroundColor)
+                .fillMaxSize()
+                .padding(top = 126.dp) // Padding para não sobrepor o header
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 34.dp)
+                .padding(bottom = 80.dp) // Bottom padding para o navigation
         ) {
             Spacer(modifier = Modifier.height(26.dp))
             
-            // Título "Dúvidas frequentes (FAQ)" - posição baseada no Figma
+            // Título "Como fazer um pedido?" - posição baseada no Figma
             Text(
-                text = "Dúvidas frequentes (FAQ)",
+                text = "Como fazer um pedido?",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 color = LineCutRed,
@@ -120,42 +118,29 @@ fun FAQScreen(
             
             Spacer(modifier = Modifier.height(28.dp))
             
-            // Lista de perguntas e respostas
+            // Lista de instruções numeradas
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                FAQItem(
+                InstructionItem(
                     number = "1.",
-                    question = "Posso alterar meu pedido depois de enviar?",
-                    answer = "Não, após confirmado, ele vai direto para a fila da lanchonete."
+                    text = "Acesse a lanchonete desejada na lista."
                 )
                 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 
-                FAQItem(
+                InstructionItem(
                     number = "2.",
-                    question = "Posso pedir em mais de uma lanchonete ao mesmo tempo?",
-                    answer = "Sim, desde que elas estejam disponíveis na praça."
+                    text = "Escolha os itens do cardápio e adicione ao carrinho."
                 )
                 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 
-                FAQItem(
+                InstructionItem(
                     number = "3.",
-                    question = "Recebo notificação quando meu pedido estiver pronto?",
-                    answer = "Sim! Você será avisado por push."
-                )
-                
-                Spacer(modifier = Modifier.height(20.dp))
-                
-                FAQItem(
-                    number = "4.",
-                    question = "Como sei que meu pagamento foi aprovado?",
-                    answer = "Você receberá a confirmação imediatamente no app."
+                    text = "Finalize o pedido e aguarde a confirmação."
                 )
             }
-            
-            Spacer(modifier = Modifier.height(60.dp)) // Espaço para o bottom navigation
         }
 
         // Bottom navigation
@@ -165,76 +150,58 @@ fun FAQScreen(
             onSearchClick = onSearchClick,
             onNotificationClick = onNotificationClick,
             onOrdersClick = onOrdersClick,
-            onProfileClick = onProfileClick
+            onProfileClick = onProfileClick,
+            modifier = Modifier.align(Alignment.BottomCenter)
         )
     }
 }
 
 @Composable
-private fun FAQItem(
+private fun InstructionItem(
     number: String,
-    question: String,
-    answer: String,
+    text: String,
     modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Top
     ) {
-        // Número da pergunta - posição baseada no Figma
+        // Número da instrução - posição baseada no Figma
         Text(
             text = number,
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
             color = LineCutRed,
-            modifier = Modifier.padding(start = 8.dp, end = 19.dp, top = 0.dp)
+            modifier = Modifier.padding(start = 19.dp, end = 28.dp)
         )
         
-        // Pergunta e resposta
-        Column(
-            modifier = Modifier.width(318.dp)
-        ) {
-            // Pergunta em negrito
-            Text(
-                text = question,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF7D7D7D),
-                textAlign = TextAlign.Justify,
-                lineHeight = 18.sp
-            )
-            
-            Spacer(modifier = Modifier.height(4.dp))
-            
-            // Resposta normal
-            Text(
-                text = answer,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Normal,
-                color = Color(0xFF7D7D7D),
-                textAlign = TextAlign.Justify,
-                lineHeight = 18.sp
-            )
-        }
+        // Texto da instrução - posição baseada no Figma
+        Text(
+            text = text,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            color = Color(0xFF7D7D7D),
+            textAlign = TextAlign.Justify,
+            modifier = Modifier.width(291.dp)
+        )
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun FAQScreenPreview() {
+fun HowToOrderScreenPreview() {
     LineCutTheme {
-        FAQScreen()
+        HowToOrderScreen()
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun FAQItemPreview() {
+fun InstructionItemPreview() {
     LineCutTheme {
-        FAQItem(
+        InstructionItem(
             number = "1.",
-            question = "Posso alterar meu pedido depois de enviar?",
-            answer = "Não, após confirmado, ele vai direto para a fila da lanchonete."
+            text = "Acesse a lanchonete desejada na lista."
         )
     }
 }

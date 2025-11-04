@@ -1,7 +1,6 @@
-package com.br.linecut.ui.screens
+package com.br.linecut.ui.screens.profile
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,14 +10,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -29,9 +26,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import java.net.URL
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import com.br.linecut.R
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.components.LineCutDesignSystem
@@ -124,7 +118,8 @@ fun ProfileScreen(
     )
 
     Box(
-        modifier = modifier
+        modifier = Modifier
+            .statusBarsPadding()
             .fillMaxSize()
             .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
@@ -157,15 +152,15 @@ fun ProfileScreen(
                     )
                 }
             }
-            
+
             // Conteúdo principal
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 23.dp)
-                    .padding(top = 45.dp, bottom = 70.dp)
+                    .padding(top = 45.dp, bottom = 100.dp)
             ) {
-                
+
                 // Card do perfil com foto e nome
                 Card(
                     modifier = Modifier
@@ -210,9 +205,9 @@ fun ProfileScreen(
                                 }
                             }
                         }
-                        
+
                         Spacer(modifier = Modifier.width(16.dp))
-                        
+
                         // Informações do usuário
                         Column {
                             Text(
@@ -236,9 +231,9 @@ fun ProfileScreen(
                         }
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(32.dp))
-                
+
                 // Lista de itens do menu
                 Column(
                     modifier = Modifier.fillMaxWidth()
@@ -250,24 +245,24 @@ fun ProfileScreen(
                             onClick = item.onClick,
                             modifier = Modifier.fillMaxWidth()
                         )
-                        
+
                         if (index < menuItems.size - 1) {
                             Spacer(modifier = Modifier.height(12.dp))
-                            
+
                             // Linha divisória
                             Divider(
                                 color = Color(0xFFE0E0E0),
                                 thickness = 0.5.dp,
                                 modifier = Modifier.padding(horizontal = 19.dp)
                             )
-                            
+
                             Spacer(modifier = Modifier.height(12.dp))
                         }
                     }
                 }
             }
         }
-        
+
         // Bottom Navigation - Fixa na parte inferior
         LineCutBottomNavigationBar(
             selectedItem = NavigationItem.PROFILE,

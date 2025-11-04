@@ -1,4 +1,4 @@
-package com.br.linecut.ui.screens
+package com.br.linecut.ui.screens.profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -75,10 +75,10 @@ fun HelpScreen(
         )
     )
 
-    Column(
+    Box(
         modifier = Modifier
-            .fillMaxSize()
             .statusBarsPadding()
+            .fillMaxSize()
             .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
         // Header seguindo o design do Figma - 206dp de altura
@@ -86,15 +86,13 @@ fun HelpScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(126.dp)
-                .background(
-                    LineCutDesignSystem.screenBackgroundColor,
-                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
-                )
                 .shadow(
                     elevation = 4.dp,
-                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp),
-                    ambientColor = Color.Black.copy(alpha = 0.25f),
-                    spotColor = Color.Black.copy(alpha = 0.25f)
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
+                )
+                .background(
+                    color = Color.White,
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
                 )
         ) {
             // Botão voltar - posição baseada no Figma
@@ -130,11 +128,11 @@ fun HelpScreen(
         // Lista de perguntas - seguindo o design do Figma com espaçamento menor
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .background(LineCutDesignSystem.screenBackgroundColor)
+                .fillMaxSize()
+                .padding(top = 126.dp) // Padding para não sobrepor o header
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 34.dp)
+                .padding(bottom = 80.dp) // Bottom padding para o navigation
         ) {
             Spacer(modifier = Modifier.height(28.dp))
             
@@ -158,8 +156,6 @@ fun HelpScreen(
                     Spacer(modifier = Modifier.height(9.dp))
                 }
             }
-            
-            Spacer(modifier = Modifier.height(60.dp)) // Espaço para o bottom navigation
         }
 
         // Bottom navigation
@@ -169,7 +165,8 @@ fun HelpScreen(
             onSearchClick = onSearchClick,
             onNotificationClick = onNotificationClick,
             onOrdersClick = onOrdersClick,
-            onProfileClick = onProfileClick
+            onProfileClick = onProfileClick,
+            modifier = Modifier.align(Alignment.BottomCenter)
         )
     }
 }
@@ -183,7 +180,7 @@ private fun HelpQuestionRow(
     Row(
         modifier = modifier
             .clickable { onClick() }
-            .height(36.dp), // Altura baseada no espaçamento do Figma
+            .padding(vertical = 8.dp), 
         verticalAlignment = Alignment.CenterVertically
     ) {
         Spacer(modifier = Modifier.width(25.dp))
@@ -193,8 +190,11 @@ private fun HelpQuestionRow(
             fontSize = 13.67.sp,
             fontWeight = FontWeight.Medium,
             color = Color(0xFF7D7D7D),
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            maxLines = 2 // Permite até 2 linhas se necessário
         )
+        
+        Spacer(modifier = Modifier.width(8.dp))
         
         Icon(
             imageVector = Icons.Default.ChevronRight,

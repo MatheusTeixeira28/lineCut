@@ -105,7 +105,8 @@ fun StoresScreen(
     }
 
    Box(
-        modifier = modifier
+        modifier = Modifier
+            .statusBarsPadding()
             .fillMaxSize()
             .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
@@ -133,7 +134,7 @@ fun StoresScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 30.dp, top = 82.dp)
+                    .padding(start = 30.dp, top = 80.dp)
             ) {
                 // Título "Lojas"
                 Text(

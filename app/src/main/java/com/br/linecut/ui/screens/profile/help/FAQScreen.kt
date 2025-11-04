@@ -1,4 +1,4 @@
-package com.br.linecut.ui.screens
+package com.br.linecut.ui.screens.profile.help
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -26,7 +26,7 @@ import com.br.linecut.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NotPickedUpScreen(
+fun FAQScreen(
     onBackClick: () -> Unit = {},
     onHomeClick: () -> Unit = {},
     onSearchClick: () -> Unit = {},
@@ -35,10 +35,10 @@ fun NotPickedUpScreen(
     onProfileClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
+    Box(
+        modifier = modifier
             .statusBarsPadding()
+            .fillMaxSize()
             .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
         // Header seguindo o design do Figma - mesmo header do HelpScreen
@@ -46,15 +46,13 @@ fun NotPickedUpScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(126.dp)
-                .background(
-                    LineCutDesignSystem.screenBackgroundColor,
-                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
-                )
                 .shadow(
                     elevation = 4.dp,
-                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp),
-                    ambientColor = Color.Black.copy(alpha = 0.25f),
-                    spotColor = Color.Black.copy(alpha = 0.25f)
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
+                )
+                .background(
+                    color = Color.White,
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
                 )
         ) {
             // Botão voltar - posição baseada no Figma
@@ -90,27 +88,24 @@ fun NotPickedUpScreen(
         // Conteúdo da tela - seguindo o design do Figma
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .background(LineCutDesignSystem.screenBackgroundColor)
+                .fillMaxSize()
+                .padding(top = 126.dp) // Padding para não sobrepor o header
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 34.dp)
+                .padding(bottom = 80.dp) // Bottom padding para o navigation
         ) {
             Spacer(modifier = Modifier.height(26.dp))
             
-            // Título "O que fazer se meu pedido não for retirado?" - posição baseada no Figma
+            // Título "Dúvidas frequentes (FAQ)" - posição baseada no Figma
             Text(
-                text = "O que fazer se meu pedido não for retirado?",
+                text = "Dúvidas frequentes (FAQ)",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 color = LineCutRed,
-                lineHeight = 20.sp,
-                modifier = Modifier
-                    .padding(start = 11.dp)
-                    .width(346.dp)
+                modifier = Modifier.padding(start = 11.43.dp)
             )
             
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             
             // Linha divisória abaixo do título
             HorizontalDivider(
@@ -118,50 +113,45 @@ fun NotPickedUpScreen(
                 thickness = 1.dp,
                 modifier = Modifier
                     .width(145.dp)
-                    .padding(start = 11.dp)
+                    .padding(start = 11.43.dp)
             )
             
             Spacer(modifier = Modifier.height(28.dp))
             
-            // Texto introdutório
-            Text(
-                text = "Se você não conseguir retirar o pedido no tempo indicado pela lanchonete:",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color(0xFF7D7D7D),
-                textAlign = TextAlign.Justify,
-                modifier = Modifier
-                    .padding(start = 23.dp, end = 23.dp)
-                    .width(318.dp)
-            )
-            
-            Spacer(modifier = Modifier.height(20.dp))
-            
-            // Lista de instruções numeradas
+            // Lista de perguntas e respostas
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                NotPickedUpItem(
+                FAQItem(
                     number = "1.",
-                    text = "Verifique se houve algum erro no status ou notificação."
+                    question = "Posso alterar meu pedido depois de enviar?",
+                    answer = "Não, após confirmado, ele vai direto para a fila da lanchonete."
                 )
                 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(20.dp))
                 
-                NotPickedUpItem(
+                FAQItem(
                     number = "2.",
-                    text = "Entre em contato com o suporte ou diretamente com a lanchonete para verificar a situação."
+                    question = "Posso pedir em mais de uma lanchonete ao mesmo tempo?",
+                    answer = "Sim, desde que elas estejam disponíveis na praça."
                 )
                 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(20.dp))
                 
-                NotPickedUpItem(
+                FAQItem(
                     number = "3.",
-                    text = "Em caso de perda ou descarte do pedido, siga as orientações da política do estabelecimento."
+                    question = "Recebo notificação quando meu pedido estiver pronto?",
+                    answer = "Sim! Você será avisado por push."
+                )
+                
+                Spacer(modifier = Modifier.height(20.dp))
+                
+                FAQItem(
+                    number = "4.",
+                    question = "Como sei que meu pagamento foi aprovado?",
+                    answer = "Você receberá a confirmação imediatamente no app."
                 )
             }
-            
-            Spacer(modifier = Modifier.height(60.dp)) // Espaço para o bottom navigation
         }
 
         // Bottom navigation
@@ -171,58 +161,77 @@ fun NotPickedUpScreen(
             onSearchClick = onSearchClick,
             onNotificationClick = onNotificationClick,
             onOrdersClick = onOrdersClick,
-            onProfileClick = onProfileClick
+            onProfileClick = onProfileClick,
+            modifier = Modifier.align(Alignment.BottomCenter)
         )
     }
 }
 
 @Composable
-private fun NotPickedUpItem(
+private fun FAQItem(
     number: String,
-    text: String,
+    question: String,
+    answer: String,
     modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Top
     ) {
-        // Número da instrução - posição baseada no Figma
+        // Número da pergunta - posição baseada no Figma
         Text(
             text = number,
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
             color = LineCutRed,
-            modifier = Modifier.padding(start = 43.dp, end = 18.dp)
+            modifier = Modifier.padding(start = 8.dp, end = 19.dp, top = 0.dp)
         )
         
-        // Texto da instrução - posição baseada no Figma
-        Text(
-            text = text,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Medium,
-            color = Color(0xFF7D7D7D),
-            textAlign = TextAlign.Justify,
-            lineHeight = 18.sp,
-            modifier = Modifier.width(268.dp)
-        )
+        // Pergunta e resposta
+        Column(
+            modifier = Modifier.width(318.dp)
+        ) {
+            // Pergunta em negrito
+            Text(
+                text = question,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF7D7D7D),
+                textAlign = TextAlign.Justify,
+                lineHeight = 18.sp
+            )
+            
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            // Resposta normal
+            Text(
+                text = answer,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Normal,
+                color = Color(0xFF7D7D7D),
+                textAlign = TextAlign.Justify,
+                lineHeight = 18.sp
+            )
+        }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun NotPickedUpScreenPreview() {
+fun FAQScreenPreview() {
     LineCutTheme {
-        NotPickedUpScreen()
+        FAQScreen()
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun NotPickedUpItemPreview() {
+fun FAQItemPreview() {
     LineCutTheme {
-        NotPickedUpItem(
+        FAQItem(
             number = "1.",
-            text = "Verifique se houve algum erro no status ou notificação."
+            question = "Posso alterar meu pedido depois de enviar?",
+            answer = "Não, após confirmado, ele vai direto para a fila da lanchonete."
         )
     }
 }

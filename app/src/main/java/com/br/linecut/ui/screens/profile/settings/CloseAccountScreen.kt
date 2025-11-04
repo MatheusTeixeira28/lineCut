@@ -1,29 +1,23 @@
-package com.br.linecut.ui.screens
+package com.br.linecut.ui.screens.profile.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.br.linecut.R
-import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.components.LineCutDesignSystem
-import com.br.linecut.ui.components.NavigationItem
 import com.br.linecut.ui.theme.*
 
 @Composable
@@ -38,47 +32,18 @@ fun CloseAccountScreen(
     onProfileClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier
+    Box(
+        modifier = Modifier
+            .statusBarsPadding()
             .fillMaxSize()
             .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
-        // Header com fundo branco e sombra
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(126.dp)
-                .background(
-                    LineCutDesignSystem.screenBackgroundColor,
-                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
-                )
-                .shadow(
-                    elevation = 4.dp,
-                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp),
-                    ambientColor = Color.Black.copy(alpha = 0.25f),
-                    spotColor = Color.Black.copy(alpha = 0.25f)
-                )
-        ) {
-            // Título "Encerrar sua conta"
-            Text(
-                text = "Encerrar sua conta",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    color = LineCutRed,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp
-                ),
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(start = 30.dp, end = 34.dp, bottom = 16.dp),
-            )
-            
-        }
-
-        // Conteúdo da tela
+        // Conteúdo da tela com padding para não sobrepor o header
         Column(
             modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
+                .statusBarsPadding()
+                .fillMaxSize()
+                .padding(top = 126.dp) // Padding para não sobrepor o header
                 .padding(horizontal = 34.5.dp) // 357px/2 = 178.5, offset de 4.5px = 34.5dp de cada lado
                 .background(LineCutDesignSystem.screenBackgroundColor),
             horizontalAlignment = Alignment.Start
@@ -193,6 +158,35 @@ fun CloseAccountScreen(
                     )
                 }
             }
+        }
+        
+        // Header com fundo branco e sombra - DEVE FICAR POR ÚLTIMO para ficar por cima
+        Box(
+            modifier = Modifier
+                .statusBarsPadding()
+                .fillMaxWidth()
+                .height(126.dp)
+                .shadow(
+                    elevation = 4.dp,
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
+                )
+                .background(
+                    color = Color.White,
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
+                )
+        ) {
+            // Título "Encerrar sua conta"
+            Text(
+                text = "Encerrar sua conta",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    color = LineCutRed,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                ),
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(start = 30.dp, end = 34.dp, bottom = 16.dp),
+            )
         }
     }
 }
