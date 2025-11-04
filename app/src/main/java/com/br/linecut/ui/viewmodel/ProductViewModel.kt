@@ -22,6 +22,12 @@ class ProductViewModel : ViewModel() {
     private val _menuItems = MutableStateFlow<List<MenuItem>>(emptyList())
     val menuItems: StateFlow<List<MenuItem>> = _menuItems.asStateFlow()
     
+    private val _filteredMenuItems = MutableStateFlow<List<MenuItem>>(emptyList())
+    val filteredMenuItems: StateFlow<List<MenuItem>> = _filteredMenuItems.asStateFlow()
+    
+    private val _selectedCategory = MutableStateFlow<String?>(null)
+    val selectedCategory: StateFlow<String?> = _selectedCategory.asStateFlow()
+    
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
     
@@ -47,7 +53,7 @@ class ProductViewModel : ViewModel() {
                             name = product.name,
                             description = product.description,
                             price = product.price,
-                            category = product.category,
+                            category = normalizeCategory(product.category), // Normalizar categoria
                             imageRes = android.R.drawable.ic_menu_gallery, // Placeholder
                             imageUrl = product.image_url,
                             quantity = 0
@@ -56,11 +62,46 @@ class ProductViewModel : ViewModel() {
                     
                     _menuItems.value = menuItemsList
                     _isLoading.value = false
+                    
+                    // Aplicar filtro se houver categoria selecionada
+                    filterByCategory(_selectedCategory.value)
                 }
             } catch (e: Exception) {
                 _error.value = "Erro ao carregar produtos: ${e.message}"
                 _isLoading.value = false
             }
+        }
+    }
+    
+    /**
+     * Normaliza o nome da categoria (remove acentos, converte para minúsculas, etc)
+     */
+    private fun normalizeCategory(category: String): String {
+        return category
+            .lowercase()
+            .replace("á", "a")
+            .replace("é", "e")
+            .replace("í", "i")
+            .replace("ó", "o")
+            .replace("ú", "u")
+            .replace("ã", "a")
+            .replace("õ", "o")
+            .replace("ç", "c")
+            .replace(" ", "_")
+    }
+    
+    /**
+     * Filtra os produtos por categoria
+     */
+    fun filterByCategory(categoryId: String?) {
+        _selectedCategory.value = categoryId
+        
+        _filteredMenuItems.value = if (categoryId.isNullOrEmpty()) {
+            // Se não houver categoria selecionada, mostrar todos os produtos
+            _menuItems.value
+        } else {
+            // Filtrar produtos pela categoria selecionada
+            _menuItems.value.filter { it.category == categoryId }
         }
     }
     

@@ -79,7 +79,8 @@ fun StoreDetailScreen(
     onOrdersClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     modifier: Modifier = Modifier,
-    productViewModel: ProductViewModel = viewModel()
+    productViewModel: ProductViewModel = viewModel(),
+    categoryViewModel: com.br.linecut.ui.viewmodel.ProductCategoryViewModel = viewModel()
 ) {
     // Carregar produtos do Firebase quando o ID da loja mudar
     LaunchedEffect(store.id) {
@@ -87,9 +88,13 @@ fun StoreDetailScreen(
     }
     
     // Observar dados do Firebase
-    val firebaseMenuItems by productViewModel.menuItems.collectAsState()
+    val firebaseMenuItems by productViewModel.filteredMenuItems.collectAsState()
     val isLoadingProducts by productViewModel.isLoading.collectAsState()
     val errorProducts by productViewModel.error.collectAsState()
+    
+    // Observar categorias do Firebase
+    val firebaseCategories by categoryViewModel.menuCategories.collectAsState()
+    val selectedCategoryId by categoryViewModel.selectedCategoryId.collectAsState()
     
     // Lista completa de produtos para exibição com quantidades
     var displayMenuItems by remember { mutableStateOf<List<MenuItem>>(emptyList()) }
@@ -117,14 +122,9 @@ fun StoreDetailScreen(
     
     // Atualizar lista de produtos quando dados do Firebase mudarem
     LaunchedEffect(firebaseMenuItems, itemQuantities) {
-        if (firebaseMenuItems.isNotEmpty()) {
-            displayMenuItems = firebaseMenuItems.map { item ->
-                item.copy(quantity = itemQuantities[item.id] ?: 0)
-            }
-        } else if (menuItems.isNotEmpty()) {
-            displayMenuItems = menuItems.map { item ->
-                item.copy(quantity = itemQuantities[item.id] ?: 0)
-            }
+        // Usar APENAS produtos do Firebase, nunca mocks
+        displayMenuItems = firebaseMenuItems.map { item ->
+            item.copy(quantity = itemQuantities[item.id] ?: 0)
         }
     }
     
@@ -188,10 +188,23 @@ fun StoreDetailScreen(
                 store = store
             )
             
-            // Filtros de categoria
+            // Filtros de categoria - usar categorias do Firebase
             CategoryFilters(
-                categories = categories,
-                onCategoryClick = onCategoryClick,
+                categories = if (firebaseCategories.isNotEmpty()) firebaseCategories else categories,
+                onCategoryClick = { category ->
+                    // Se clicar na categoria já selecionada, desselecionar (mostrar todos)
+                    if (selectedCategoryId == category.id) {
+                        categoryViewModel.selectCategory("")
+                        productViewModel.filterByCategory(null)
+                    } else {
+                        // Atualizar seleção no categoryViewModel
+                        categoryViewModel.selectCategory(category.id)
+                        // Filtrar produtos no productViewModel
+                        productViewModel.filterByCategory(category.id)
+                    }
+                    // Chamar callback original se necessário
+                    onCategoryClick(category)
+                },
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
             
