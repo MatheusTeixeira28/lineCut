@@ -104,36 +104,31 @@ fun StoresScreen(
         }
     }
 
-    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-
-    Column(
+   Box(
         modifier = modifier
-            .fillMaxWidth()
+            .fillMaxSize()
             .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
-        // Header com fundo arredondado - mais fiel ao Figma
+        // Header com fundo arredondado
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(175.dp +statusBarHeight )
         ) {
-            // Header simples baseado no Figma
+            // Header background (Rectangle 6)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(126.dp)
-                    .background(
-                        LineCutDesignSystem.screenBackgroundColor,
-                        shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
-                    )
+                    .height(120.dp)
                     .shadow(
                         elevation = 4.dp,
-                        shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp),
-                        ambientColor = Color.Black.copy(alpha = 0.25f),
-                        spotColor = Color.Black.copy(alpha = 0.25f)
+                        shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
                     )
-            ) { }
-            
+                    .background(
+                        color = Color.White,
+                        shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
+                    )
+            )
+
             // Conteúdo do header
             Column(
                 modifier = Modifier
@@ -141,7 +136,6 @@ fun StoresScreen(
                     .padding(start = 30.dp, top = 82.dp)
             ) {
                 // Título "Lojas"
-
                 Text(
                     text = "Lojas",
                     style = MaterialTheme.typography.headlineSmall.copy(
@@ -151,8 +145,8 @@ fun StoresScreen(
                     )
                 )
                 Spacer(modifier = Modifier.height(20.dp))
-                
-                // Endereço centralizado - visível apenas quando busca não está ativa
+
+                // Endereço - visível apenas quando busca não está ativa
                 if (!isSearchVisible) {
                     Box(
                         modifier = Modifier.fillMaxWidth(),
@@ -161,7 +155,7 @@ fun StoresScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(end = 23.dp), // Ajusta a distância da borda direita
+                                .padding(end = 23.dp),
                             contentAlignment = Alignment.CenterEnd
                         ) {
                             Card(
@@ -200,8 +194,8 @@ fun StoresScreen(
                     }
                 }
             }
-            
-            // Barra de busca - posicionada com CSS especificado
+
+            // Barra de busca
             if (isSearchVisible) {
                 Box(
                     modifier = Modifier
@@ -236,9 +230,9 @@ fun StoresScreen(
                                 tint = TextPlaceholder,
                                 modifier = Modifier.size(16.dp)
                             )
-                            
+
                             Spacer(modifier = Modifier.width(8.dp))
-                            
+
                             BasicTextField(
                                 value = searchQuery,
                                 onValueChange = { searchQuery = it },
@@ -261,7 +255,7 @@ fun StoresScreen(
                                     innerTextField()
                                 }
                             )
-                            
+
                             if (searchQuery.isNotEmpty()) {
                                 IconButton(
                                     onClick = { searchQuery = "" },
@@ -280,140 +274,150 @@ fun StoresScreen(
                 }
             }
         }
-        
-        // Lista de lojas
-        when {
-            isLoading -> {
-                // Estado de carregamento
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(
-                        color = LineCutRed,
-                        modifier = Modifier.size(48.dp)
-                    )
-                }
-            }
-            error != null -> {
-                // Estado de erro
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+
+        // Lista de lojas - com padding top para não sobrepor o header
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .padding(
+                    top = if (isSearchVisible) 185.dp else 165.dp,
+                    bottom = 80.dp // Espaço para o bottom navigation
+                )
+        ) {
+            when {
+                isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Error,
-                            contentDescription = null,
-                            tint = LineCutRed,
-                            modifier = Modifier.size(64.dp)
+                        CircularProgressIndicator(
+                            color = LineCutRed,
+                            modifier = Modifier.size(48.dp)
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Erro ao carregar lojas",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                color = TextPrimary,
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = error ?: "",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = TextSecondary
-                            )
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = { companyViewModel.refresh() },
-                            colors = ButtonDefaults.buttonColors(containerColor = LineCutRed)
+                    }
+                }
+                error != null -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(24.dp)
                         ) {
-                            Text("Tentar novamente")
+                            Icon(
+                                imageVector = Icons.Default.Error,
+                                contentDescription = null,
+                                tint = LineCutRed,
+                                modifier = Modifier.size(64.dp)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Erro ao carregar lojas",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    color = TextPrimary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = error ?: "",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    color = TextSecondary
+                                ),
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = { companyViewModel.refresh() },
+                                colors = ButtonDefaults.buttonColors(containerColor = LineCutRed)
+                            ) {
+                                Text("Tentar novamente")
+                            }
+                        }
+                    }
+                }
+                filteredStores.isEmpty() -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.StoreMallDirectory,
+                                contentDescription = null,
+                                tint = TextSecondary,
+                                modifier = Modifier.size(64.dp)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = if (searchQuery.isNotEmpty()) "Nenhuma loja encontrada" else "Nenhuma loja disponível",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    color = TextSecondary
+                                ),
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                text = if (searchQuery.isNotEmpty()) "Tente buscar por outro termo" else "Tente ajustar os filtros ou sua localização",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    color = TextPlaceholder
+                                ),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(
+                            start = 23.dp,
+                            end = 23.dp,
+                            bottom = 16.dp
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(19.dp)
+                    ) {
+                        items(filteredStores) { store ->
+                            StoreCard(
+                                store = store,
+                                onStoreClick = { onStoreClick(store) },
+                                onFavoriteClick = { /* TODO: Toggle favorite */ }
+                            )
                         }
                     }
                 }
             }
-            filteredStores.isEmpty() -> {
-                // Estado vazio
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.StoreMallDirectory,
-                            contentDescription = null,
-                            tint = TextSecondary,
-                            modifier = Modifier.size(64.dp)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = if (searchQuery.isNotEmpty()) "Nenhuma loja encontrada" else "Nenhuma loja encontrada",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                color = TextSecondary
-                            )
-                        )
-                        Text(
-                            text = if (searchQuery.isNotEmpty()) "Tente buscar por outro termo" else "Tente ajustar os filtros ou sua localização",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = TextPlaceholder
-                            )
-                        )
-                    }
-                }
-            }
-            else -> {
-                // Lista com dados
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 23.dp),
-                    verticalArrangement = Arrangement.spacedBy(19.dp)
-                ) {
-
-                    
-                    items(filteredStores) { store ->
-                        StoreCard(
-                            store = store,
-                            onStoreClick = { onStoreClick(store) },
-                            onFavoriteClick = { /* TODO: Toggle favorite */ }
-                        )
-                    }
-                    
-
-                }
-            }
         }
-        
-        // Bottom Navigation
-        LineCutBottomNavigationBar(
-            selectedItem = if (isSearchVisible) NavigationItem.SEARCH else NavigationItem.HOME,
-            onHomeClick = {
-                if (isSearchVisible) {
-                    isSearchVisible = false
-                    searchQuery = ""
-                } else {
-                    onHomeClick()
-                }
-            },
-            onSearchClick = {
-                isSearchVisible = true
-                onSearchClick()
-            },
-            onNotificationClick = onNotificationClick,
-            onOrdersClick = onOrdersClick,
-            onProfileClick = onProfileClick
-        )
+
+        // Bottom Navigation - fixado na parte inferior
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+        ) {
+            LineCutBottomNavigationBar(
+                selectedItem = if (isSearchVisible) NavigationItem.SEARCH else NavigationItem.HOME,
+                onHomeClick = {
+                    if (isSearchVisible) {
+                        isSearchVisible = false
+                        searchQuery = ""
+                    } else {
+                        onHomeClick()
+                    }
+                },
+                onSearchClick = {
+                    isSearchVisible = true
+                    onSearchClick()
+                },
+                onNotificationClick = onNotificationClick,
+                onOrdersClick = onOrdersClick,
+                onProfileClick = onProfileClick
+            )
+        }
     }
     
     // Dialog de solicitação de localização

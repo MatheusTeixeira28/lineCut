@@ -20,27 +20,27 @@ public class Pix {
         try {
             PixData pixData = new PixData(valorTotal, chavePix);
             String json = gson.toJson(pixData);
-
             RequestBody body = RequestBody.create(json, JSON);
 
             Request request = new Request.Builder()
-                    .url("http://192.168.1.9:3000/")
+                    .url("https://apipixlinecut.com/")
                     .post(body)
                     .build();
 
+
             try (Response response = client.newCall(request).execute()) {
-                
+                Log.d("REQUEST_LOG", "O response: " + response);
                 if (response.body() == null) {
                     return null;
                 }
                 // Ler o body uma única vez e armazenar
                 String responseBody = response.body().string();
 
-                
+
                 if (response.isSuccessful()) {
                     return gson.fromJson(responseBody, PixResponse.class);
                 } else {
-                    Log.e(TAG, "Erro na requisição: " + response.code());
+                    Log.e("REQUEST_LOG", "Erro na requisição: " + response.code());
                     throw new RuntimeException("Erro na requisição: " + response.code());
                 }
             }

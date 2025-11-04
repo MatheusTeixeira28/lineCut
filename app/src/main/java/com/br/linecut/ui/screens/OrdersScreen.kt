@@ -59,22 +59,22 @@ fun OrdersScreen(
     
     Box(
         modifier = modifier
+            .statusBarsPadding()
             .fillMaxSize()
             .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
         // Header background (Rectangle 6)
         Box(
             modifier = Modifier
-                .width(428.dp)
-                .height(206.dp)
-                .offset(x = (-8).dp, y = (-80).dp)
+                .width(430.dp)
+                .height(120.dp)
                 .shadow(
                     elevation = 4.dp,
-                    shape = RoundedCornerShape(30.dp)
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
                 )
                 .background(
                     color = Color.White,
-                    shape = RoundedCornerShape(30.dp)
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
                 )
         )
         
