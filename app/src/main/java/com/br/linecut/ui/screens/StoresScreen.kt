@@ -50,7 +50,8 @@ data class Store(
     val distance: String,
     val imageRes: Int = android.R.drawable.ic_menu_gallery, // placeholder
     val imageUrl: String = "", // URL da imagem do Firebase
-    val isFavorite: Boolean = false
+    val isFavorite: Boolean = false,
+    val chavePix: String = "" // Chave PIX da loja para recebimento de pagamentos
 ) : Parcelable
 
 @OptIn(ExperimentalMaterial3Api::class)

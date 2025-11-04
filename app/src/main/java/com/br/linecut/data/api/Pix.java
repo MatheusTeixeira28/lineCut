@@ -29,7 +29,7 @@ public class Pix {
 
 
             try (Response response = client.newCall(request).execute()) {
-                Log.d("REQUEST_LOG", "O response: " + response);
+                Log.d(TAG, "O response: " + response);
                 if (response.body() == null) {
                     return null;
                 }

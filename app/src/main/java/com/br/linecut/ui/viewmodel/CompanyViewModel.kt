@@ -54,7 +54,8 @@ class CompanyViewModel : ViewModel() {
                             distance = "", // Deixar vazio por enquanto
                             imageRes = android.R.drawable.ic_menu_gallery, // Placeholder
                             imageUrl = company.image_url,
-                            isFavorite = false
+                            isFavorite = false,
+                            chavePix = company.chave_pix
                         )
                     }
                     

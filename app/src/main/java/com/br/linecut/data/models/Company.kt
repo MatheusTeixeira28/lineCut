@@ -9,5 +9,6 @@ data class Company(
     val description: String = "",
     val polo: String = "",
     val image_url: String = "",
-    val cnpj: String = ""
+    val cnpj: String = "",
+    val chave_pix: String = ""
 )

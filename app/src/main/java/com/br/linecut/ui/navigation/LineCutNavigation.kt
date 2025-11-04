@@ -509,7 +509,7 @@ fun LineCutNavigation(
                     val pixJob = async(kotlinx.coroutines.Dispatchers.IO) {
                         val pix = com.br.linecut.data.api.Pix()
                         val valorTotal = cartItems.sumOf { it.price * it.quantity }
-                        val chavePix = "sua_chave_pix_aqui" // TODO: Definir chave PIX correta
+                        val chavePix = selectedStore?.chavePix
                         pix.gerarQRCodePix(valorTotal, chavePix)
                     }
                     
