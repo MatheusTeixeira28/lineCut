@@ -10,7 +10,8 @@ data class User(
     val phone: String = "",
     val email: String = "",
     val profileImageUrl: String = "",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val favoritos: String = "" // IDs das lanchonetes favoritas separados por vírgula
 )
 
 /**

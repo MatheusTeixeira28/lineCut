@@ -387,7 +387,7 @@ fun StoresScreen(
                             StoreCard(
                                 store = store,
                                 onStoreClick = { onStoreClick(store) },
-                                onFavoriteClick = { /* TODO: Toggle favorite */ }
+                                onFavoriteClick = { companyViewModel.toggleFavorite(store.id) }
                             )
                         }
                     }

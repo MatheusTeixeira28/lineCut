@@ -178,6 +178,144 @@ class AuthRepository {
 }
     
     /**
+     * Adiciona uma lanchonete aos favoritos do usuário
+     */
+    suspend fun addFavorite(storeId: String): Boolean {
+        return try {
+            val currentFirebaseUser = auth.currentUser ?: return false
+            val uid = currentFirebaseUser.uid
+            
+            // Buscar favoritos atuais
+            val snapshot = realtimeDatabase.reference
+                .child("usuarios")
+                .child(uid)
+                .child("favoritos")
+                .get()
+                .await()
+            
+            val currentFavorites = snapshot.getValue(String::class.java) ?: ""
+            val favoritesList = if (currentFavorites.isEmpty()) {
+                mutableListOf()
+            } else {
+                currentFavorites.split(",").toMutableList()
+            }
+            
+            // Adicionar novo favorito se ainda não existe
+            if (!favoritesList.contains(storeId)) {
+                favoritesList.add(storeId)
+                val newFavorites = favoritesList.joinToString(",")
+                
+                // Atualizar no Firebase
+                realtimeDatabase.reference
+                    .child("usuarios")
+                    .child(uid)
+                    .child("favoritos")
+                    .setValue(newFavorites)
+                    .await()
+            }
+            
+            true
+        } catch (e: Exception) {
+            Log.e("AUTH_REPOSITORY", "Erro ao adicionar favorito: ${e.message}", e)
+            false
+        }
+    }
+    
+    /**
+     * Remove uma lanchonete dos favoritos do usuário
+     */
+    suspend fun removeFavorite(storeId: String): Boolean {
+        return try {
+            val currentFirebaseUser = auth.currentUser ?: return false
+            val uid = currentFirebaseUser.uid
+            
+            // Buscar favoritos atuais
+            val snapshot = realtimeDatabase.reference
+                .child("usuarios")
+                .child(uid)
+                .child("favoritos")
+                .get()
+                .await()
+            
+            val currentFavorites = snapshot.getValue(String::class.java) ?: ""
+            val favoritesList = if (currentFavorites.isEmpty()) {
+                mutableListOf()
+            } else {
+                currentFavorites.split(",").toMutableList()
+            }
+            
+            // Remover favorito
+            favoritesList.remove(storeId)
+            val newFavorites = favoritesList.joinToString(",")
+            
+            // Atualizar no Firebase
+            realtimeDatabase.reference
+                .child("usuarios")
+                .child(uid)
+                .child("favoritos")
+                .setValue(newFavorites)
+                .await()
+            
+            true
+        } catch (e: Exception) {
+            Log.e("AUTH_REPOSITORY", "Erro ao remover favorito: ${e.message}", e)
+            false
+        }
+    }
+    
+    /**
+     * Verifica se uma lanchonete está nos favoritos do usuário
+     */
+    suspend fun isFavorite(storeId: String): Boolean {
+        return try {
+            val currentFirebaseUser = auth.currentUser ?: return false
+            val uid = currentFirebaseUser.uid
+            
+            val snapshot = realtimeDatabase.reference
+                .child("usuarios")
+                .child(uid)
+                .child("favoritos")
+                .get()
+                .await()
+            
+            val currentFavorites = snapshot.getValue(String::class.java) ?: ""
+            val favoritesList = currentFavorites.split(",")
+            
+            favoritesList.contains(storeId)
+        } catch (e: Exception) {
+            Log.e("AUTH_REPOSITORY", "Erro ao verificar favorito: ${e.message}", e)
+            false
+        }
+    }
+    
+    /**
+     * Obtém lista de IDs dos favoritos do usuário
+     */
+    suspend fun getFavorites(): List<String> {
+        return try {
+            val currentFirebaseUser = auth.currentUser ?: return emptyList()
+            val uid = currentFirebaseUser.uid
+            
+            val snapshot = realtimeDatabase.reference
+                .child("usuarios")
+                .child(uid)
+                .child("favoritos")
+                .get()
+                .await()
+            
+            val currentFavorites = snapshot.getValue(String::class.java) ?: ""
+            if (currentFavorites.isEmpty()) {
+                emptyList()
+            } else {
+                currentFavorites.split(",").filter { it.isNotEmpty() }
+            }
+        } catch (e: Exception) {
+            Log.e("AUTH_REPOSITORY", "Erro ao obter favoritos: ${e.message}", e)
+            emptyList()
+        }
+    }
+    
+    /**
      * Valida os dados do formulário de cadastro
      */
     private fun validateSignUpData(
