@@ -586,6 +586,7 @@ fun LineCutNavigation(
             QRCodePixScreen(
                 totalAmount = totalAmount,
                 qrCodeBase64 = pixQrCodeBase64, // Usar estado persistente
+                pixCopiaCola = pixResponse?.cobData?.pixCopiaECola,
                 onBackClick = {
                     currentScreen = Screen.PAYMENT_METHOD
                 },

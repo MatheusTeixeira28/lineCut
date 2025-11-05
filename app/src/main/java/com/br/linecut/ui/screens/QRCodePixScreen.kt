@@ -1,7 +1,11 @@
 package com.br.linecut.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.graphics.BitmapFactory
 import android.util.Base64
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.Image
@@ -19,8 +23,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -34,13 +40,17 @@ import com.br.linecut.R
 fun QRCodePixScreen(
     totalAmount: Double = 39.90,
     qrCodeBase64: String? = null,
+    pixCopiaCola: String? = null,
     onBackClick: () -> Unit = {},
     onFinishPaymentClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    // Log para debug - verificar se qrCodeBase64 está chegando
-    LaunchedEffect(qrCodeBase64) {
-        android.util.Log.d("QRCodePixScreen", "Tela recomposta - qrCodeBase64: ${if (qrCodeBase64.isNullOrEmpty()) "VAZIO" else "${qrCodeBase64.length} chars"}")
+    val context = LocalContext.current
+    
+    // Log para debug
+    LaunchedEffect(qrCodeBase64, pixCopiaCola) {
+        android.util.Log.d("QRCodePixScreen", "qrCodeBase64: ${if (qrCodeBase64.isNullOrEmpty()) "VAZIO" else "${qrCodeBase64.length} chars"}")
+        android.util.Log.d("QRCodePixScreen", "pixCopiaCola: ${if (pixCopiaCola.isNullOrEmpty()) "VAZIO" else pixCopiaCola}")
     }
     
     Column(
@@ -48,43 +58,29 @@ fun QRCodePixScreen(
             .fillMaxSize()
             .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
-        // Header simples baseado no padrão das outras telas
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(126.dp)
-                .background(
-                    LineCutDesignSystem.screenBackgroundColor,
-                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
-                )
                 .shadow(
                     elevation = 4.dp,
-                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp),
-                    ambientColor = Color.Black.copy(alpha = 0.25f),
-                    spotColor = Color.Black.copy(alpha = 0.25f)
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
+                )
+                .background(
+                    color = LineCutDesignSystem.screenBackgroundColor,
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
                 )
         ) {
             // Linha inferior do header com voltar + título
             Row(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(start = 34.dp, end = 34.dp, bottom = 16.dp),
+                    .padding(start = 18.dp, end = 34.dp, bottom = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = onBackClick,
-                    modifier = Modifier.size(20.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_filter_arrow),
-                        contentDescription = "Voltar",
-                        tint = Color.Unspecified,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
-                    text = "QR Code PIX",
+                    text = "Pagamento",
                     style = MaterialTheme.typography.titleLarge.copy(
                         color = LineCutRed,
                         fontWeight = FontWeight.Bold,
@@ -94,122 +90,224 @@ fun QRCodePixScreen(
             }
         }
 
-        // Conteúdo principal
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Conteúdo principal com shadow
         Box(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .background(LineCutDesignSystem.screenBackgroundColor)
+                .shadow(
+                    elevation = 4.dp,
+                    ambientColor = Color.Black.copy(alpha = 0.25f),
+                    spotColor = Color.Black.copy(alpha = 0.25f)
+                )
+                .background(Color.White)
         ) {
-            // Texto "Escaneie para pagar em seu banco"
-            Text(
-                text = "Escaneie para pagar em seu banco",
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    color = Color(0xFF515050),
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 15.sp
-                ),
-                textAlign = TextAlign.Center,
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 70.dp, top = 86.dp, end = 70.dp)
-            )
-            
-        // QR Code - centralizado (Figma: 236x236) preenchendo sem distorcer
-            Box(
-                modifier = Modifier
-                    .size(420.dp)
-                    .padding(top = 175.dp) // 328dp - 126dp = 202dp
-            .align(Alignment.TopCenter),
-                contentAlignment = Alignment.Center
+                    .fillMaxSize()
+                    .padding(horizontal = 34.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Processar QR Code base64 - usar key mais específica para evitar recomputação
-                val hasQrCode = remember(qrCodeBase64) { 
-                    !qrCodeBase64.isNullOrEmpty() 
+                Spacer(modifier = Modifier.height(20.dp))
+                
+                // Pagamento Total
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Pagamento Total",
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            color = Color(0xFF515050),
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 15.sp
+                        )
+                    )
+                    Text(
+                        text = "R$ ${String.format("%.2f", totalAmount).replace(".", ",")}",
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            color = LineCutRed,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 15.sp
+                        )
+                    )
                 }
                 
-                val qrBitmap = remember(qrCodeBase64) {
-                    if (!qrCodeBase64.isNullOrEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // Pague em até
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Pague em até",
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            color = Color(0xFF515050),
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 15.sp
+                        )
+                    )
+                    Text(
+                        text = "10 minutos",
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            color = LineCutRed,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 15.sp
+                        )
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(30.dp))
+                
+                // Linha divisória horizontal
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Color(0xFFE0E0E0))
+                )
+                
+                Spacer(modifier = Modifier.height(30.dp))
+                
+                // Texto "Escaneie para pagar em seu banco"
+                Text(
+                    text = "Escaneie para pagar em seu banco",
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        color = Color(0xFF515050),
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 15.sp
+                    ),
+                    textAlign = TextAlign.Center
+                )
+                
+                Spacer(modifier = Modifier.height(36.dp))
+                
+                // QR Code - sempre mostrar, mesmo que seja null (para debug)
+                if (qrCodeBase64 != null) {
+                    val qrBitmap = remember(qrCodeBase64) {
                         try {
-                            // Remover prefixo data:image/png;base64, se existir
                             val base64String = if (qrCodeBase64.contains("base64,")) {
                                 qrCodeBase64.substringAfter("base64,")
                             } else {
                                 qrCodeBase64
                             }
-                            
-                            android.util.Log.d("QRCodePixScreen", "Decodificando QR Code base64 (${base64String.length} chars)")
                             val imageBytes = Base64.decode(base64String, Base64.DEFAULT)
-                            val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-                            android.util.Log.d("QRCodePixScreen", "QR Code decodificado com sucesso: ${bitmap != null}")
-                            bitmap
+                            BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
                         } catch (e: Exception) {
-                            android.util.Log.e("QRCodePixScreen", "Erro ao decodificar base64", e)
+                            android.util.Log.e("QRCodePixScreen", "Erro ao decodificar QR Code", e)
                             null
                         }
+                    }
+                    
+                    if (qrBitmap != null) {
+                        Image(
+                            bitmap = qrBitmap.asImageBitmap(),
+                            contentDescription = "QR Code PIX",
+                            modifier = Modifier.size(236.dp),
+                            contentScale = ContentScale.Fit
+                        )
                     } else {
-                        android.util.Log.d("QRCodePixScreen", "Nenhum QR Code base64 fornecido")
-                        null
+                        // Se houver erro ao decodificar, mostrar placeholder para debug
+                        Box(
+                            modifier = Modifier
+                                .size(236.dp)
+                                .background(Color(0xFFE0E0E0), RoundedCornerShape(10.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Erro ao carregar\nQR Code",
+                                textAlign = TextAlign.Center,
+                                color = Color(0xFF515050)
+                            )
+                        }
+                    }
+                } else {
+                    // Se não houver QR Code, mostrar placeholder para debug
+                    Box(
+                        modifier = Modifier
+                            .size(236.dp)
+                            .background(Color(0xFFE0E0E0), RoundedCornerShape(10.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Aguardando\nQR Code",
+                            textAlign = TextAlign.Center,
+                            color = Color(0xFF515050)
+                        )
                     }
                 }
                 
-                // Exibir QR Code - priorizar bitmap se disponível
-                if (hasQrCode && qrBitmap != null) {
-                    Image(
-                        bitmap = qrBitmap.asImageBitmap(),
-                        contentDescription = "QR Code PIX",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Fit
-                    )
-                } else {
-                    // Fallback para imagem padrão apenas se não houver base64
-                    if (!hasQrCode) {
-                        Image(
-                            painter = painterResource(id = R.drawable.qr_code),
-                            contentDescription = "QR Code PIX",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Fit
-                        )
-                    }
-                }
-            }
-            
-            // Card com valor a ser pago - centralizado
-            Box(
-                modifier = Modifier
-                    .padding(top = 531.dp) // 657dp - 126dp = 531dp
-                    .width(339.dp)
-                    .height(97.dp)
-                    .align(Alignment.TopCenter)
-                    .background(
-                        Color.White,
-                        shape = RoundedCornerShape(10.dp)
-                    )
-                    .border(
-                        width = 1.dp, // Apenas linha vermelha, sem sombra
-                        color = LineCutRed,
-                        shape = RoundedCornerShape(10.dp)
-                    )
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                Spacer(modifier = Modifier.height(38.dp))
+                
+                // Código PIX
+                Text(
+                    text = "Código PIX",
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        color = Color(0xFF515050),
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 15.sp
+                    ),
+                    textAlign = TextAlign.Center
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Box com o código PIX (fundo cinza)
+                Box(
+                    modifier = Modifier
+                        .width(294.dp)
+                        .height(35.dp)
+                        .background(
+                            Color(0xFFD1D1D1),
+                            shape = RoundedCornerShape(10.dp)
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Valor a ser pago:",
-                        style = MaterialTheme.typography.bodyLarge.copy(
+                        text = pixCopiaCola?.take(30)?.plus("...") ?: "",
+                        style = MaterialTheme.typography.bodyMedium.copy(
                             color = Color(0xFF515050),
                             fontWeight = FontWeight.Normal,
                             fontSize = 16.sp
-                        )
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
+                }
+                
+                Spacer(modifier = Modifier.height(30.dp))
+                
+                // Botão Copiar Código PIX
+                Button(
+                    onClick = {
+                        pixCopiaCola?.let { codigo ->
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            val clip = ClipData.newPlainText("Código PIX", codigo)
+                            clipboard.setPrimaryClip(clip)
+                            android.util.Log.d("QRCodePixScreen", "Código PIX copiado: $codigo")
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = LineCutDesignSystem.screenBackgroundColor
+                    ),
+                    shape = RoundedCornerShape(100.dp),
+                    border = BorderStroke(1.dp, LineCutRed),
+                    modifier = Modifier
+                        .width(163.dp)
+                        .height(24.dp),
+                    contentPadding = PaddingValues(0.dp)
+                ) {
                     Text(
-                        text = "R$ ${String.format("%.2f", totalAmount).replace(".", ",")}",
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            color = Color(0xFF515050),
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 32.sp
+                        text = "Copiar Código PIX",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = LineCutRed,
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 16.sp
                         )
                     )
                 }
@@ -221,12 +319,12 @@ fun QRCodePixScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(100.dp)
-                .background(Color.White)
                 .shadow(
                     elevation = 4.dp,
                     ambientColor = Color.Black.copy(alpha = 0.25f),
                     spotColor = Color.Black.copy(alpha = 0.25f)
-                ),
+                )
+                .background(Color.White),
             contentAlignment = Alignment.Center
         ) {
             Button(
@@ -235,8 +333,7 @@ fun QRCodePixScreen(
                 shape = RoundedCornerShape(20.dp),
                 modifier = Modifier
                     .width(343.dp)
-                    .height(28.dp)
-                    ,
+                    .height(28.dp),
                 contentPadding = PaddingValues(0.dp)
             ) {
                 Text(
@@ -262,7 +359,8 @@ fun QRCodePixScreen(
 fun QRCodePixScreenPreview() {
     LineCutTheme {
         QRCodePixScreen(
-            totalAmount = 39.90
+            totalAmount = 39.90,
+            pixCopiaCola = "34195.42689 31456.700000 12345.678901 23456 78901234567890"
         )
     }
 }
