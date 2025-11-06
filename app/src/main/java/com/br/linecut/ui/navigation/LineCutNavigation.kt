@@ -802,6 +802,8 @@ fun LineCutNavigation(
                             OrderStatus.IN_PROGRESS -> "Em preparo"
                             OrderStatus.CANCELLED -> "Cancelado"
                         },
+                        paymentStatus = "pendente", // Simular pagamento pendente
+                        remainingTime = "10:00 min", // Tempo restante para pagamento
                         items = listOf(
                             OrderDetailItem("Item exemplo", 1, order.total)
                         ),
@@ -809,7 +811,8 @@ fun LineCutNavigation(
                         paymentMethod = "PIX",
                         pickupLocation = "Praça 3 - Senac",
                         rating = if (order.status == OrderStatus.COMPLETED) 5 else null,
-                        imageRes = R.drawable.burger_queen
+                        imageRes = R.drawable.burger_queen,
+                        createdAtMillis = System.currentTimeMillis() // Simula pedido criado agora - em produção virá do Firebase
                     )
                     currentScreen = Screen.ORDER_DETAILS
                 }
@@ -1613,6 +1616,8 @@ private fun getSampleOrderDetail() = OrderDetail(
     storeType = "Lanches e Salgados",
     date = "24/04/2025",
     status = "Pedido concluído",
+    paymentStatus = "aprovado",
+    remainingTime = null,
     items = listOf(
         OrderDetailItem("Açaí", 1, 11.90),
         OrderDetailItem("Pizza", 2, 20.00),
@@ -1623,7 +1628,8 @@ private fun getSampleOrderDetail() = OrderDetail(
     paymentMethod = "PIX",
     pickupLocation = "Praça 3 - Senac",
     rating = 5,
-    imageRes = R.drawable.burger_queen
+    imageRes = R.drawable.burger_queen,
+    createdAtMillis = null
 )
 
 @Preview(

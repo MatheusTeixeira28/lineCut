@@ -1,15 +1,36 @@
 package com.br.linecut.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,7 +44,8 @@ import androidx.compose.ui.unit.sp
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.components.NavigationItem
-import com.br.linecut.ui.theme.*
+import com.br.linecut.ui.theme.LineCutRed
+import com.br.linecut.ui.theme.LineCutTheme
 
 data class Order(
     val id: String,
@@ -128,22 +150,21 @@ fun OrderCardAbsolute(
     onDetailsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Rectangle 6 - Card background
-    Box(
+    // Card background with dynamic width
+    Card(
         modifier = modifier
-            .width(368.dp)
+            .fillMaxWidth()
             .height(165.dp)
-            .offset(y = topOffset) // Removido o offset horizontal negativo
+            .offset(y = topOffset)
             .shadow(
                 elevation = 4.31.dp,
                 shape = RoundedCornerShape(10.77.dp)
             )
-            .background(
-                color = Color.White,
-                shape = RoundedCornerShape(10.77.dp)
-            )
-            .clickable { onDetailsClick() }
+            .clickable { onDetailsClick() },
+        shape = RoundedCornerShape(10.77.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
+        Box(modifier = Modifier.fillMaxSize()) {
         // Date - positioned exactly as in CSS
         Text(
             text = order.date,
@@ -211,59 +232,67 @@ fun OrderCardAbsolute(
                 .background(Color(0xFFB9B9B9).copy(alpha = 0.14f))
         )
         
-        // Status indicator - positioned exactly
+        // Status indicator - positioned at top right dynamically
         val (statusText, statusColor) = when (order.status) {
             OrderStatus.IN_PROGRESS -> Pair("Em andamento", Color(0xFFF2C12E))
             OrderStatus.COMPLETED -> Pair("Pedido concluído", Color(0xFF1CB456))
             OrderStatus.CANCELLED -> Pair("Cancelado", Color(0xFF9C0202))
         }
         
-        // Status circle
-        Box(
+        // Status row at top right
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .size(17.dp)
-                .offset(x = 235.dp, y = 17.dp)
-                .shadow(4.31.dp, CircleShape)
-                .background(statusColor, CircleShape),
-            contentAlignment = Alignment.Center
+                .align(Alignment.TopEnd)
+                .padding(top = 14.dp, end = 11.dp)
         ) {
-            when (order.status) {
-                OrderStatus.IN_PROGRESS -> {
-                    Icon(
-                        imageVector = Icons.Default.Schedule,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(9.69.dp)
-                    )
-                }
-                OrderStatus.COMPLETED -> {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(10.8.dp)
-                    )
-                }
-                OrderStatus.CANCELLED -> {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(7.56.dp)
-                    )
+            // Status circle
+            Box(
+                modifier = Modifier
+                    .size(17.dp)
+                    .shadow(4.31.dp, CircleShape)
+                    .background(statusColor, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                when (order.status) {
+                    OrderStatus.IN_PROGRESS -> {
+                        Icon(
+                            imageVector = Icons.Default.Schedule,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(9.69.dp)
+                        )
+                    }
+                    OrderStatus.COMPLETED -> {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(10.8.dp)
+                        )
+                    }
+                    OrderStatus.CANCELLED -> {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(7.56.dp)
+                        )
+                    }
                 }
             }
+            
+            Spacer(modifier = Modifier.width(6.dp))
+            
+            // Status text
+            Text(
+                text = statusText,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
+                fontWeight = FontWeight.Normal,
+                fontSize = 11.sp,
+                color = Color(0xFF515050)
+            )
         }
-        
-        // Status text
-        Text(
-            text = statusText,
-            fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
-            fontWeight = FontWeight.Normal,
-            fontSize = 11.sp,
-            color = Color(0xFF515050),
-            modifier = Modifier.offset(x = 255.dp, y = 14.dp)
-        )
         
         // "Avaliação" label
         Text(
@@ -293,17 +322,19 @@ fun OrderCardAbsolute(
             )
         }
         
-        // Details button - positioned exactly
-        Box(
+        // Details button - positioned at bottom right dynamically
+        OutlinedButton(
+            onClick = onDetailsClick,
+            shape = RoundedCornerShape(21.53.dp),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = Color(0xFF959595)
+            ),
+            border = androidx.compose.foundation.BorderStroke(1.08.dp, Color(0xFF959595)),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp),
             modifier = Modifier
-                .width(124.9.dp)
+                .align(Alignment.BottomEnd)
+                .padding(end = 11.dp, bottom = 13.dp)
                 .height(20.46.dp)
-                .offset(x = 210.dp, y = 129.21.dp)
-
-                .background(Color.Transparent, RoundedCornerShape(21.53.dp))
-                .border(1.08.dp, Color(0xFF959595), RoundedCornerShape(21.53.dp))
-                .clickable { onDetailsClick() },
-            contentAlignment = Alignment.Center
         ) {
             Text(
                 text = "Detalhes do Pedido",
@@ -312,6 +343,7 @@ fun OrderCardAbsolute(
                 fontSize = 10.77.sp,
                 color = Color(0xFF959595)
             )
+        }
         }
     }
 }

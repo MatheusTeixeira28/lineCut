@@ -41,12 +41,15 @@ data class OrderDetail(
     val storeType: String,
     val date: String,
     val status: String,
+    val paymentStatus: String = "aprovado", // "pendente" ou "aprovado"
     val items: List<OrderDetailItem>,
     val total: Double,
     val paymentMethod: String,
     val pickupLocation: String,
     val rating: Int? = null,
-    val imageRes: Int
+    val imageRes: Int,
+    val remainingTime: String? = null, // ex: "10:00 min"
+    val createdAtMillis: Long? = null // Timestamp de criação do pedido no Firebase
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,10 +64,12 @@ fun OrderDetailsScreen(
     onProfileClick: () -> Unit,
     onRateOrderClick: () -> Unit,
     onAddToCartClick: () -> Unit,
+    onCompletePaymentClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = modifier
+        modifier = Modifier
+            .statusBarsPadding()
             .fillMaxSize()
             .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
@@ -77,10 +82,15 @@ fun OrderDetailsScreen(
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .offset(x = 30.dp, y = 80.dp)
+            Box(
+                modifier = Modifier.fillMaxSize()
             ) {
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = 20.dp, end = 34.dp, bottom = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                 IconButton(
                     onClick = onBackClick,
                     modifier = Modifier.size(20.dp)
@@ -93,7 +103,7 @@ fun OrderDetailsScreen(
                     )
                 }
                 
-                Spacer(modifier = Modifier.width(34.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 
                 Text(
                     text = "Detalhes do pedido",
@@ -101,6 +111,7 @@ fun OrderDetailsScreen(
                     fontWeight = FontWeight.Bold,
                     color = LineCutRed
                 )
+            }
             }
         }
         
@@ -121,7 +132,7 @@ fun OrderDetailsScreen(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(12.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -137,13 +148,13 @@ fun OrderDetailsScreen(
                         ) {
                             Image(
                                 painter = painterResource(id = order.imageRes),
-                                contentDescription = "Logo Burger_queen}",
+                                contentDescription = "Logo ${order.storeName}",
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
                             )
                         }
                         
-                        Spacer(modifier = Modifier.width(14.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
                         
                         Column(
                             modifier = Modifier.weight(1f)
@@ -156,10 +167,10 @@ fun OrderDetailsScreen(
                             )
                             Text(
                                 text = order.storeType,
-                                fontSize = 14.3.sp,
+                                fontSize = 14.sp,
                                 color = Color(0xFF515050).copy(alpha = 0.85f)
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
                             Text(
                                 text = "Pedido nº ${order.orderId}",
                                 fontSize = 11.sp,
@@ -174,7 +185,7 @@ fun OrderDetailsScreen(
                         )
                     }
                     
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     
                     // Status badge
                     Card(
@@ -187,7 +198,7 @@ fun OrderDetailsScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 8.dp),
+                                .padding(vertical = 6.dp),
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -195,12 +206,12 @@ fun OrderDetailsScreen(
                                 imageVector = Icons.Default.CheckCircle,
                                 contentDescription = null,
                                 tint = Color(0xFF4CAF50),
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(14.dp)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = order.status,
-                                fontSize = 11.66.sp,
+                                fontSize = 10.5.sp,
                                 color = Color(0xFF515050)
                             )
                         }
@@ -212,7 +223,19 @@ fun OrderDetailsScreen(
             
             // Order progress tracker for in-progress orders
             if (order.status != "Pedido concluído") {
+                // Payment pending card
+                if (order.paymentStatus == "pendente") {
+                    PaymentPendingCard(
+                        remainingTime = order.remainingTime ?: "10:00 min",
+                        onCompletePaymentClick = onCompletePaymentClick,
+                        createdAtMillis = order.createdAtMillis,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+                
                 OrderProgressTracker(
+                    paymentStatus = order.paymentStatus,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(32.dp))
@@ -379,19 +402,22 @@ fun OrderDetailsScreen(
                 Spacer(modifier = Modifier.height(32.dp))
             }
             
-            // Add to cart button
+            // Cancel order button
             OutlinedButton(
-                onClick = onAddToCartClick,
+                onClick = { 
+                    // TODO: Implementar funcionalidade de cancelar pedido
+                },
                 shape = RoundedCornerShape(22.dp),
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = LineCutRed
                 ),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(23.dp)
+                    .height(30.dp)
             ) {
                 Text(
-                    text = "Adicionar à sacola",
+                    text = "Cancelar pedido",
                     fontSize = 13.23.sp
                 )
             }
@@ -435,6 +461,7 @@ fun getSampleOrderDetail() = OrderDetail(
     storeType = "Lanches e Salgados",
     date = "24/04/2025",
     status = "Pedido concluído",
+    paymentStatus = "aprovado",
     items = listOf(
         OrderDetailItem("Açaí", 1, 11.90),
         OrderDetailItem("Pizza", 2, 20.00),
@@ -445,7 +472,9 @@ fun getSampleOrderDetail() = OrderDetail(
     paymentMethod = "PIX",
     pickupLocation = "Praça 3 - Senac",
     rating = 5,
-    imageRes = R.drawable.burger_queen
+    imageRes = R.drawable.burger_queen,
+    remainingTime = null,
+    createdAtMillis = null
 )
 
 // Previews
@@ -462,7 +491,8 @@ fun OrderDetailsScreenPreview() {
             onOrdersClick = { },
             onProfileClick = { },
             onRateOrderClick = { },
-            onAddToCartClick = { }
+            onAddToCartClick = { },
+            onCompletePaymentClick = { }
         )
     }
 }
@@ -483,7 +513,33 @@ fun OrderDetailsScreenWithoutRatingPreview() {
             onOrdersClick = { },
             onProfileClick = { },
             onRateOrderClick = { },
-            onAddToCartClick = { }
+            onAddToCartClick = { },
+            onCompletePaymentClick = { }
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun OrderDetailsScreenWithPaymentPendingPreview() {
+    LineCutTheme {
+        OrderDetailsScreen(
+            order = getSampleOrderDetail().copy(
+                status = "Em preparo",
+                paymentStatus = "pendente",
+                rating = null,
+                remainingTime = "10:00 min",
+                createdAtMillis = System.currentTimeMillis() // Simula pedido criado agora
+            ),
+            onBackClick = { },
+            onHomeClick = { },
+            onSearchClick = { },
+            onNotificationClick = { },
+            onOrdersClick = { },
+            onProfileClick = { },
+            onRateOrderClick = { },
+            onAddToCartClick = { },
+            onCompletePaymentClick = { }
         )
     }
 }
@@ -497,46 +553,241 @@ data class ProgressStep(
 )
 
 @Composable
-fun OrderProgressTracker(
+fun PaymentPendingCard(
+    remainingTime: String,
+    onCompletePaymentClick: () -> Unit,
+    createdAtMillis: Long? = null,
     modifier: Modifier = Modifier
 ) {
-    val progressSteps = listOf(
-        ProgressStep(
-            title = "Pedido realizado",
-            description = "Seu pedido foi recebido com sucesso!",
-            icon = Icons.Default.ShoppingCart,
-            isCompleted = true
-        ),
-        ProgressStep(
-            title = "Preparando pedido",
-            description = null,
-            icon = Icons.Default.Schedule,
-            isCompleted = true,
-            isActive = true
-        ),
-        ProgressStep(
-            title = "Pronto para retirada",
-            description = null,
-            icon = Icons.Default.ShoppingBag,
-            isCompleted = false
-        ),
-        ProgressStep(
-            title = "Retirado",
-            description = null,
-            icon = Icons.Default.CheckCircle,
-            isCompleted = false
+    // Calculate remaining time based on creation timestamp
+    var totalSeconds by remember { 
+        mutableStateOf(
+            if (createdAtMillis != null) {
+                val currentTimeMillis = System.currentTimeMillis()
+                val elapsedSeconds = ((currentTimeMillis - createdAtMillis) / 1000).toInt()
+                val maxSeconds = 10 * 60 // 10 minutos
+                maxOf(0, maxSeconds - elapsedSeconds)
+            } else {
+                // Fallback: Parse initial time from string
+                val cleanTime = remainingTime.replace(" min", "").trim()
+                val parts = cleanTime.split(":")
+                val minutes = parts.getOrNull(0)?.toIntOrNull() ?: 10
+                val seconds = parts.getOrNull(1)?.toIntOrNull() ?: 0
+                minutes * 60 + seconds
+            }
         )
-    )
+    }
+    
+    // State to manage display time
+    var timeLeft by remember { 
+        val mins = totalSeconds / 60
+        val secs = totalSeconds % 60
+        mutableStateOf(String.format("%02d:%02d min", mins, secs))
+    }
+    
+    // Countdown effect
+    LaunchedEffect(key1 = totalSeconds) {
+        if (totalSeconds > 0) {
+            kotlinx.coroutines.delay(1000L)
+            totalSeconds -= 1
+            val mins = totalSeconds / 60
+            val secs = totalSeconds % 60
+            timeLeft = String.format("%02d:%02d min", mins, secs)
+        }
+    }
+    
+    // Check if time has run out
+    val isTimeExpired = totalSeconds <= 0
+    
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(4.dp, RoundedCornerShape(10.dp)),
+        shape = RoundedCornerShape(10.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Timer section with LineCutRed background (full width edge to edge)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(35.dp)
+                    .background(
+                        color = LineCutRed,
+                        shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp, bottomStart = 10.dp, bottomEnd = 10.dp)
+                    )
+                    .padding(horizontal = 16.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Schedule,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(17.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Tempo restante:",
+                            fontSize = 13.sp,
+                            color = Color.White,
+                            fontWeight = FontWeight.Normal
+                        )
+                    }
+                    Text(
+                        text = timeLeft,
+                        fontSize = 15.sp,
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+            
+            // Content with padding
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Warning text
+                Text(
+                    text = "Pague antes que o tempo acabe!",
+                    fontSize = 11.sp,
+                    color = Color(0xFF7D7D7D),
+                    fontWeight = FontWeight.Medium
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // Complete payment button
+                Button(
+                    onClick = onCompletePaymentClick,
+                    enabled = !isTimeExpired,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF1CB456),
+                        disabledContainerColor = Color(0xFFCCCCCC)
+                    ),
+                    shape = RoundedCornerShape(22.dp),
+                    modifier = Modifier
+                        .width(343.dp)
+                        .height(23.dp),
+                    contentPadding = PaddingValues(0.dp)
+                ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Schedule,
+                        contentDescription = null,
+                        tint = if (isTimeExpired) Color(0xFF999999) else Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Concluir pagamento",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = if (isTimeExpired) Color(0xFF999999) else Color.White,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 13.sp
+                        )
+                    )
+                }
+            }
+            }
+        }
+    }
+} // End of PaymentPendingCard
+
+@Composable
+fun OrderProgressTracker(
+    paymentStatus: String = "aprovado",
+    modifier: Modifier = Modifier
+) {
+    val progressSteps = if (paymentStatus == "pendente") {
+        listOf(
+            ProgressStep(
+                title = "Pedido realizado",
+                description = "Seu pedido foi recebido com sucesso!",
+                icon = Icons.Default.ShoppingCart,
+                isCompleted = true
+            ),
+            ProgressStep(
+                title = "Pagamento em análise",
+                description = null,
+                icon = Icons.Default.Schedule,
+                isCompleted = false,
+                isActive = true
+            ),
+            ProgressStep(
+                title = "Preparando pedido",
+                description = null,
+                icon = Icons.Default.Schedule,
+                isCompleted = false
+            ),
+            ProgressStep(
+                title = "Pronto para retirada",
+                description = null,
+                icon = Icons.Default.ShoppingBag,
+                isCompleted = false
+            ),
+            ProgressStep(
+                title = "Retirado",
+                description = null,
+                icon = Icons.Default.CheckCircle,
+                isCompleted = false
+            )
+        )
+    } else {
+        listOf(
+            ProgressStep(
+                title = "Pedido realizado",
+                description = "Seu pedido foi recebido com sucesso!",
+                icon = Icons.Default.ShoppingCart,
+                isCompleted = true
+            ),
+            ProgressStep(
+                title = "Preparando pedido",
+                description = null,
+                icon = Icons.Default.Schedule,
+                isCompleted = true,
+                isActive = true
+            ),
+            ProgressStep(
+                title = "Pronto para retirada",
+                description = null,
+                icon = Icons.Default.ShoppingBag,
+                isCompleted = false
+            ),
+            ProgressStep(
+                title = "Retirado",
+                description = null,
+                icon = Icons.Default.CheckCircle,
+                isCompleted = false
+            )
+        )
+    }
     
     Column(modifier = modifier) {
         // "Acompanhe seu pedido!" section
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(bottom = 8.dp)
+            modifier = Modifier.padding(bottom = 6.dp)
         ) {
             Text(
                 text = "Acompanhe seu pedido!",
-                fontSize = 16.sp,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFF515050)
             )
@@ -545,19 +796,19 @@ fun OrderProgressTracker(
         // Time estimate
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(bottom = 24.dp)
+            modifier = Modifier.padding(bottom = 16.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.Schedule,
                 contentDescription = null,
-                tint = Color(0xFF666666),
-                modifier = Modifier.size(16.dp)
+                tint = Color(0xFF736F6C),
+                modifier = Modifier.size(14.dp)
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(6.dp))
             Text(
                 text = "10 a 15 minutos",
-                fontSize = 14.sp,
-                color = Color(0xFF666666)
+                fontSize = 12.sp,
+                color = Color(0xFF736F6C)
             )
         }
         
@@ -574,7 +825,7 @@ fun OrderProgressTracker(
                     // Icon circle
                     Box(
                         modifier = Modifier
-                            .size(40.dp)
+                            .size(22.dp)
                             .clip(CircleShape)
                             .background(
                                 if (step.isCompleted || step.isActive) LineCutRed
@@ -587,7 +838,7 @@ fun OrderProgressTracker(
                             contentDescription = null,
                             tint = if (step.isCompleted || step.isActive) Color.White 
                                    else Color(0xFF999999),
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(12.dp)
                         )
                     }
                     
@@ -596,7 +847,7 @@ fun OrderProgressTracker(
                         Box(
                             modifier = Modifier
                                 .width(2.dp)
-                                .height(40.dp)
+                                .height(48.dp)
                                 .background(
                                     if (progressSteps[index + 1].isCompleted) LineCutRed
                                     else Color(0xFFE0E0E0)
@@ -605,25 +856,25 @@ fun OrderProgressTracker(
                     }
                 }
                 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(12.dp))
                 
                 // Text content
                 Column(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(top = 8.dp, bottom = if (index < progressSteps.size - 1) 24.dp else 0.dp)
+                        .padding(top = 2.dp)
                 ) {
                     Text(
                         text = step.title,
-                        fontSize = 14.sp,
-                        fontWeight = if (step.isActive) FontWeight.SemiBold else FontWeight.Normal,
+                        fontSize = 13.sp,
+                        fontWeight = if (step.isActive) FontWeight.SemiBold else FontWeight.Medium,
                         color = Color(0xFF515050)
                     )
                     
                     step.description?.let { desc ->
                         Text(
                             text = desc,
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             color = Color(0xFF666666),
                             modifier = Modifier.padding(top = 4.dp)
                         )
