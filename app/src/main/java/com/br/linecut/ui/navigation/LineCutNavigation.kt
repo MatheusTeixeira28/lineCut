@@ -1,5 +1,6 @@
 package com.br.linecut.ui.navigation
 
+import android.util.Log
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -51,6 +52,7 @@ import com.br.linecut.ui.theme.LineCutTheme
 import com.br.linecut.ui.utils.ImageCache
 import com.br.linecut.ui.utils.ImageLoader
 import com.br.linecut.ui.viewmodel.AuthViewModel
+import com.br.linecut.data.repository.OrderRepository
 
 @Composable
 fun LineCutNavigation(
@@ -77,6 +79,9 @@ fun LineCutNavigation(
     
     // CoroutineScope para operações assíncronas
     val coroutineScope = rememberCoroutineScope()
+    
+    // OrderRepository para buscar pedidos
+    val orderRepository = remember { OrderRepository() }
     
     // Observar o usuário atual
     val currentUser by authViewModel.currentUser.collectAsState()
@@ -559,17 +564,31 @@ fun LineCutNavigation(
                     val pixResponseData = pixJob.await()
                     android.util.Log.d("PIX_RESPONSE", "Resposta da API PIX: $pixResponseData")
                     
-                    // Atualizar cod_transacao_pagamento no Firebase
+                    // Atualizar cod_transacao_pagamento, pix_copia_cola e qr_code_pedido (base64) no Firebase
                     val txid = pixResponseData?.cobData?.txid ?: ""
-                    if (txid.isNotEmpty() && resultado.isSuccess) {
-                        val updates = mapOf<String, Any>("cod_transacao_pagamento" to txid)
-                        pedidoRef.updateChildren(updates).await()
-                        android.util.Log.d("PIX_RESPONSE", "Código de transação atualizado: $txid")
+                    val pixCopiaCola = pixResponseData?.cobData?.pixCopiaECola ?: ""
+                    val qrCodeImageRaw = pixResponseData?.qrCodeImage ?: ""
+                    
+                    // Remover prefixo "data:image/png;base64," se existir
+                    val qrCodeImage = if (qrCodeImageRaw.contains("base64,")) {
+                        qrCodeImageRaw.substringAfter("base64,")
+                    } else {
+                        qrCodeImageRaw
                     }
                     
-                    // Salvar dados persistentes do PIX
+                    if (txid.isNotEmpty() && pixCopiaCola.isNotEmpty() && resultado.isSuccess) {
+                        val updates = mapOf<String, Any>(
+                            "cod_transacao_pagamento" to txid,
+                            "pix_copia_cola" to pixCopiaCola,
+                            "qr_code_pedido" to qrCodeImage
+                        )
+                        pedidoRef.updateChildren(updates).await()
+                        android.util.Log.d("PIX_RESPONSE", "Dados PIX salvos: txid=$txid, pix_copia_cola=${pixCopiaCola.take(20)}..., qr_code_pedido=${qrCodeImage.take(50)}...")
+                    }
+                    
+                    // Salvar dados persistentes do PIX (já limpo, sem prefixo)
                     pixResponse = pixResponseData
-                    pixQrCodeBase64 = pixResponseData?.qrCodeImage
+                    pixQrCodeBase64 = qrCodeImage
                     pixTxid = txid
                     
                     // Navegar para QR Code PIX
@@ -582,26 +601,98 @@ fun LineCutNavigation(
         }
         
         Screen.QR_CODE_PIX -> {
-            val totalAmount = cartItems.sumOf { it.price * it.quantity }
+            // Priorizar valor do pedido do Firebase sobre carrinho
+            val totalAmount = selectedOrderDetail?.total ?: cartItems.sumOf { it.price * it.quantity }
+            
+            // Log para debug
+            Log.d("LineCutNavigation", "QR_CODE_PIX - totalAmount: $totalAmount")
+            Log.d("LineCutNavigation", "QR_CODE_PIX - selectedOrderDetail.total: ${selectedOrderDetail?.total}")
+            Log.d("LineCutNavigation", "QR_CODE_PIX - cartItems total: ${cartItems.sumOf { it.price * it.quantity }}")
+            
+            // Priorizar dados do pedido do Firebase (selectedOrderDetail) sobre estados persistentes
+            val qrCodeToDisplay = selectedOrderDetail?.qrCodeBase64 ?: pixQrCodeBase64
+            val pixCopiaCola = selectedOrderDetail?.pixCopiaCola ?: pixResponse?.cobData?.pixCopiaECola
+            
+            // Log dos dados PIX
+            Log.d("LineCutNavigation", "QR_CODE_PIX - qrCodeBase64 (selectedOrderDetail): ${if (selectedOrderDetail?.qrCodeBase64.isNullOrEmpty()) "VAZIO" else "${selectedOrderDetail?.qrCodeBase64?.length} chars"}")
+            Log.d("LineCutNavigation", "QR_CODE_PIX - qrCodeBase64 (pixQrCodeBase64): ${if (pixQrCodeBase64.isNullOrEmpty()) "VAZIO" else "${pixQrCodeBase64?.length} chars"}")
+            Log.d("LineCutNavigation", "QR_CODE_PIX - qrCodeToDisplay: ${if (qrCodeToDisplay.isNullOrEmpty()) "VAZIO" else "${qrCodeToDisplay.length} chars"}")
+            Log.d("LineCutNavigation", "QR_CODE_PIX - pixCopiaCola (selectedOrderDetail): ${if (selectedOrderDetail?.pixCopiaCola.isNullOrEmpty()) "VAZIO" else "OK"}")
+            Log.d("LineCutNavigation", "QR_CODE_PIX - pixCopiaCola (pixResponse): ${if (pixResponse?.cobData?.pixCopiaECola.isNullOrEmpty()) "VAZIO" else "OK"}")
+            Log.d("LineCutNavigation", "QR_CODE_PIX - pixCopiaCola final: ${if (pixCopiaCola.isNullOrEmpty()) "VAZIO" else "OK"}")
+            
             QRCodePixScreen(
                 totalAmount = totalAmount,
-                qrCodeBase64 = pixQrCodeBase64, // Usar estado persistente
-                pixCopiaCola = pixResponse?.cobData?.pixCopiaECola,
+                qrCodeBase64 = qrCodeToDisplay,
+                pixCopiaCola = pixCopiaCola,
                 onBackClick = {
                     currentScreen = Screen.PAYMENT_METHOD
                 },
                 onFinishPaymentClick = {
-                    // Clear cart after payment completion
-                    cartItems = emptyList()
-                    shoppingCart = emptyList() // Limpar também o shoppingCart
-                    // Clear pedido ID as the payment is completed
-                    currentPedidoId = null
-                    // Clear PIX response e estados persistentes
-                    pixResponse = null
-                    pixQrCodeBase64 = null
-                    pixTxid = null
-                    // Navigate to pickup QR screen
-                    currentScreen = Screen.PICKUP_QR
+                    // Buscar pedido do Firebase e navegar para OrderDetailsScreen
+                    coroutineScope.launch {
+                        // Se já temos selectedOrderDetail (vindo de um pedido existente), usar ele
+                        if (selectedOrderDetail != null && selectedOrderDetail?.orderId != null) {
+                            Log.d("LineCutNavigation", "✅ Usando selectedOrderDetail existente: ${selectedOrderDetail?.orderId}")
+                            
+                            // Clear cart e estados de PIX
+                            cartItems = emptyList()
+                            shoppingCart = emptyList()
+                            pixResponse = null
+                            pixQrCodeBase64 = null
+                            pixTxid = null
+                            currentPedidoId = null
+                            
+                            currentScreen = Screen.ORDER_DETAILS
+                        } else {
+                            // Caso contrário, buscar do Firebase usando currentPedidoId
+                            val pedidoId = currentPedidoId
+                            
+                            Log.d("LineCutNavigation", "Finalizando pagamento, currentPedidoId: $pedidoId")
+                            
+                            if (pedidoId != null) {
+                                Log.d("LineCutNavigation", "Buscando pedido do Firebase: $pedidoId")
+                                
+                                val orderDetail = orderRepository.getOrderById(pedidoId)
+                                
+                                if (orderDetail != null) {
+                                    Log.d("LineCutNavigation", "✅ Pedido encontrado, navegando para detalhes")
+                                    selectedOrderDetail = orderDetail
+                                    
+                                    // Clear cart e estados de PIX (mas MANTER currentPedidoId temporariamente)
+                                    cartItems = emptyList()
+                                    shoppingCart = emptyList()
+                                    pixResponse = null
+                                    pixQrCodeBase64 = null
+                                    pixTxid = null
+                                    
+                                    currentScreen = Screen.ORDER_DETAILS
+                                    
+                                    // Limpar currentPedidoId DEPOIS de navegar
+                                    currentPedidoId = null
+                                } else {
+                                    Log.e("LineCutNavigation", "❌ Erro: Pedido não encontrado no Firebase para ID: $pedidoId")
+                                    // Fallback: limpar e voltar para home
+                                    cartItems = emptyList()
+                                    shoppingCart = emptyList()
+                                    currentPedidoId = null
+                                    pixResponse = null
+                                    pixQrCodeBase64 = null
+                                    pixTxid = null
+                                    currentScreen = Screen.STORES
+                                }
+                            } else {
+                                Log.w("LineCutNavigation", "⚠️ currentPedidoId é null ao finalizar pagamento")
+                                // Clear cart e estados
+                                cartItems = emptyList()
+                                shoppingCart = emptyList()
+                                pixResponse = null
+                                pixQrCodeBase64 = null
+                                pixTxid = null
+                                currentScreen = Screen.STORES
+                            }
+                        }
+                    }
                 },
                 modifier = modifier
             )
@@ -848,6 +939,34 @@ fun LineCutNavigation(
                     onAddToCartClick = {
                         // TODO: Add items to cart and navigate
                         currentScreen = Screen.CART
+                    },
+                    onCompletePaymentClick = {
+                        // Buscar pedido atualizado do Firebase antes de navegar
+                        coroutineScope.launch {
+                            val orderId = orderDetail.orderId.removePrefix("#")
+                            Log.d("LineCutNavigation", "Buscando pedido do Firebase: $orderId")
+                            
+                            val updatedOrder = orderRepository.getOrderById(orderId)
+                            
+                            if (updatedOrder != null) {
+                                Log.d("LineCutNavigation", "✅ Pedido encontrado, navegando para QR Code PIX")
+                                selectedOrderDetail = updatedOrder
+                                
+                                // Passar os dados do PIX do pedido atualizado diretamente
+                                pixQrCodeBase64 = updatedOrder.qrCodeBase64
+                                
+                                // Limpar pixResponse pois vamos usar os dados do pedido
+                                pixResponse = null
+                                
+                                Log.d("LineCutNavigation", "QR Code do pedido: ${if (updatedOrder.qrCodeBase64.isNullOrEmpty()) "VAZIO" else "${updatedOrder.qrCodeBase64.length} chars"}")
+                                Log.d("LineCutNavigation", "PIX Copia Cola: ${if (updatedOrder.pixCopiaCola.isNullOrEmpty()) "VAZIO" else "OK"}")
+                                
+                                currentScreen = Screen.QR_CODE_PIX
+                            } else {
+                                Log.e("LineCutNavigation", "❌ Erro: Pedido não encontrado ou não pertence ao usuário")
+                                // Mostrar mensagem de erro ou manter na tela atual
+                            }
+                        }
                     }
                 )
             }

@@ -5,6 +5,8 @@ import com.br.linecut.data.firebase.FirebaseConfig
 import com.br.linecut.data.models.FirebaseOrder
 import com.br.linecut.data.models.FirebaseStore
 import com.br.linecut.ui.screens.Order
+import com.br.linecut.ui.screens.OrderDetail
+import com.br.linecut.ui.screens.OrderDetailItem
 import com.br.linecut.ui.screens.OrderStatus
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
@@ -198,6 +200,230 @@ class OrderRepository {
         
         awaitClose {
             userOrdersRef.removeEventListener(listener)
+        }
+    }
+    
+    /**
+     * Busca um pedido específico pelo ID
+     * Retorna OrderDetail com todas as informações necessárias para a tela de detalhes
+     */
+    suspend fun getOrderById(orderId: String): OrderDetail? {
+        val currentUser = auth.currentUser
+        if (currentUser == null) {
+            Log.e("OrderRepository", "Usuário não autenticado")
+            return null
+        }
+        
+        val userId = currentUser.uid
+        Log.d("OrderRepository", "Buscando pedido específico: $orderId para usuário: $userId")
+        
+        return try {
+            // Buscar o pedido na tabela 'pedidos'
+            val orderSnapshot = database.reference
+                .child("pedidos")
+                .child(orderId)
+                .get()
+                .await()
+            
+            if (!orderSnapshot.exists()) {
+                Log.w("OrderRepository", "Pedido $orderId não encontrado")
+                return null
+            }
+            
+            Log.d("OrderRepository", "Dados do pedido: ${orderSnapshot.value}")
+            
+            // O Firebase pode retornar dados em formato aninhado com o ID como chave
+            // Precisamos verificar e extrair corretamente
+            val firebaseOrder = try {
+                if (orderSnapshot.hasChildren()) {
+                    // Estrutura: { orderId: { dados } } - pegar o primeiro filho
+                    val firstChild = orderSnapshot.children.firstOrNull()
+                    firstChild?.getValue(FirebaseOrder::class.java)?.copy(id = orderId)
+                } else {
+                    // Estrutura direta: { dados }
+                    orderSnapshot.getValue(FirebaseOrder::class.java)?.copy(id = orderId)
+                }
+            } catch (e: Exception) {
+                Log.e("OrderRepository", "Erro ao converter pedido para FirebaseOrder: ${e.message}", e)
+                
+                // Tentar conversão manual como fallback
+                try {
+                    val dataMap = orderSnapshot.value as? Map<*, *>
+                    if (dataMap != null) {
+                        Log.d("OrderRepository", "Tentando conversão manual do pedido")
+                        FirebaseOrder(
+                            id = orderId,
+                            codTransacaoPagamento = dataMap["cod_transacao_pagamento"] as? String ?: "",
+                            pixCopiaCola = dataMap["pix_copia_cola"] as? String ?: "",
+                            datahoraCriacao = dataMap["datahora_criacao"] as? String ?: "",
+                            datahoraPagamento = dataMap["datahora_pagamento"] as? String ?: "",
+                            idLanchonete = dataMap["id_lanchonete"] as? String ?: "",
+                            userId = dataMap["id_usuario"] as? String ?: "",
+                            items = dataMap["items"] as? Map<String, Any>,
+                            metodoPagamento = dataMap["metodo_pagamento"] as? String ?: "",
+                            precoTotal = (dataMap["preco_total"] as? Number)?.toDouble() ?: 0.0,
+                            qrCodePedido = dataMap["qr_code_pedido"] as? String ?: "",
+                            statusPagamento = dataMap["status_pagamento"] as? String ?: "",
+                            statusPedido = dataMap["status_pedido"] as? String ?: ""
+                        )
+                    } else {
+                        null
+                    }
+                } catch (e2: Exception) {
+                    Log.e("OrderRepository", "Erro na conversão manual: ${e2.message}", e2)
+                    null
+                }
+            }
+            
+            if (firebaseOrder == null) {
+                Log.e("OrderRepository", "Erro ao converter pedido $orderId")
+                return null
+            }
+            
+            Log.d("OrderRepository", "FirebaseOrder convertido:")
+            Log.d("OrderRepository", "  - id: '${firebaseOrder.id}'")
+            Log.d("OrderRepository", "  - userId: '${firebaseOrder.userId}'")
+            Log.d("OrderRepository", "  - idLanchonete: '${firebaseOrder.idLanchonete}'")
+            Log.d("OrderRepository", "  - statusPagamento: '${firebaseOrder.statusPagamento}'")
+            Log.d("OrderRepository", "  - statusPedido: '${firebaseOrder.statusPedido}'")
+            
+            // SEGURANÇA: Verificar se o pedido pertence ao usuário autenticado
+            if (firebaseOrder.userId != userId) {
+                Log.w("OrderRepository", "❌ Pedido $orderId não pertence ao usuário $userId (pertence a '${firebaseOrder.userId}')")
+                return null
+            }
+            
+            Log.d("OrderRepository", "✅ Pedido validado - pertence ao usuário")
+            
+            // Buscar informações da lanchonete
+            val storeInfo = fetchStoreInfoSync(firebaseOrder.idLanchonete)
+            
+            // Converter items do Firebase para OrderDetailItem
+            val orderItems = mutableListOf<OrderDetailItem>()
+            firebaseOrder.items?.forEach { (itemId, itemData) ->
+                try {
+                    @Suppress("UNCHECKED_CAST")
+                    val itemMap = itemData as? Map<String, Any>
+                    if (itemMap != null) {
+                        val name = itemMap["nome_produto"] as? String ?: itemMap["nome"] as? String ?: "Item"
+                        val quantity = (itemMap["quantidade"] as? Long)?.toInt() ?: 1
+                        val price = (itemMap["subtotal"] as? Double) 
+                                    ?: (itemMap["preco_unitario"] as? Double) 
+                                    ?: (itemMap["preco"] as? Double) 
+                                    ?: 0.0
+                        
+                        orderItems.add(OrderDetailItem(name, quantity, price))
+                        Log.d("OrderRepository", "  - Item: $name x$quantity = R$ $price")
+                    }
+                } catch (e: Exception) {
+                    Log.e("OrderRepository", "Erro ao converter item: ${e.message}")
+                }
+            }
+            
+            // Se não há items, adicionar placeholder
+            if (orderItems.isEmpty()) {
+                orderItems.add(OrderDetailItem("Itens do pedido", 1, firebaseOrder.total))
+            }
+            
+            // Formatar data
+            val dateString = formatDate(firebaseOrder.date)
+            
+            // Determinar status do pedido
+            val status = when (firebaseOrder.statusPedido.lowercase()) {
+                "pendente", "em_preparo" -> "Em preparo"
+                "pronto" -> "Pronto para retirada"
+                "entregue" -> "Pedido concluído"
+                "cancelado" -> "Pedido cancelado"
+                else -> "Em preparo"
+            }
+            
+            Log.d("OrderRepository", "✅ OrderDetail criado com sucesso")
+            Log.d("OrderRepository", "  - Total de items: ${orderItems.size}")
+            Log.d("OrderRepository", "  - Status: $status")
+            Log.d("OrderRepository", "  - StatusPagamento: ${firebaseOrder.statusPagamento}")
+            
+            // Buscar pix_copia_cola e qr_code_pedido diretamente do firebaseOrder
+            val pixCopiaCola = firebaseOrder.pixCopiaCola.takeIf { it.isNotEmpty() }
+            val qrCodeBase64Raw = firebaseOrder.qrCodePedido.takeIf { it.isNotEmpty() }
+            
+            // Remover prefixo "data:image/png;base64," se existir (compatibilidade com pedidos antigos)
+            val qrCodeBase64 = qrCodeBase64Raw?.let { raw ->
+                if (raw.contains("base64,")) {
+                    raw.substringAfter("base64,")
+                } else {
+                    raw
+                }
+            }
+            
+            if (firebaseOrder.codTransacaoPagamento.isNotEmpty()) {
+                Log.d("OrderRepository", "✅ PIX copia e cola: ${if (pixCopiaCola.isNullOrEmpty()) "VAZIO" else "OK"}")
+                Log.d("OrderRepository", "✅ QR Code (qr_code_pedido): ${if (qrCodeBase64.isNullOrEmpty()) "VAZIO" else "${qrCodeBase64.length} chars"}")
+            }
+            
+            // Criar OrderDetail
+            OrderDetail(
+                orderId = firebaseOrder.orderNumber,
+                storeName = storeInfo.first,
+                storeType = storeInfo.second,
+                date = dateString,
+                status = status,
+                paymentStatus = if (firebaseOrder.statusPagamento == "pago") "aprovado" else "pendente",
+                statusPagamento = firebaseOrder.statusPagamento,
+                items = orderItems,
+                total = firebaseOrder.total,
+                paymentMethod = when (firebaseOrder.metodoPagamento.uppercase()) {
+                    "PIX" -> "PIX"
+                    "CREDITO" -> "Cartão de Crédito"
+                    "DEBITO" -> "Cartão de Débito"
+                    else -> firebaseOrder.metodoPagamento
+                },
+                pickupLocation = "Local de retirada", // TODO: Buscar do Firebase
+                rating = null, // TODO: Implementar sistema de avaliação
+                imageRes = com.br.linecut.R.drawable.burger_queen, // Placeholder
+                remainingTime = null,
+                createdAtMillis = firebaseOrder.date,
+                qrCodeBase64 = qrCodeBase64,
+                pixCopiaCola = pixCopiaCola
+            )
+        } catch (e: Exception) {
+            Log.e("OrderRepository", "Erro ao buscar pedido $orderId: ${e.message}", e)
+            e.printStackTrace()
+            null
+        }
+    }
+    
+    /**
+     * Busca informações da lanchonete de forma síncrona
+     * Retorna Pair<storeName, storeCategory>
+     */
+    private suspend fun fetchStoreInfoSync(storeId: String): Pair<String, String> {
+        if (storeId.isEmpty()) {
+            return Pair("Lanchonete", "Categoria")
+        }
+        
+        return try {
+            val storeSnapshot = database.reference
+                .child("empresas")
+                .child(storeId)
+                .get()
+                .await()
+            
+            if (storeSnapshot.exists()) {
+                val firebaseStore = storeSnapshot.getValue(FirebaseStore::class.java)
+                if (firebaseStore != null) {
+                    Pair(
+                        firebaseStore.nomeLanchonete.ifEmpty { "Lanchonete" },
+                        firebaseStore.description.ifEmpty { "Categoria" }
+                    )
+                } else {
+                    Pair("Lanchonete", "Categoria")
+                }
+            } else {
+                Pair("Lanchonete", "Categoria")
+            }
+        } catch (e: Exception) {
+            Log.e("OrderRepository", "Erro ao buscar lanchonete $storeId: ${e.message}")
+            Pair("Lanchonete", "Categoria")
         }
     }
     

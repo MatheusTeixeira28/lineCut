@@ -12,6 +12,10 @@ data class FirebaseOrder(
     @set:PropertyName("cod_transacao_pagamento")
     var codTransacaoPagamento: String = "",
     
+    @get:PropertyName("pix_copia_cola")
+    @set:PropertyName("pix_copia_cola")
+    var pixCopiaCola: String = "",
+    
     @get:PropertyName("datahora_criacao")
     @set:PropertyName("datahora_criacao")
     var datahoraCriacao: String = "",
@@ -52,7 +56,7 @@ data class FirebaseOrder(
 ) {
     // Propriedades computadas para compatibilidade com o modelo Order da UI
     val orderNumber: String
-        get() = qrCodePedido.takeIf { it.isNotEmpty() } ?: id.takeLast(8)
+        get() = id // Exibe o ID do pedido completo (ex: -QdVUZ_BZlCwG_hBxQhA)
     
     val date: Long
         get() = try {

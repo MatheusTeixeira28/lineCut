@@ -42,6 +42,7 @@ data class OrderDetail(
     val date: String,
     val status: String,
     val paymentStatus: String = "aprovado", // "pendente" ou "aprovado"
+    val statusPagamento: String = "pendente", // "pendente" ou "pago" - campo do Firebase
     val items: List<OrderDetailItem>,
     val total: Double,
     val paymentMethod: String,
@@ -49,7 +50,9 @@ data class OrderDetail(
     val rating: Int? = null,
     val imageRes: Int,
     val remainingTime: String? = null, // ex: "10:00 min"
-    val createdAtMillis: Long? = null // Timestamp de criação do pedido no Firebase
+    val createdAtMillis: Long? = null, // Timestamp de criação do pedido no Firebase
+    val qrCodeBase64: String? = null, // QR Code PIX em base64
+    val pixCopiaCola: String? = null // Código PIX copia e cola
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -235,6 +238,7 @@ fun OrderDetailsScreen(
             // Order progress tracker (always visible)
             OrderProgressTracker(
                 paymentStatus = order.paymentStatus,
+                statusPagamento = order.statusPagamento,
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(32.dp))
@@ -460,6 +464,7 @@ fun getSampleOrderDetail() = OrderDetail(
     date = "24/04/2025",
     status = "Pedido concluído",
     paymentStatus = "aprovado",
+    statusPagamento = "pago",
     items = listOf(
         OrderDetailItem("Açaí", 1, 11.90),
         OrderDetailItem("Pizza", 2, 20.00),
@@ -472,7 +477,9 @@ fun getSampleOrderDetail() = OrderDetail(
     rating = 5,
     imageRes = R.drawable.burger_queen,
     remainingTime = null,
-    createdAtMillis = null
+    createdAtMillis = null,
+    qrCodeBase64 = null,
+    pixCopiaCola = null
 )
 
 // Previews
@@ -502,6 +509,7 @@ fun OrderDetailsScreenWithoutRatingPreview() {
         OrderDetailsScreen(
             order = getSampleOrderDetail().copy(
                 status = "Em preparo",
+                statusPagamento = "pago",
                 rating = null
             ),
             onBackClick = { },
@@ -525,6 +533,7 @@ fun OrderDetailsScreenWithPaymentPendingPreview() {
             order = getSampleOrderDetail().copy(
                 status = "Em preparo",
                 paymentStatus = "pendente",
+                statusPagamento = "pendente",
                 rating = null,
                 remainingTime = "10:00 min",
                 createdAtMillis = System.currentTimeMillis() // Simula pedido criado agora
@@ -711,22 +720,25 @@ fun PaymentPendingCard(
 @Composable
 fun OrderProgressTracker(
     paymentStatus: String = "aprovado",
+    statusPagamento: String = "pendente", // Campo do Firebase: "pendente" ou "pago"
     modifier: Modifier = Modifier
 ) {
-    val progressSteps = if (paymentStatus == "pendente") {
+    // Determinar steps baseado no status_pagamento do Firebase
+    val progressSteps = if (statusPagamento == "pendente") {
+        // Pagamento ainda não foi confirmado - mostrar apenas "Pedido realizado"
         listOf(
             ProgressStep(
                 title = "Pedido realizado",
-                description = "Seu pedido foi recebido com sucesso!",
+                description = "Seu pedido foi recebido com sucesso! Aguardando confirmação de pagamento.",
                 icon = Icons.Default.ShoppingCart,
-                isCompleted = true
+                isCompleted = true,
+                isActive = true
             ),
             ProgressStep(
                 title = "Pagamento em análise",
                 description = null,
                 icon = Icons.Default.Schedule,
-                isCompleted = false,
-                isActive = true
+                isCompleted = false
             ),
             ProgressStep(
                 title = "Preparando pedido",
@@ -748,6 +760,7 @@ fun OrderProgressTracker(
             )
         )
     } else {
+        // Pagamento confirmado (status_pagamento == "pago") - avançar para próximos steps
         listOf(
             ProgressStep(
                 title = "Pedido realizado",
@@ -756,10 +769,16 @@ fun OrderProgressTracker(
                 isCompleted = true
             ),
             ProgressStep(
+                title = "Pagamento confirmado",
+                description = "Pagamento aprovado!",
+                icon = Icons.Default.CheckCircle,
+                isCompleted = true
+            ),
+            ProgressStep(
                 title = "Preparando pedido",
                 description = null,
                 icon = Icons.Default.Schedule,
-                isCompleted = true,
+                isCompleted = false,
                 isActive = true
             ),
             ProgressStep(

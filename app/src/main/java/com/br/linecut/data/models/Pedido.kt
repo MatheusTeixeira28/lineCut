@@ -22,7 +22,8 @@ data class Pedido(
     var datahora_criacao: String = "",
     var datahora_pagamento: String = "",
     var cod_transacao_pagamento: String = "", // txid do PIX (cobData.txid)
-    var qr_code_pedido: String = "",
+    var pix_copia_cola: String = "", // Código PIX copia e cola
+    var qr_code_pedido: String = "", // QR Code PIX em base64 (ou ID do pedido para retirada)
     val items: List<PedidoItem> = emptyList(),
     var avaliacao: Avaliacao? = null
 ) {
@@ -76,7 +77,8 @@ data class Pedido(
                 "datahora_criacao" to datahora_criacao,
                 "datahora_pagamento" to datahora_pagamento,
                 "cod_transacao_pagamento" to cod_transacao_pagamento,
-                "qr_code_pedido" to pedidoId,
+                "pix_copia_cola" to pix_copia_cola,
+                "qr_code_pedido" to qr_code_pedido,
                 "items" to itemsMap,
                 "avaliacao" to avaliacaoMap
             )
@@ -144,7 +146,8 @@ data class Pedido(
                 "datahora_criacao" to datahora_criacao,
                 "datahora_pagamento" to datahora_pagamento,
                 "cod_transacao_pagamento" to cod_transacao_pagamento,
-                "qr_code_pedido" to id_pedido,
+                "pix_copia_cola" to pix_copia_cola,
+                "qr_code_pedido" to qr_code_pedido,
                 "items" to itemsMap,
                 "avaliacao" to avaliacaoMap
             )

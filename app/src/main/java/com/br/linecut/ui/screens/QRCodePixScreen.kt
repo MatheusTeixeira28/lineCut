@@ -10,6 +10,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -92,7 +94,7 @@ fun QRCodePixScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Conteúdo principal com shadow
+        // Conteúdo principal com shadow e scroll
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -107,6 +109,7 @@ fun QRCodePixScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
                     .padding(horizontal = 34.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -283,7 +286,7 @@ fun QRCodePixScreen(
                 Spacer(modifier = Modifier.height(30.dp))
                 
                 // Botão Copiar Código PIX
-                Button(
+                OutlinedButton(
                     onClick = {
                         pixCopiaCola?.let { codigo ->
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -292,8 +295,9 @@ fun QRCodePixScreen(
                             android.util.Log.d("QRCodePixScreen", "Código PIX copiado: $codigo")
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = LineCutDesignSystem.screenBackgroundColor
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = LineCutRed,
+                        containerColor = Color.Transparent
                     ),
                     shape = RoundedCornerShape(100.dp),
                     border = BorderStroke(1.dp, LineCutRed),
@@ -307,10 +311,69 @@ fun QRCodePixScreen(
                         style = MaterialTheme.typography.bodyMedium.copy(
                             color = LineCutRed,
                             fontWeight = FontWeight.Normal,
-                            fontSize = 16.sp
+                            fontSize = 12.sp
                         )
                     )
                 }
+                
+                Spacer(modifier = Modifier.height(40.dp))
+                
+                // Seção de Instruções com borda
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(
+                            width = 1.dp,
+                            color = Color(0xFFE0E0E0),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                        .padding(16.dp)
+                        .padding(bottom = 8.dp),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Text(
+                        text = "Por favor siga as instruções:",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = Color(0xFF515050),
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 14.sp
+                        )
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Instrução 1
+                    InstructionItem(
+                        number = "1.",
+                        text = "Copie o código Pix acima."
+                    )
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    // Instrução 2
+                    InstructionItem(
+                        number = "2.",
+                        text = "Acesse o app do seu banco ou internet banking de preferência."
+                    )
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    // Instrução 3
+                    InstructionItem(
+                        number = "3.",
+                        text = "Escolha pagar com o Pix, cole o código e finalize o pagamento."
+                    )
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    // Instrução 4
+                    InstructionItem(
+                        number = "4.",
+                        text = "Seu pagamento será aprovado em alguns segundos."
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
         
@@ -346,6 +409,38 @@ fun QRCodePixScreen(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun InstructionItem(
+    number: String,
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top
+    ) {
+        Text(
+            text = number,
+            style = MaterialTheme.typography.bodyMedium.copy(
+                color = Color(0xFF515050),
+                fontWeight = FontWeight.Normal,
+                fontSize = 13.sp
+            ),
+            modifier = Modifier.width(20.dp)
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium.copy(
+                color = Color(0xFF515050),
+                fontWeight = FontWeight.Normal,
+                fontSize = 13.sp,
+                lineHeight = 18.sp
+            ),
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 
