@@ -221,25 +221,23 @@ fun OrderDetailsScreen(
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            // Order progress tracker for in-progress orders
-            if (order.status != "Pedido concluído") {
-                // Payment pending card
-                if (order.paymentStatus == "pendente") {
-                    PaymentPendingCard(
-                        remainingTime = order.remainingTime ?: "10:00 min",
-                        onCompletePaymentClick = onCompletePaymentClick,
-                        createdAtMillis = order.createdAtMillis,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
-                
-                OrderProgressTracker(
-                    paymentStatus = order.paymentStatus,
+            // Payment pending card (only when payment is pending)
+            if (order.paymentStatus == "pendente") {
+                PaymentPendingCard(
+                    remainingTime = order.remainingTime ?: "10:00 min",
+                    onCompletePaymentClick = onCompletePaymentClick,
+                    createdAtMillis = order.createdAtMillis,
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
             }
+            
+            // Order progress tracker (always visible)
+            OrderProgressTracker(
+                paymentStatus = order.paymentStatus,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(32.dp))
             
             // Order summary
             Text(

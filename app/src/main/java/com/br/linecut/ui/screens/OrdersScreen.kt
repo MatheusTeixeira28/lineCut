@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -30,7 +32,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,11 +45,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.br.linecut.ui.components.CachedAsyncImage
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.components.NavigationItem
 import com.br.linecut.ui.theme.LineCutRed
 import com.br.linecut.ui.theme.LineCutTheme
+import com.br.linecut.ui.viewmodel.OrderViewModel
 
 data class Order(
     val id: String,
@@ -56,7 +63,8 @@ data class Order(
     val status: OrderStatus,
     val total: Double,
     val rating: Int? = null,
-    val canRate: Boolean = true
+    val canRate: Boolean = true,
+    val storeImageUrl: String = ""
 )
 
 enum class OrderStatus {
@@ -75,9 +83,18 @@ fun OrdersScreen(
     onOrdersClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     onOrderClick: (Order) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    orderViewModel: OrderViewModel = viewModel()
 ) {
-    val orders = remember { getSampleOrders() }
+    // Carregar pedidos do Firebase quando a tela for aberta
+    LaunchedEffect(Unit) {
+        orderViewModel.loadUserOrders()
+    }
+    
+    // Observar estados do ViewModel
+    val orders by orderViewModel.orders.collectAsState()
+    val isLoading by orderViewModel.isLoading.collectAsState()
+    val error by orderViewModel.error.collectAsState()
     
     Box(
         modifier = modifier
@@ -110,22 +127,74 @@ fun OrdersScreen(
                 .offset(x = 30.dp, y = 80.dp)
         )
         
-        // Pedidos container
-        Box(
+        // Pedidos container with LazyColumn for scrolling
+        LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(725.71.dp)
-                .offset(y = 147.dp)
-                .padding(horizontal = 24.dp), // Padding para centralizar os cards
-            contentAlignment = Alignment.TopCenter
+                .padding(top = 147.dp, bottom = 80.dp) // Space for header and bottom nav
+                .padding(horizontal = 24.dp),
+            contentPadding = PaddingValues(bottom = 16.dp)
         ) {
-            // Order cards with exact positioning
-            orders.forEachIndexed { index, order ->
-                val topOffset = (index * 178).dp // Each card is 165dp + 13dp spacing
-                OrderCardAbsolute(
+            // Mostrar indicador de carregamento
+            if (isLoading && orders.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Carregando pedidos...",
+                            color = Color(0xFF959595),
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            }
+            
+            // Mostrar mensagem de erro se houver
+            if (error != null) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = error ?: "Erro ao carregar pedidos",
+                            color = Color(0xFF9C0202),
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            }
+            
+            // Mostrar mensagem se não houver pedidos
+            if (!isLoading && orders.isEmpty() && error == null) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Você ainda não fez nenhum pedido",
+                            color = Color(0xFF959595),
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            }
+            
+            // Listar os pedidos
+            items(orders) { order ->
+                OrderCard(
                     order = order,
-                    topOffset = topOffset,
-                    onDetailsClick = { onOrderClick(order) }
+                    onDetailsClick = { onOrderClick(order) },
+                    modifier = Modifier.padding(bottom = 13.dp)
                 )
             }
         }
@@ -140,6 +209,219 @@ fun OrdersScreen(
             onProfileClick = onProfileClick,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
+    }
+}
+
+@Composable
+fun OrderCard(
+    order: Order,
+    onDetailsClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // Card background with dynamic width
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(165.dp)
+            .shadow(
+                elevation = 4.31.dp,
+                shape = RoundedCornerShape(10.77.dp)
+            )
+            .clickable { onDetailsClick() },
+        shape = RoundedCornerShape(10.77.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+        // Date - positioned exactly as in CSS
+        Text(
+            text = order.date,
+            fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
+            fontWeight = FontWeight.Normal,
+            fontSize = 11.84.sp,
+            color = Color(0xFF515050),
+            modifier = Modifier.offset(x = 11.84.dp, y = 9.69.dp)
+        )
+        
+        // Store image - circular with exact positioning
+        Box(
+            modifier = Modifier
+                .size(36.61.dp)
+                .offset(x = 18.3.dp, y = 43.07.dp)
+                .shadow(4.31.dp, CircleShape)
+                .clip(CircleShape)
+                .background(Color(0xFF8B4513)),
+            contentAlignment = Alignment.Center
+        ) {
+            if (order.storeImageUrl.isNotEmpty()) {
+                CachedAsyncImage(
+                    imageUrl = order.storeImageUrl,
+                    contentDescription = "Logo ${order.storeName}",
+                    modifier = Modifier.size(36.61.dp),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                )
+            } else {
+                // Fallback para primeira letra do nome
+                Text(
+                    text = order.storeName.firstOrNull()?.uppercase() ?: "L",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+        
+        // Store name "Museoh"
+        Text(
+            text = order.storeName,
+            fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
+            fontWeight = FontWeight.Bold,
+            fontSize = 15.07.sp,
+            color = Color(0xFF515050).copy(alpha = 0.85f),
+            modifier = Modifier.offset(x = 68.91.dp, y = 41.99.dp)
+        )
+        
+        // Store category "Lanches e Salgados"
+        Text(
+            text = order.storeCategory,
+            fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
+            fontWeight = FontWeight.Normal,
+            fontSize = 12.92.sp,
+            color = Color(0xFF515050).copy(alpha = 0.85f),
+            modifier = Modifier.offset(x = 68.91.dp, y = 61.37.dp)
+        )
+        
+        // Order number
+        Text(
+            text = "Pedido nº ${order.orderNumber}",
+            fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
+            fontWeight = FontWeight.Normal,
+            fontSize = 11.sp,
+            color = Color(0xFF515050).copy(alpha = 0.85f),
+            modifier = Modifier.offset(x = 139.dp, y = 84.dp)
+        )
+        
+        // Line divider
+        Box(
+            modifier = Modifier
+                .width(347.78.dp)
+                .height(1.08.dp)
+                .offset(x = 11.84.dp, y = 109.83.dp)
+                .background(Color(0xFFB9B9B9).copy(alpha = 0.14f))
+        )
+        
+        // Status indicator - positioned at top right dynamically
+        val (statusText, statusColor) = when (order.status) {
+            OrderStatus.IN_PROGRESS -> Pair("Em andamento", Color(0xFFF2C12E))
+            OrderStatus.COMPLETED -> Pair("Pedido concluído", Color(0xFF1CB456))
+            OrderStatus.CANCELLED -> Pair("Cancelado", Color(0xFF9C0202))
+        }
+        
+        // Status row at top right
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 14.dp, end = 11.dp)
+        ) {
+            // Status circle
+            Box(
+                modifier = Modifier
+                    .size(17.dp)
+                    .shadow(4.31.dp, CircleShape)
+                    .background(statusColor, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                when (order.status) {
+                    OrderStatus.IN_PROGRESS -> {
+                        Icon(
+                            imageVector = Icons.Default.Schedule,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(9.69.dp)
+                        )
+                    }
+                    OrderStatus.COMPLETED -> {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(10.8.dp)
+                        )
+                    }
+                    OrderStatus.CANCELLED -> {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(7.56.dp)
+                        )
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.width(6.dp))
+            
+            // Status text
+            Text(
+                text = statusText,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
+                fontWeight = FontWeight.Normal,
+                fontSize = 11.sp,
+                color = Color(0xFF515050)
+            )
+        }
+        
+        // "Avaliação" label
+        Text(
+            text = "Avaliação",
+            fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
+            fontWeight = FontWeight.Normal,
+            fontSize = 11.84.sp,
+            color = Color(0xFF515050),
+            modifier = Modifier.offset(x = 22.32.dp, y = 116.29.dp)
+        )
+        
+        // Rating stars or "Indisponível"
+        if (order.status == OrderStatus.CANCELLED || !order.canRate) {
+            Text(
+                text = "Indisponível",
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
+                fontWeight = FontWeight.Normal,
+                fontSize = 10.sp,
+                color = Color(0xFF959595),
+                modifier = Modifier.offset(x = 21.92.dp, y = 138.dp)
+            )
+        } else {
+            // Star rating with exact positioning
+            StarRatingAbsolute(
+                rating = order.rating ?: 0,
+                modifier = Modifier.offset(x = 19.38.dp, y = 138.77.dp)
+            )
+        }
+        
+        // Details button - positioned at bottom right dynamically
+        OutlinedButton(
+            onClick = onDetailsClick,
+            shape = RoundedCornerShape(21.53.dp),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = Color(0xFF959595)
+            ),
+            border = androidx.compose.foundation.BorderStroke(1.08.dp, Color(0xFF959595)),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 11.dp, bottom = 13.dp)
+                .height(20.46.dp)
+        ) {
+            Text(
+                text = "Detalhes do Pedido",
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
+                fontWeight = FontWeight.Medium,
+                fontSize = 10.77.sp,
+                color = Color(0xFF959595)
+            )
+        }
+        }
     }
 }
 
@@ -185,12 +467,22 @@ fun OrderCardAbsolute(
                 .background(Color(0xFF8B4513)),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "M",
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
+            if (order.storeImageUrl.isNotEmpty()) {
+                CachedAsyncImage(
+                    imageUrl = order.storeImageUrl,
+                    contentDescription = "Logo ${order.storeName}",
+                    modifier = Modifier.size(36.61.dp),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                )
+            } else {
+                // Fallback para primeira letra do nome
+                Text(
+                    text = order.storeName.firstOrNull()?.uppercase() ?: "L",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
         
         // Store name "Museoh"
@@ -389,79 +681,6 @@ fun StarRating(
     }
 }
 
-
-
-fun getSampleOrders(): List<Order> {
-    return listOf(
-        Order(
-            id = "1",
-            orderNumber = "#1025",
-            date = "24 Abril 2025",
-            storeName = "Museoh",
-            storeCategory = "Lanches e Salgados",
-            status = OrderStatus.IN_PROGRESS,
-            total = 42.90,
-            rating = null,
-            canRate = true
-        ),
-        Order(
-            id = "2",
-            orderNumber = "#1024",
-            date = "24 Abril 2025",
-            storeName = "Museoh",
-            storeCategory = "Lanches e Salgados",
-            status = OrderStatus.IN_PROGRESS,
-            total = 35.50,
-            rating = null,
-            canRate = true
-        ),
-        Order(
-            id = "3",
-            orderNumber = "#1020",
-            date = "13 Abril 2025",
-            storeName = "Museoh",
-            storeCategory = "Lanches e Salgados",
-            status = OrderStatus.COMPLETED,
-            total = 39.90,
-            rating = 5,
-            canRate = true
-        ),
-        Order(
-            id = "4",
-            orderNumber = "#1013",
-            date = "10 Abril 2025",
-            storeName = "Museoh",
-            storeCategory = "Lanches e Salgados",
-            status = OrderStatus.CANCELLED,
-            total = 28.75,
-            rating = null,
-            canRate = false
-        ),
-        Order(
-            id = "5",
-            orderNumber = "#1013",
-            date = "5 Abril 2025",
-            storeName = "Museoh",
-            storeCategory = "Lanches e Salgados",
-            status = OrderStatus.COMPLETED,
-            total = 55.80,
-            rating = 5,
-            canRate = true
-        ),
-        Order(
-            id = "6",
-            orderNumber = "#1013",
-            date = "2 Abril 2025",
-            storeName = "Museoh",
-            storeCategory = "Lanches e Salgados",
-            status = OrderStatus.COMPLETED,
-            total = 31.20,
-            rating = 5,
-            canRate = true
-        )
-    )
-}
-
 @Preview(
     name = "Orders Screen - Light",
     showBackground = true,
@@ -482,7 +701,7 @@ fun OrdersScreenPreview() {
 fun OrderCardInProgressPreview() {
     LineCutTheme {
         Box(modifier = Modifier.size(400.dp, 200.dp)) {
-            OrderCardAbsolute(
+            OrderCard(
                 order = Order(
                     id = "1",
                     orderNumber = "#1025",
@@ -492,9 +711,9 @@ fun OrderCardInProgressPreview() {
                     status = OrderStatus.IN_PROGRESS,
                     total = 42.90,
                     rating = null,
-                    canRate = true
+                    canRate = true,
+                    storeImageUrl = ""
                 ),
-                topOffset = 0.dp,
                 onDetailsClick = {}
             )
         }
@@ -509,7 +728,7 @@ fun OrderCardInProgressPreview() {
 fun OrderCardCompletedPreview() {
     LineCutTheme {
         Box(modifier = Modifier.size(400.dp, 200.dp)) {
-            OrderCardAbsolute(
+            OrderCard(
                 order = Order(
                     id = "2",
                     orderNumber = "#1020",
@@ -519,9 +738,9 @@ fun OrderCardCompletedPreview() {
                     status = OrderStatus.COMPLETED,
                     total = 39.90,
                     rating = 5,
-                    canRate = true
+                    canRate = true,
+                    storeImageUrl = ""
                 ),
-                topOffset = 0.dp,
                 onDetailsClick = {}
             )
         }
@@ -536,7 +755,7 @@ fun OrderCardCompletedPreview() {
 fun OrderCardCancelledPreview() {
     LineCutTheme {
         Box(modifier = Modifier.size(400.dp, 200.dp)) {
-            OrderCardAbsolute(
+            OrderCard(
                 order = Order(
                     id = "3",
                     orderNumber = "#1013",
@@ -546,9 +765,9 @@ fun OrderCardCancelledPreview() {
                     status = OrderStatus.CANCELLED,
                     total = 28.75,
                     rating = null,
-                    canRate = false
+                    canRate = false,
+                    storeImageUrl = ""
                 ),
-                topOffset = 0.dp,
                 onDetailsClick = {}
             )
         }
