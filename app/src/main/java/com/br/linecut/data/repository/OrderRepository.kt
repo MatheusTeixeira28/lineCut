@@ -380,6 +380,7 @@ class OrderRepository {
                 status = status,
                 paymentStatus = if (firebaseOrder.statusPagamento == "pago") "aprovado" else "pendente",
                 statusPagamento = firebaseOrder.statusPagamento,
+                statusPedido = firebaseOrder.statusPedido,
                 items = orderItems,
                 total = firebaseOrder.total,
                 paymentMethod = when (firebaseOrder.metodoPagamento.uppercase()) {
@@ -400,7 +401,9 @@ class OrderRepository {
                 Log.d("OrderRepository", "orderId: ${orderDetail.orderId}")
                 Log.d("OrderRepository", "paymentStatus: ${orderDetail.paymentStatus}")
                 Log.d("OrderRepository", "statusPagamento: ${orderDetail.statusPagamento}")
+                Log.d("OrderRepository", "statusPedido: ${orderDetail.statusPedido}")
                 Log.d("OrderRepository", "Firebase statusPagamento: ${firebaseOrder.statusPagamento}")
+                Log.d("OrderRepository", "Firebase statusPedido: ${firebaseOrder.statusPedido}")
                 Log.d("OrderRepository", "Condição (firebaseOrder.statusPagamento == 'pago'): ${firebaseOrder.statusPagamento == "pago"}")
             }
         } catch (e: Exception) {

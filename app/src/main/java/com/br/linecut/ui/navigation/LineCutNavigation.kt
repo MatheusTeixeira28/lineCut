@@ -938,13 +938,24 @@ fun LineCutNavigation(
                                 
                                 Log.d("LineCutNavigation", "Firebase atualizado - status_pagamento: $statusPagamento, status_pedido: $statusPedido")
                                 
+                                // Mapear status_pedido do Firebase para status da UI
+                                val statusUI = when (statusPedido.lowercase()) {
+                                    "pendente", "em_preparo" -> "Em preparo"
+                                    "pronto" -> "Pronto para retirada"
+                                    "entregue" -> "Pedido concluído"
+                                    "cancelado" -> "Pedido cancelado"
+                                    else -> "Em preparo"
+                                }
+                                
                                 // Atualizar o estado do pedido para forçar recomposição
-                                if (statusPagamento != currentOrder.statusPagamento || statusPedido != currentOrder.status) {
+                                if (statusPagamento != currentOrder.statusPagamento || statusPedido != currentOrder.statusPedido) {
                                     currentOrder = currentOrder.copy(
                                         statusPagamento = statusPagamento,
-                                        paymentStatus = if (statusPagamento == "pago") "aprovado" else "pendente"
+                                        paymentStatus = if (statusPagamento == "pago") "aprovado" else "pendente",
+                                        status = statusUI,
+                                        statusPedido = statusPedido
                                     )
-                                    Log.d("LineCutNavigation", "✅ UI atualizada com novo status")
+                                    Log.d("LineCutNavigation", "✅ UI atualizada - statusPagamento: $statusPagamento, statusPedido: $statusPedido, statusUI: $statusUI")
                                 }
                             } catch (e: Exception) {
                                 Log.e("LineCutNavigation", "Erro ao processar atualização: ${e.message}", e)

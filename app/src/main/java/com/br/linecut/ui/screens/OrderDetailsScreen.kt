@@ -43,6 +43,7 @@ data class OrderDetail(
     val status: String,
     val paymentStatus: String = "aprovado", // "pendente" ou "aprovado"
     val statusPagamento: String = "pendente", // "pendente" ou "pago" - campo do Firebase
+    val statusPedido: String = "pendente", // "pendente", "em_preparo", "pronto", "entregue", "cancelado" - campo do Firebase
     val items: List<OrderDetailItem>,
     val total: Double,
     val paymentMethod: String,
@@ -236,9 +237,15 @@ fun OrderDetailsScreen(
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            // Payment pending card (visible quando pendente OU quando pago mas ainda não concluído)
-            // Mostrar enquanto o pagamento não foi totalmente processado
-            if (order.paymentStatus == "pendente" || order.statusPagamento == "pago") {
+            // Payment pending card
+            // Mostrar apenas quando:
+            // 1. Pagamento pendente (status_pagamento == "pendente")
+            // 2. OU pagamento pago mas ainda não em preparo (status_pagamento == "pago" E status_pedido == "pendente")
+            // Ocultar quando status_pedido for "em_preparo", "pronto" ou "entregue"
+            val shouldShowPaymentCard = order.paymentStatus == "pendente" || 
+                                       (order.statusPagamento == "pago" && order.statusPedido == "pendente")
+            
+            if (shouldShowPaymentCard) {
                 PaymentPendingCard(
                     remainingTime = order.remainingTime ?: "10:00 min",
                     onCompletePaymentClick = onCompletePaymentClick,
@@ -249,10 +256,22 @@ fun OrderDetailsScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
             
+            // Pickup ready card - mostrar quando pedido estiver pronto para retirada
+            if (order.statusPedido == "pronto") {
+                PickupReadyCard(
+                    onViewPickupCodeClick = {
+                        // TODO: Navegar para tela de código de retirada
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+            
             // Order progress tracker (always visible)
             OrderProgressTracker(
                 paymentStatus = order.paymentStatus,
                 statusPagamento = order.statusPagamento,
+                statusPedido = order.statusPedido,
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(32.dp))
@@ -479,6 +498,7 @@ fun getSampleOrderDetail() = OrderDetail(
     status = "Pedido concluído",
     paymentStatus = "aprovado",
     statusPagamento = "pago",
+    statusPedido = "entregue",
     items = listOf(
         OrderDetailItem("Açaí", 1, 11.90),
         OrderDetailItem("Pizza", 2, 20.00),
@@ -524,6 +544,7 @@ fun OrderDetailsScreenWithoutRatingPreview() {
             order = getSampleOrderDetail().copy(
                 status = "Em preparo",
                 statusPagamento = "pago",
+                statusPedido = "em_preparo",
                 rating = null
             ),
             onBackClick = { },
@@ -548,9 +569,35 @@ fun OrderDetailsScreenWithPaymentPendingPreview() {
                 status = "Em preparo",
                 paymentStatus = "pendente",
                 statusPagamento = "pendente",
+                statusPedido = "pendente",
                 rating = null,
                 remainingTime = "10:00 min",
                 createdAtMillis = System.currentTimeMillis() // Simula pedido criado agora
+            ),
+            onBackClick = { },
+            onHomeClick = { },
+            onSearchClick = { },
+            onNotificationClick = { },
+            onOrdersClick = { },
+            onProfileClick = { },
+            onRateOrderClick = { },
+            onAddToCartClick = { },
+            onCompletePaymentClick = { }
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun OrderDetailsScreenReadyForPickupPreview() {
+    LineCutTheme {
+        OrderDetailsScreen(
+            order = getSampleOrderDetail().copy(
+                status = "Pronto para retirada",
+                paymentStatus = "aprovado",
+                statusPagamento = "pago",
+                statusPedido = "pronto",
+                rating = null
             ),
             onBackClick = { },
             onHomeClick = { },
@@ -763,44 +810,133 @@ fun PaymentPendingCard(
 } // End of PaymentPendingCard
 
 @Composable
+fun PickupReadyCard(
+    onViewPickupCodeClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(4.dp, RoundedCornerShape(10.dp)),
+        shape = RoundedCornerShape(10.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Ícone de pedido pronto
+            Icon(
+                imageVector = Icons.Default.ShoppingBag,
+                contentDescription = null,
+                tint = Color(0xFF1CB456),
+                modifier = Modifier.size(32.dp)
+            )
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            // Texto informativo
+            Text(
+                text = "Seu pedido está pronto para retirada!",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF515050),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Text(
+                text = "Clique no botão abaixo para ver o código de retirada",
+                fontSize = 12.sp,
+                color = Color(0xFF7D7D7D),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Botão Ver Código de Retirada
+            Button(
+                onClick = onViewPickupCodeClick,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF1CB456)
+                ),
+                shape = RoundedCornerShape(22.dp),
+                modifier = Modifier
+                    .width(343.dp)
+                    .height(23.dp),
+                contentPadding = PaddingValues(0.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.QrCode,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Ver Código de Retirada",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = Color.White,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 13.sp
+                        )
+                    )
+                }
+            }
+        }
+    }
+} // End of PickupReadyCard
+
+@Composable
 fun OrderProgressTracker(
     paymentStatus: String = "aprovado",
     statusPagamento: String = "pendente", // Campo do Firebase: "pendente" ou "pago"
+    statusPedido: String = "pendente", // Campo do Firebase: "pendente", "em_preparo", "pronto", "entregue"
     modifier: Modifier = Modifier
 ) {
-    // Determinar steps baseado no status_pagamento do Firebase
+    // Determinar steps baseado nos status do Firebase
     val progressSteps = listOf(
         ProgressStep(
             title = "Pedido realizado",
             description = "Seu pedido foi recebido com sucesso! Aguardando confirmação de pagamento.",
             icon = Icons.Default.ShoppingCart,
             isCompleted = true,
-            isActive = statusPagamento == "pendente"
+            isActive = statusPagamento == "pendente" && statusPedido == "pendente"
         ),
         ProgressStep(
             title = "Pagamento em análise",
             description = null,
             icon = Icons.Default.Schedule,
-            isCompleted = false,
-            isActive = statusPagamento == "pago"
+            isCompleted = statusPagamento == "pago",
+            isActive = statusPagamento == "pago" && statusPedido == "pendente"
         ),
         ProgressStep(
             title = "Preparando pedido",
             description = null,
             icon = Icons.Default.Schedule,
-            isCompleted = false
+            isCompleted = statusPedido in listOf("pronto", "entregue"),
+            isActive = statusPedido == "em_preparo"
         ),
         ProgressStep(
             title = "Pronto para retirada",
             description = null,
             icon = Icons.Default.ShoppingBag,
-            isCompleted = false
+            isCompleted = statusPedido == "entregue",
+            isActive = statusPedido == "pronto"
         ),
         ProgressStep(
             title = "Retirado",
             description = null,
             icon = Icons.Default.CheckCircle,
-            isCompleted = false
+            isCompleted = statusPedido == "entregue",
+            isActive = statusPedido == "entregue"
         )
     )
     
