@@ -533,6 +533,10 @@ fun LineCutNavigation(
                         pedidoRef = database.getReference("pedidos").push()
                         pedidoId = pedidoRef.key ?: java.util.UUID.randomUUID().toString()
                         currentPedidoId = pedidoId
+                        
+                        // Limpar selectedOrderDetail de pedidos anteriores
+                        selectedOrderDetail = null
+                        
                         android.util.Log.d("PIX_RESPONSE", "Criando novo pedido: $pedidoId")
                     }
                     
@@ -569,6 +573,11 @@ fun LineCutNavigation(
                     val pixCopiaCola = pixResponseData?.cobData?.pixCopiaECola ?: ""
                     val qrCodeImageRaw = pixResponseData?.qrCodeImage ?: ""
                     
+                    android.util.Log.d("PIX_RESPONSE", "txid: ${if (txid.isEmpty()) "VAZIO ❌" else "OK ✅"}")
+                    android.util.Log.d("PIX_RESPONSE", "pixCopiaCola: ${if (pixCopiaCola.isEmpty()) "VAZIO ❌" else "OK ✅ (${pixCopiaCola.length} chars)"}")
+                    android.util.Log.d("PIX_RESPONSE", "qrCodeImageRaw: ${if (qrCodeImageRaw.isEmpty()) "VAZIO ❌" else "OK ✅ (${qrCodeImageRaw.length} chars)"}")
+                    android.util.Log.d("PIX_RESPONSE", "resultado.isSuccess: ${resultado.isSuccess}")
+                    
                     // Remover prefixo "data:image/png;base64," se existir
                     val qrCodeImage = if (qrCodeImageRaw.contains("base64,")) {
                         qrCodeImageRaw.substringAfter("base64,")
@@ -583,7 +592,9 @@ fun LineCutNavigation(
                             "qr_code_pedido" to qrCodeImage
                         )
                         pedidoRef.updateChildren(updates).await()
-                        android.util.Log.d("PIX_RESPONSE", "Dados PIX salvos: txid=$txid, pix_copia_cola=${pixCopiaCola.take(20)}..., qr_code_pedido=${qrCodeImage.take(50)}...")
+                        android.util.Log.d("PIX_RESPONSE", "✅ Dados PIX salvos no Firebase com sucesso!")
+                    } else {
+                        android.util.Log.e("PIX_RESPONSE", "❌ Dados PIX NÃO foram salvos! txid vazio: ${txid.isEmpty()}, pixCopiaCola vazio: ${pixCopiaCola.isEmpty()}, resultado.isSuccess: ${resultado.isSuccess}")
                     }
                     
                     // Salvar dados persistentes do PIX (já limpo, sem prefixo)
@@ -601,12 +612,13 @@ fun LineCutNavigation(
         }
         
         Screen.QR_CODE_PIX -> {
-            // Priorizar valor do pedido do Firebase sobre carrinho
+            // Se tem selectedOrderDetail (pedido existente), usar o total dele
+            // Senão, calcular do carrinho (pedido novo)
             val totalAmount = selectedOrderDetail?.total ?: cartItems.sumOf { it.price * it.quantity }
             
             // Log para debug
             Log.d("LineCutNavigation", "QR_CODE_PIX - totalAmount: $totalAmount")
-            Log.d("LineCutNavigation", "QR_CODE_PIX - selectedOrderDetail.total: ${selectedOrderDetail?.total}")
+            Log.d("LineCutNavigation", "QR_CODE_PIX - selectedOrderDetail?.total: ${selectedOrderDetail?.total}")
             Log.d("LineCutNavigation", "QR_CODE_PIX - cartItems total: ${cartItems.sumOf { it.price * it.quantity }}")
             
             // Priorizar dados do pedido do Firebase (selectedOrderDetail) sobre estados persistentes
@@ -631,9 +643,46 @@ fun LineCutNavigation(
                 onFinishPaymentClick = {
                     // Buscar pedido do Firebase e navegar para OrderDetailsScreen
                     coroutineScope.launch {
-                        // Se já temos selectedOrderDetail (vindo de um pedido existente), usar ele
-                        if (selectedOrderDetail != null && selectedOrderDetail?.orderId != null) {
-                            Log.d("LineCutNavigation", "✅ Usando selectedOrderDetail existente: ${selectedOrderDetail?.orderId}")
+                        Log.d("LineCutNavigation", "==== FINALIZAR PAGAMENTO ====")
+                        Log.d("LineCutNavigation", "currentPedidoId: $currentPedidoId")
+                        Log.d("LineCutNavigation", "selectedOrderDetail?.orderId: ${selectedOrderDetail?.orderId}")
+                        
+                        // SEMPRE usar currentPedidoId quando vier de um novo pedido do carrinho
+                        // Só usar selectedOrderDetail se NÃO tivermos currentPedidoId (pedido existente sendo reaberto)
+                        if (currentPedidoId != null) {
+                            // Pedido NOVO do carrinho - usar currentPedidoId
+                            val pedidoId = currentPedidoId!!
+                            Log.d("LineCutNavigation", "✅ Pedido NOVO do carrinho - buscando ID: $pedidoId")
+                            
+                            val orderDetail = orderRepository.getOrderById(pedidoId)
+                            
+                            if (orderDetail != null) {
+                                Log.d("LineCutNavigation", "✅ Pedido encontrado, navegando para detalhes")
+                                selectedOrderDetail = orderDetail
+                                
+                                // Clear cart e estados de PIX
+                                cartItems = emptyList()
+                                shoppingCart = emptyList()
+                                pixResponse = null
+                                pixQrCodeBase64 = null
+                                pixTxid = null
+                                currentPedidoId = null
+                                
+                                currentScreen = Screen.ORDER_DETAILS
+                            } else {
+                                Log.e("LineCutNavigation", "❌ Erro: Pedido não encontrado no Firebase para ID: $pedidoId")
+                                // Fallback: limpar e voltar para home
+                                cartItems = emptyList()
+                                shoppingCart = emptyList()
+                                currentPedidoId = null
+                                pixResponse = null
+                                pixQrCodeBase64 = null
+                                pixTxid = null
+                                currentScreen = Screen.STORES
+                            }
+                        } else if (selectedOrderDetail != null && selectedOrderDetail?.orderId != null) {
+                            // Pedido EXISTENTE sendo reaberto (sem currentPedidoId)
+                            Log.d("LineCutNavigation", "✅ Pedido EXISTENTE - usando selectedOrderDetail: ${selectedOrderDetail?.orderId}")
                             
                             // Clear cart e estados de PIX
                             cartItems = emptyList()
@@ -641,56 +690,19 @@ fun LineCutNavigation(
                             pixResponse = null
                             pixQrCodeBase64 = null
                             pixTxid = null
-                            currentPedidoId = null
                             
                             currentScreen = Screen.ORDER_DETAILS
                         } else {
-                            // Caso contrário, buscar do Firebase usando currentPedidoId
-                            val pedidoId = currentPedidoId
+                            // Nenhum pedido disponível
+                            Log.w("LineCutNavigation", "⚠️ Nenhum pedido disponível - currentPedidoId e selectedOrderDetail são null")
                             
-                            Log.d("LineCutNavigation", "Finalizando pagamento, currentPedidoId: $pedidoId")
-                            
-                            if (pedidoId != null) {
-                                Log.d("LineCutNavigation", "Buscando pedido do Firebase: $pedidoId")
-                                
-                                val orderDetail = orderRepository.getOrderById(pedidoId)
-                                
-                                if (orderDetail != null) {
-                                    Log.d("LineCutNavigation", "✅ Pedido encontrado, navegando para detalhes")
-                                    selectedOrderDetail = orderDetail
-                                    
-                                    // Clear cart e estados de PIX (mas MANTER currentPedidoId temporariamente)
-                                    cartItems = emptyList()
-                                    shoppingCart = emptyList()
-                                    pixResponse = null
-                                    pixQrCodeBase64 = null
-                                    pixTxid = null
-                                    
-                                    currentScreen = Screen.ORDER_DETAILS
-                                    
-                                    // Limpar currentPedidoId DEPOIS de navegar
-                                    currentPedidoId = null
-                                } else {
-                                    Log.e("LineCutNavigation", "❌ Erro: Pedido não encontrado no Firebase para ID: $pedidoId")
-                                    // Fallback: limpar e voltar para home
-                                    cartItems = emptyList()
-                                    shoppingCart = emptyList()
-                                    currentPedidoId = null
-                                    pixResponse = null
-                                    pixQrCodeBase64 = null
-                                    pixTxid = null
-                                    currentScreen = Screen.STORES
-                                }
-                            } else {
-                                Log.w("LineCutNavigation", "⚠️ currentPedidoId é null ao finalizar pagamento")
-                                // Clear cart e estados
-                                cartItems = emptyList()
-                                shoppingCart = emptyList()
-                                pixResponse = null
-                                pixQrCodeBase64 = null
-                                pixTxid = null
-                                currentScreen = Screen.STORES
-                            }
+                            // Clear cart e estados
+                            cartItems = emptyList()
+                            shoppingCart = emptyList()
+                            pixResponse = null
+                            pixQrCodeBase64 = null
+                            pixTxid = null
+                            currentScreen = Screen.STORES
                         }
                     }
                 },
@@ -882,38 +894,80 @@ fun LineCutNavigation(
                     currentScreen = Screen.PROFILE
                 },
                 onOrderClick = { order ->
-                    // Convert Order to OrderDetail and navigate
-                    selectedOrderDetail = OrderDetail(
-                        orderId = order.id,
-                        storeName = order.storeName,
-                        storeType = "Lanches e Salgados", // Default type
-                        date = order.date,
-                        status = when(order.status) {
-                            OrderStatus.COMPLETED -> "Pedido concluído"
-                            OrderStatus.IN_PROGRESS -> "Em preparo"
-                            OrderStatus.CANCELLED -> "Cancelado"
-                        },
-                        paymentStatus = "pendente", // Simular pagamento pendente
-                        remainingTime = "10:00 min", // Tempo restante para pagamento
-                        items = listOf(
-                            OrderDetailItem("Item exemplo", 1, order.total)
-                        ),
-                        total = order.total,
-                        paymentMethod = "PIX",
-                        pickupLocation = "Praça 3 - Senac",
-                        rating = if (order.status == OrderStatus.COMPLETED) 5 else null,
-                        imageRes = R.drawable.burger_queen,
-                        createdAtMillis = System.currentTimeMillis() // Simula pedido criado agora - em produção virá do Firebase
-                    )
-                    currentScreen = Screen.ORDER_DETAILS
+                    // Buscar dados reais do pedido no Firebase
+                    coroutineScope.launch {
+                        val orderId = order.id.removePrefix("#")
+                        Log.d("LineCutNavigation", "Buscando pedido do Firebase ao clicar: $orderId")
+                        
+                        val firebaseOrder = orderRepository.getOrderById(orderId)
+                        
+                        if (firebaseOrder != null) {
+                            Log.d("LineCutNavigation", "✅ Pedido encontrado - statusPagamento: ${firebaseOrder.statusPagamento}")
+                            Log.d("LineCutNavigation", "QR Code Base64: ${if (firebaseOrder.qrCodeBase64.isNullOrEmpty()) "VAZIO ❌" else "OK ✅ (${firebaseOrder.qrCodeBase64.length} chars)"}")
+                            Log.d("LineCutNavigation", "PIX Copia e Cola: ${if (firebaseOrder.pixCopiaCola.isNullOrEmpty()) "VAZIO ❌" else "OK ✅ (${firebaseOrder.pixCopiaCola.length} chars)"}")
+                            selectedOrderDetail = firebaseOrder
+                            currentScreen = Screen.ORDER_DETAILS
+                        } else {
+                            Log.e("LineCutNavigation", "❌ Pedido não encontrado no Firebase - ID: $orderId")
+                            // TODO: Mostrar mensagem de erro para o usuário
+                            // Por enquanto, ficar na tela de pedidos
+                        }
+                    }
                 }
             )
         }
         
         Screen.ORDER_DETAILS -> {
-            selectedOrderDetail?.let { orderDetail ->
+            selectedOrderDetail?.let { initialOrderDetail ->
+                // Estado para o pedido atualizado em tempo real
+                var currentOrder by remember(initialOrderDetail.orderId) { 
+                    mutableStateOf(initialOrderDetail) 
+                }
+                
+                // Listener para monitorar mudanças no pedido
+                DisposableEffect(initialOrderDetail.orderId) {
+                    val orderId = initialOrderDetail.orderId.removePrefix("#")
+                    val database = FirebaseDatabase.getInstance()
+                    val pedidoRef = database.getReference("pedidos").child(orderId)
+                    
+                    val listener = object : com.google.firebase.database.ValueEventListener {
+                        override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
+                            try {
+                                val statusPagamento = snapshot.child("status_pagamento").getValue(String::class.java) ?: "pendente"
+                                val statusPedido = snapshot.child("status_pedido").getValue(String::class.java) ?: "pendente"
+                                
+                                Log.d("LineCutNavigation", "Firebase atualizado - status_pagamento: $statusPagamento, status_pedido: $statusPedido")
+                                
+                                // Atualizar o estado do pedido para forçar recomposição
+                                if (statusPagamento != currentOrder.statusPagamento || statusPedido != currentOrder.status) {
+                                    currentOrder = currentOrder.copy(
+                                        statusPagamento = statusPagamento,
+                                        paymentStatus = if (statusPagamento == "pago") "aprovado" else "pendente"
+                                    )
+                                    Log.d("LineCutNavigation", "✅ UI atualizada com novo status")
+                                }
+                            } catch (e: Exception) {
+                                Log.e("LineCutNavigation", "Erro ao processar atualização: ${e.message}", e)
+                            }
+                        }
+                        
+                        override fun onCancelled(error: com.google.firebase.database.DatabaseError) {
+                            Log.e("LineCutNavigation", "Erro ao monitorar pedido: ${error.message}")
+                        }
+                    }
+                    
+                    pedidoRef.addValueEventListener(listener)
+                    Log.d("LineCutNavigation", "Listener registrado para pedido: $orderId")
+                    
+                    // Cleanup: remover listener quando sair da tela
+                    onDispose {
+                        pedidoRef.removeEventListener(listener)
+                        Log.d("LineCutNavigation", "Listener removido para pedido: $orderId")
+                    }
+                }
+                
                 OrderDetailsScreen(
-                    order = orderDetail,
+                    order = currentOrder,
                     onBackClick = {
                         currentScreen = Screen.ORDERS
                     },
@@ -943,7 +997,7 @@ fun LineCutNavigation(
                     onCompletePaymentClick = {
                         // Buscar pedido atualizado do Firebase antes de navegar
                         coroutineScope.launch {
-                            val orderId = orderDetail.orderId.removePrefix("#")
+                            val orderId = currentOrder.orderId.removePrefix("#")
                             Log.d("LineCutNavigation", "Buscando pedido do Firebase: $orderId")
                             
                             val updatedOrder = orderRepository.getOrderById(orderId)

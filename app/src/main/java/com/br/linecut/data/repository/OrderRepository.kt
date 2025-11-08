@@ -105,7 +105,7 @@ class OrderRepository {
                                         Log.d("OrderRepository", "Campo '${child.key}': ${child.value}")
                                     }
                                     
-                                    val firebaseOrder = orderSnapshot.getValue(FirebaseOrder::class.java)
+                                    val firebaseOrder = orderSnapshot.getValue(FirebaseOrder::class.java)?.copy(id = orderId)
                                     
                                     if (firebaseOrder != null) {
                                         Log.d("OrderRepository", "Objeto convertido:")
@@ -238,7 +238,7 @@ class OrderRepository {
                 if (orderSnapshot.hasChildren()) {
                     // Estrutura: { orderId: { dados } } - pegar o primeiro filho
                     val firstChild = orderSnapshot.children.firstOrNull()
-                    firstChild?.getValue(FirebaseOrder::class.java)?.copy(id = orderId)
+                    firstChild?.getValue(FirebaseOrder::class.java)?.copy(id = firstChild.key ?: orderId)
                 } else {
                     // Estrutura direta: { dados }
                     orderSnapshot.getValue(FirebaseOrder::class.java)?.copy(id = orderId)
@@ -286,6 +286,8 @@ class OrderRepository {
             Log.d("OrderRepository", "  - idLanchonete: '${firebaseOrder.idLanchonete}'")
             Log.d("OrderRepository", "  - statusPagamento: '${firebaseOrder.statusPagamento}'")
             Log.d("OrderRepository", "  - statusPedido: '${firebaseOrder.statusPedido}'")
+            Log.d("OrderRepository", "  - qrCodePedido: ${if (firebaseOrder.qrCodePedido.isEmpty()) "VAZIO ❌" else "OK ✅ (${firebaseOrder.qrCodePedido.length} chars)"}")
+            Log.d("OrderRepository", "  - pixCopiaCola: ${if (firebaseOrder.pixCopiaCola.isEmpty()) "VAZIO ❌" else "OK ✅ (${firebaseOrder.pixCopiaCola.length} chars)"}")
             
             // SEGURANÇA: Verificar se o pedido pertence ao usuário autenticado
             if (firebaseOrder.userId != userId) {
@@ -307,16 +309,25 @@ class OrderRepository {
                     if (itemMap != null) {
                         val name = itemMap["nome_produto"] as? String ?: itemMap["nome"] as? String ?: "Item"
                         val quantity = (itemMap["quantidade"] as? Long)?.toInt() ?: 1
-                        val price = (itemMap["subtotal"] as? Double) 
-                                    ?: (itemMap["preco_unitario"] as? Double) 
-                                    ?: (itemMap["preco"] as? Double) 
+                        
+                        // Buscar preco_unitario (para exibir na UI)
+                        val precoUnitario = (itemMap["preco_unitario"] as? Double) 
+                                            ?: (itemMap["preco_unitario"] as? Long)?.toDouble()
+                        
+                        // Buscar preco_total (subtotal já calculado)
+                        val precoTotal = (itemMap["preco_total"] as? Double) 
+                                        ?: (itemMap["preco_total"] as? Long)?.toDouble()
+                        
+                        // Se temos preco_total, usar ele. Senão, calcular (preco_unitario * quantidade)
+                        val price = precoTotal 
+                                    ?: (precoUnitario?.let { it * quantity })
                                     ?: 0.0
                         
                         orderItems.add(OrderDetailItem(name, quantity, price))
-                        Log.d("OrderRepository", "  - Item: $name x$quantity = R$ $price")
+                        Log.d("OrderRepository", "  - Item: $name x$quantity - preco_unitario: $precoUnitario, preco_total: $precoTotal, final: R$ $price")
                     }
                 } catch (e: Exception) {
-                    Log.e("OrderRepository", "Erro ao converter item: ${e.message}")
+                    Log.e("OrderRepository", "Erro ao converter item: ${e.message}", e)
                 }
             }
             
@@ -384,7 +395,14 @@ class OrderRepository {
                 createdAtMillis = firebaseOrder.date,
                 qrCodeBase64 = qrCodeBase64,
                 pixCopiaCola = pixCopiaCola
-            )
+            ).also { orderDetail ->
+                Log.d("OrderRepository", "==== ORDER DETAIL CRIADO ====")
+                Log.d("OrderRepository", "orderId: ${orderDetail.orderId}")
+                Log.d("OrderRepository", "paymentStatus: ${orderDetail.paymentStatus}")
+                Log.d("OrderRepository", "statusPagamento: ${orderDetail.statusPagamento}")
+                Log.d("OrderRepository", "Firebase statusPagamento: ${firebaseOrder.statusPagamento}")
+                Log.d("OrderRepository", "Condição (firebaseOrder.statusPagamento == 'pago'): ${firebaseOrder.statusPagamento == "pago"}")
+            }
         } catch (e: Exception) {
             Log.e("OrderRepository", "Erro ao buscar pedido $orderId: ${e.message}", e)
             e.printStackTrace()

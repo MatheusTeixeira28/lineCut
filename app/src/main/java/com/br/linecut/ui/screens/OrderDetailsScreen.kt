@@ -205,10 +205,22 @@ fun OrderDetailsScreen(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            // Ícone dinâmico baseado no status
+                            val (statusIcon, statusColor) = when {
+                                order.status.contains("concluído", ignoreCase = true) -> 
+                                    Icons.Default.CheckCircle to Color(0xFF4CAF50)
+                                order.status.contains("preparo", ignoreCase = true) -> 
+                                    Icons.Default.Schedule to Color(0xFFFFA500) // Laranja/Amarelo
+                                order.status.contains("cancelado", ignoreCase = true) -> 
+                                    Icons.Default.Cancel to Color(0xFFF44336)
+                                else -> 
+                                    Icons.Default.Schedule to Color(0xFFFFA500)
+                            }
+                            
                             Icon(
-                                imageVector = Icons.Default.CheckCircle,
+                                imageVector = statusIcon,
                                 contentDescription = null,
-                                tint = Color(0xFF4CAF50),
+                                tint = statusColor,
                                 modifier = Modifier.size(14.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -224,12 +236,14 @@ fun OrderDetailsScreen(
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            // Payment pending card (only when payment is pending)
-            if (order.paymentStatus == "pendente") {
+            // Payment pending card (visible quando pendente OU quando pago mas ainda não concluído)
+            // Mostrar enquanto o pagamento não foi totalmente processado
+            if (order.paymentStatus == "pendente" || order.statusPagamento == "pago") {
                 PaymentPendingCard(
                     remainingTime = order.remainingTime ?: "10:00 min",
                     onCompletePaymentClick = onCompletePaymentClick,
                     createdAtMillis = order.createdAtMillis,
+                    statusPagamento = order.statusPagamento,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(24.dp))
@@ -564,47 +578,54 @@ fun PaymentPendingCard(
     remainingTime: String,
     onCompletePaymentClick: () -> Unit,
     createdAtMillis: Long? = null,
+    statusPagamento: String = "pendente", // Novo parâmetro para verificar status
     modifier: Modifier = Modifier
 ) {
-    // Calculate remaining time based on creation timestamp
-    var totalSeconds by remember { 
-        mutableStateOf(
-            if (createdAtMillis != null) {
-                val currentTimeMillis = System.currentTimeMillis()
-                val elapsedSeconds = ((currentTimeMillis - createdAtMillis) / 1000).toInt()
-                val maxSeconds = 10 * 60 // 10 minutos
-                maxOf(0, maxSeconds - elapsedSeconds)
-            } else {
-                // Fallback: Parse initial time from string
-                val cleanTime = remainingTime.replace(" min", "").trim()
-                val parts = cleanTime.split(":")
-                val minutes = parts.getOrNull(0)?.toIntOrNull() ?: 10
-                val seconds = parts.getOrNull(1)?.toIntOrNull() ?: 0
-                minutes * 60 + seconds
-            }
-        )
+    // Verificar se o pagamento foi confirmado
+    val isPaymentConfirmed = statusPagamento == "pago"
+    
+    // Calculate remaining time based on creation timestamp - SEMPRE recalcular baseado no timestamp
+    val currentTimeMillis = System.currentTimeMillis()
+    
+    val totalSeconds = if (createdAtMillis != null) {
+        val elapsedSeconds = ((currentTimeMillis - createdAtMillis) / 1000).toInt()
+        val maxSeconds = 10 * 60 // 10 minutos
+        maxOf(0, maxSeconds - elapsedSeconds)
+    } else {
+        // Fallback: Parse initial time from string
+        val cleanTime = remainingTime.replace(" min", "").trim()
+        val parts = cleanTime.split(":")
+        val minutes = parts.getOrNull(0)?.toIntOrNull() ?: 10
+        val seconds = parts.getOrNull(1)?.toIntOrNull() ?: 0
+        minutes * 60 + seconds
     }
+    
+    // State para controlar o countdown (apenas para atualizar a UI a cada segundo)
+    var countdownSeconds by remember { mutableStateOf(totalSeconds) }
     
     // State to manage display time
-    var timeLeft by remember { 
-        val mins = totalSeconds / 60
-        val secs = totalSeconds % 60
-        mutableStateOf(String.format("%02d:%02d min", mins, secs))
-    }
+    val mins = countdownSeconds / 60
+    val secs = countdownSeconds % 60
+    val timeLeft = String.format("%02d:%02d min", mins, secs)
     
-    // Countdown effect
-    LaunchedEffect(key1 = totalSeconds) {
-        if (totalSeconds > 0) {
+    // Countdown effect - atualiza a cada segundo (apenas se pagamento não foi confirmado)
+    LaunchedEffect(key1 = currentTimeMillis, key2 = isPaymentConfirmed) {
+        if (!isPaymentConfirmed) {
             kotlinx.coroutines.delay(1000L)
-            totalSeconds -= 1
-            val mins = totalSeconds / 60
-            val secs = totalSeconds % 60
-            timeLeft = String.format("%02d:%02d min", mins, secs)
+            // Recalcular baseado no timestamp real, não apenas decrementar
+            if (createdAtMillis != null) {
+                val newCurrentTime = System.currentTimeMillis()
+                val elapsedSeconds = ((newCurrentTime - createdAtMillis) / 1000).toInt()
+                val maxSeconds = 10 * 60
+                countdownSeconds = maxOf(0, maxSeconds - elapsedSeconds)
+            } else {
+                countdownSeconds = maxOf(0, countdownSeconds - 1)
+            }
         }
     }
     
     // Check if time has run out
-    val isTimeExpired = totalSeconds <= 0
+    val isTimeExpired = countdownSeconds <= 0
     
     Card(
         modifier = modifier
@@ -623,40 +644,52 @@ fun PaymentPendingCard(
                     .fillMaxWidth()
                     .height(35.dp)
                     .background(
-                        color = LineCutRed,
+                        color = if (isPaymentConfirmed) LineCutRed else LineCutRed,
                         shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp, bottomStart = 10.dp, bottomEnd = 10.dp)
                     )
                     .padding(horizontal = 16.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                if (isPaymentConfirmed) {
+                    // Texto de "Processando pagamento..."
+                    Text(
+                        text = "Processando pagamento...",
+                        fontSize = 14.sp,
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else {
+                    // Timer original
                     Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Schedule,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(17.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Schedule,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(17.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Tempo restante:",
+                                fontSize = 13.sp,
+                                color = Color.White,
+                                fontWeight = FontWeight.Normal
+                            )
+                        }
                         Text(
-                            text = "Tempo restante:",
-                            fontSize = 13.sp,
+                            text = timeLeft,
+                            fontSize = 15.sp,
                             color = Color.White,
-                            fontWeight = FontWeight.Normal
+                            fontWeight = FontWeight.Medium
                         )
                     }
-                    Text(
-                        text = timeLeft,
-                        fontSize = 15.sp,
-                        color = Color.White,
-                        fontWeight = FontWeight.Medium
-                    )
                 }
             }
             
@@ -667,51 +700,63 @@ fun PaymentPendingCard(
                     .padding(horizontal = 12.dp, vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Warning text
-                Text(
-                    text = "Pague antes que o tempo acabe!",
-                    fontSize = 11.sp,
-                    color = Color(0xFF7D7D7D),
-                    fontWeight = FontWeight.Medium
-                )
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                // Complete payment button
-                Button(
-                    onClick = onCompletePaymentClick,
-                    enabled = !isTimeExpired,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF1CB456),
-                        disabledContainerColor = Color(0xFFCCCCCC)
-                    ),
-                    shape = RoundedCornerShape(22.dp),
-                    modifier = Modifier
-                        .width(343.dp)
-                        .height(23.dp),
-                    contentPadding = PaddingValues(0.dp)
-                ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Schedule,
-                        contentDescription = null,
-                        tint = if (isTimeExpired) Color(0xFF999999) else Color.White,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
+                if (isPaymentConfirmed) {
+                    // Texto de aguarde confirmação
                     Text(
-                        text = "Concluir pagamento",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = if (isTimeExpired) Color(0xFF999999) else Color.White,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 13.sp
-                        )
+                        text = "O Pix geralmente é confirmado em poucos segundos. Por favor, aguarde.",
+                        fontSize = 12.sp,
+                        color = Color(0xFF515050),
+                        fontWeight = FontWeight.Normal,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.padding(vertical = 8.dp)
                     )
+                } else {
+                    // UI original com botão
+                    Text(
+                        text = "Pague antes que o tempo acabe!",
+                        fontSize = 11.sp,
+                        color = Color(0xFF7D7D7D),
+                        fontWeight = FontWeight.Medium
+                    )
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    // Complete payment button
+                    Button(
+                        onClick = onCompletePaymentClick,
+                        enabled = !isTimeExpired,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF1CB456),
+                            disabledContainerColor = Color(0xFFCCCCCC)
+                        ),
+                        shape = RoundedCornerShape(22.dp),
+                        modifier = Modifier
+                            .width(343.dp)
+                            .height(23.dp),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Schedule,
+                                contentDescription = null,
+                                tint = if (isTimeExpired) Color(0xFF999999) else Color.White,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Concluir pagamento",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    color = if (isTimeExpired) Color(0xFF999999) else Color.White,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 13.sp
+                                )
+                            )
+                        }
+                    }
                 }
-            }
             }
         }
     }
@@ -724,77 +769,40 @@ fun OrderProgressTracker(
     modifier: Modifier = Modifier
 ) {
     // Determinar steps baseado no status_pagamento do Firebase
-    val progressSteps = if (statusPagamento == "pendente") {
-        // Pagamento ainda não foi confirmado - mostrar apenas "Pedido realizado"
-        listOf(
-            ProgressStep(
-                title = "Pedido realizado",
-                description = "Seu pedido foi recebido com sucesso! Aguardando confirmação de pagamento.",
-                icon = Icons.Default.ShoppingCart,
-                isCompleted = true,
-                isActive = true
-            ),
-            ProgressStep(
-                title = "Pagamento em análise",
-                description = null,
-                icon = Icons.Default.Schedule,
-                isCompleted = false
-            ),
-            ProgressStep(
-                title = "Preparando pedido",
-                description = null,
-                icon = Icons.Default.Schedule,
-                isCompleted = false
-            ),
-            ProgressStep(
-                title = "Pronto para retirada",
-                description = null,
-                icon = Icons.Default.ShoppingBag,
-                isCompleted = false
-            ),
-            ProgressStep(
-                title = "Retirado",
-                description = null,
-                icon = Icons.Default.CheckCircle,
-                isCompleted = false
-            )
+    val progressSteps = listOf(
+        ProgressStep(
+            title = "Pedido realizado",
+            description = "Seu pedido foi recebido com sucesso! Aguardando confirmação de pagamento.",
+            icon = Icons.Default.ShoppingCart,
+            isCompleted = true,
+            isActive = statusPagamento == "pendente"
+        ),
+        ProgressStep(
+            title = "Pagamento em análise",
+            description = null,
+            icon = Icons.Default.Schedule,
+            isCompleted = false,
+            isActive = statusPagamento == "pago"
+        ),
+        ProgressStep(
+            title = "Preparando pedido",
+            description = null,
+            icon = Icons.Default.Schedule,
+            isCompleted = false
+        ),
+        ProgressStep(
+            title = "Pronto para retirada",
+            description = null,
+            icon = Icons.Default.ShoppingBag,
+            isCompleted = false
+        ),
+        ProgressStep(
+            title = "Retirado",
+            description = null,
+            icon = Icons.Default.CheckCircle,
+            isCompleted = false
         )
-    } else {
-        // Pagamento confirmado (status_pagamento == "pago") - avançar para próximos steps
-        listOf(
-            ProgressStep(
-                title = "Pedido realizado",
-                description = "Seu pedido foi recebido com sucesso!",
-                icon = Icons.Default.ShoppingCart,
-                isCompleted = true
-            ),
-            ProgressStep(
-                title = "Pagamento confirmado",
-                description = "Pagamento aprovado!",
-                icon = Icons.Default.CheckCircle,
-                isCompleted = true
-            ),
-            ProgressStep(
-                title = "Preparando pedido",
-                description = null,
-                icon = Icons.Default.Schedule,
-                isCompleted = false,
-                isActive = true
-            ),
-            ProgressStep(
-                title = "Pronto para retirada",
-                description = null,
-                icon = Icons.Default.ShoppingBag,
-                isCompleted = false
-            ),
-            ProgressStep(
-                title = "Retirado",
-                description = null,
-                icon = Icons.Default.CheckCircle,
-                isCompleted = false
-            )
-        )
-    }
+    )
     
     Column(modifier = modifier) {
         // "Acompanhe seu pedido!" section
@@ -864,9 +872,9 @@ fun OrderProgressTracker(
                         Box(
                             modifier = Modifier
                                 .width(2.dp)
-                                .height(48.dp)
+                                .height(56.dp)
                                 .background(
-                                    if (progressSteps[index + 1].isCompleted) LineCutRed
+                                    if (progressSteps[index + 1].isCompleted || progressSteps[index + 1].isActive) LineCutRed
                                     else Color(0xFFE0E0E0)
                                 )
                         )
