@@ -69,6 +69,7 @@ fun OrderDetailsScreen(
     onRateOrderClick: () -> Unit,
     onAddToCartClick: () -> Unit,
     onCompletePaymentClick: () -> Unit = {},
+    onViewPickupCodeClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -259,9 +260,7 @@ fun OrderDetailsScreen(
             // Pickup ready card - mostrar quando pedido estiver pronto para retirada
             if (order.statusPedido == "pronto") {
                 PickupReadyCard(
-                    onViewPickupCodeClick = {
-                        // TODO: Navegar para tela de código de retirada
-                    },
+                    onViewPickupCodeClick = onViewPickupCodeClick,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(24.dp))
@@ -531,7 +530,8 @@ fun OrderDetailsScreenPreview() {
             onProfileClick = { },
             onRateOrderClick = { },
             onAddToCartClick = { },
-            onCompletePaymentClick = { }
+            onCompletePaymentClick = { },
+            onViewPickupCodeClick = { }
         )
     }
 }
@@ -555,7 +555,8 @@ fun OrderDetailsScreenWithoutRatingPreview() {
             onProfileClick = { },
             onRateOrderClick = { },
             onAddToCartClick = { },
-            onCompletePaymentClick = { }
+            onCompletePaymentClick = { },
+            onViewPickupCodeClick = { }
         )
     }
 }
@@ -582,7 +583,8 @@ fun OrderDetailsScreenWithPaymentPendingPreview() {
             onProfileClick = { },
             onRateOrderClick = { },
             onAddToCartClick = { },
-            onCompletePaymentClick = { }
+            onCompletePaymentClick = { },
+            onViewPickupCodeClick = { }
         )
     }
 }
@@ -607,7 +609,8 @@ fun OrderDetailsScreenReadyForPickupPreview() {
             onProfileClick = { },
             onRateOrderClick = { },
             onAddToCartClick = { },
-            onCompletePaymentClick = { }
+            onCompletePaymentClick = { },
+            onViewPickupCodeClick = { }
         )
     }
 }

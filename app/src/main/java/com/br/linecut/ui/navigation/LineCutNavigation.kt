@@ -711,29 +711,40 @@ fun LineCutNavigation(
         }
         
         Screen.PICKUP_QR -> {
-            PickupQRScreen(
-                orderNumber = "#1024", // TODO: Get actual order number
-                onBackClick = {
-                    currentScreen = Screen.QR_CODE_PIX
-                },
-                onHomeClick = {
-                    showSearchBarOnStores = false
-                    currentScreen = Screen.STORES
-                },
-                onSearchClick = {
-                    currentScreen = Screen.STORES
-                },
-                onNotificationClick = {
-                    currentScreen = Screen.NOTIFICATIONS
-                },
-                onOrdersClick = {
-                    currentScreen = Screen.ORDERS
-                },
-                onProfileClick = {
-                    currentScreen = Screen.PROFILE
-                },
-                modifier = modifier
-            )
+            // Usar dados do pedido atual (selectedOrderDetail)
+            selectedOrderDetail?.let { order ->
+                PickupQRScreen(
+                    orderNumber = order.orderId,
+                    storeName = order.storeName,
+                    storeType = order.storeType,
+                    date = order.date,
+                    status = order.status,
+                    items = order.items,
+                    total = order.total,
+                    paymentMethod = order.paymentMethod,
+                    imageRes = order.imageRes,
+                    onBackClick = {
+                        currentScreen = Screen.ORDER_DETAILS
+                    },
+                    onHomeClick = {
+                        showSearchBarOnStores = false
+                        currentScreen = Screen.STORES
+                    },
+                    onSearchClick = {
+                        currentScreen = Screen.STORES
+                    },
+                    onNotificationClick = {
+                        currentScreen = Screen.NOTIFICATIONS
+                    },
+                    onOrdersClick = {
+                        currentScreen = Screen.ORDERS
+                    },
+                    onProfileClick = {
+                        currentScreen = Screen.PROFILE
+                    },
+                    modifier = modifier
+                )
+            }
         }
         
         Screen.PROFILE -> {
@@ -1032,7 +1043,12 @@ fun LineCutNavigation(
                                 // Mostrar mensagem de erro ou manter na tela atual
                             }
                         }
-                    }
+                    },
+                    onViewPickupCodeClick = {
+                        // Navegar para tela de código de retirada
+                        currentScreen = Screen.PICKUP_QR
+                    },
+                    modifier = modifier
                 )
             }
         }

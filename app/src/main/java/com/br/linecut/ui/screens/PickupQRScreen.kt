@@ -4,13 +4,18 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Payment
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -29,7 +34,15 @@ import com.br.linecut.ui.theme.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PickupQRScreen(
-    orderNumber: String = "#1024",
+    orderNumber: String,
+    storeName: String,
+    storeType: String,
+    date: String,
+    status: String,
+    items: List<OrderDetailItem>,
+    total: Double,
+    paymentMethod: String,
+    imageRes: Int,
     onBackClick: () -> Unit = {},
     onHomeClick: () -> Unit = {},
     onSearchClick: () -> Unit = {},
@@ -45,20 +58,17 @@ fun PickupQRScreen(
             .fillMaxSize()
             .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
-        // Header identical to QRCodePixScreen - same proportions
+        // Header - Código de Retirada
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(126.dp)
+                .height(126.dp).shadow(
+                    elevation = 4.dp,
+                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
+                )
                 .background(
                     LineCutDesignSystem.screenBackgroundColor,
                     shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)
-                )
-                .shadow(
-                    elevation = 4.dp,
-                    shape = RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp),
-                    ambientColor = Color.Black.copy(alpha = 0.25f),
-                    spotColor = Color.Black.copy(alpha = 0.25f)
                 )
         ) {
             // Linha inferior do header com voltar + título
@@ -81,7 +91,7 @@ fun PickupQRScreen(
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
-                    text = "QR de Retirada",
+                    text = "Código de Retirada",
                     style = MaterialTheme.typography.titleLarge.copy(
                         color = LineCutRed,
                         fontWeight = FontWeight.Bold,
@@ -91,86 +101,283 @@ fun PickupQRScreen(
             }
         }
 
-        // Conteúdo principal
+        // Conteúdo principal com scroll
         Box(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .background(LineCutDesignSystem.screenBackgroundColor)
         ) {
-            // Texto "Apresente este QR Code no balcão"
-            Text(
-                text = "Apresente este QR Code no balcão",
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    color = Color(0xFF515050),
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 15.sp
-                ),
-                textAlign = TextAlign.Center,
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 72.dp, top = 89.dp, end = 72.dp) // 215px - 126px = 89dp
-            )
-            
-            // QR Code - 236x236 centralizado (mesmo do QRCodePixScreen)
-            Box(
-                modifier = Modifier
-                    .size(236.dp)
-                    .offset(y = 213.dp) // 339px - 126px = 213dp
-                    .align(Alignment.TopCenter),
-                contentAlignment = Alignment.Center
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(bottom = 16.dp)
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.qr_code),
-                    contentDescription = "QR Code de Retirada",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            }
-            
-            // Card com número do pedido - 339x97 centralizado
-            Box(
-                modifier = Modifier
-                    .offset(y = 550.dp) // 676px - 126px = 550dp
-                    .width(339.dp)
-                    .height(97.dp)
-                    .align(Alignment.TopCenter)
-                    .background(
-                        Color.White,
-                        shape = RoundedCornerShape(10.dp)
+                Spacer(modifier = Modifier.height(34.dp))
+                
+                // Store card (Rectangle 6 - igual ao OrderDetailsScreen)
+                Card(
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp)
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White
+                    ),
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = 4.dp
                     )
-                    .border(
-                        width = 1.dp,
-                        color = LineCutRed,
-                        shape = RoundedCornerShape(10.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Store image
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                                    .shadow(
+                                        elevation = 4.dp,
+                                        shape = CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = imageRes),
+                                    contentDescription = "Logo $storeName",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                            
+                            Spacer(modifier = Modifier.width(12.dp))
+                            
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = storeName,
+                                    fontSize = 16.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF515050).copy(alpha = 0.85f)
+                                )
+                                Text(
+                                    text = storeType,
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF515050).copy(alpha = 0.85f)
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = "Pedido nº $orderNumber",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF515050).copy(alpha = 0.85f)
+                                )
+                            }
+                            
+                            Text(
+                                text = date,
+                                fontSize = 11.66.sp,
+                                color = Color(0xFF515050)
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        // Status badge
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.6.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFFB9B9B9).copy(alpha = 0.14f)
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 6.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Schedule,
+                                    contentDescription = null,
+                                    tint = Color(0xFFFFA500),
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = status,
+                                    fontSize = 10.5.sp,
+                                    color = Color(0xFF515050)
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(44.dp))
+                
+                // Card grande com número do pedido (bordado em vermelho)
+                Card(
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp)
+                        .fillMaxWidth()
+                        .height(208.dp)
+                        .border(
+                            width = 2.dp,
+                            color = LineCutRed,
+                            shape = RoundedCornerShape(10.dp)
+                        ),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White
                     )
-            ) {
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "APRESENTE ESTE CÓDIGO NO BALCÃO",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = LineCutRed,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        Text(
+                            text = orderNumber,
+                            fontSize = 48.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = LineCutRed
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(40.dp))
+                
+                // Resumo do pedido
                 Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    modifier = Modifier.padding(horizontal = 25.dp)
                 ) {
                     Text(
-                        text = "Número do pedido:",
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            color = Color(0xFF515050),
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 16.sp
-                        )
+                        text = "Resumo do pedido",
+                        fontSize = 13.23.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF515050)
                     )
-                    Text(
-                        text = orderNumber,
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            color = Color(0xFF515050),
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 32.sp
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Order items
+                    items.forEach { item ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 6.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = item.name,
+                                fontSize = 12.13.sp,
+                                color = Color(0xFF515050),
+                                modifier = Modifier.weight(1f)
+                            )
+                            
+                            Text(
+                                text = "${item.quantity}x",
+                                fontSize = 12.13.sp,
+                                color = Color(0xFF515050),
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                            )
+                            
+                            Text(
+                                text = "R$ %.2f".format(item.price),
+                                fontSize = 12.13.sp,
+                                color = Color(0xFF515050)
+                            )
+                        }
+                        
+                        // Divider
+                        Divider(
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            color = Color(0xFFB9B9B9).copy(alpha = 0.3f)
                         )
-                    )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // Total
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Total",
+                            fontSize = 13.23.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF515050)
+                        )
+                        
+                        Text(
+                            text = "R$ %.2f".format(total),
+                            fontSize = 13.23.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF515050)
+                        )
+                    }
                 }
+                
+                Spacer(modifier = Modifier.height(40.dp))
+                
+                // Pagamento
+                Column(
+                    modifier = Modifier.padding(horizontal = 29.dp)
+                ) {
+                    Text(
+                        text = "Pagamento",
+                        fontSize = 12.98.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF515050)
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Payment,
+                            contentDescription = "PIX",
+                            tint = Color(0xFF515050),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        
+                        Spacer(modifier = Modifier.width(8.dp))
+                        
+                        Text(
+                            text = paymentMethod,
+                            fontSize = 12.98.sp,
+                            color = Color(0xFF515050).copy(alpha = 0.85f)
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
         
-        // Bottom Navigation - seguindo o padrão especificado
+        // Bottom Navigation
         LineCutBottomNavigationBar(
             selectedItem = if (isSearchVisible) NavigationItem.SEARCH else NavigationItem.HOME,
             onHomeClick = {
@@ -204,7 +411,20 @@ fun PickupQRScreen(
 fun PickupQRScreenPreview() {
     LineCutTheme {
         PickupQRScreen(
-            orderNumber = "#1024"
+            orderNumber = "#1025",
+            storeName = "Burger Queen",
+            storeType = "Lanches e Salgados",
+            date = "24/04/2025",
+            status = "Em andamento",
+            items = listOf(
+                OrderDetailItem("Açaí", 1, 11.90),
+                OrderDetailItem("Pizza", 2, 20.00),
+                OrderDetailItem("Coca-cola", 1, 5.00),
+                OrderDetailItem("Suco", 1, 6.00)
+            ),
+            total = 39.90,
+            paymentMethod = "PIX",
+            imageRes = R.drawable.burger_queen
         )
     }
 }
