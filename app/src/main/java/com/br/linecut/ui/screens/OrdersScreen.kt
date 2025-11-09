@@ -1,5 +1,6 @@
 package com.br.linecut.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -40,8 +41,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -63,9 +69,10 @@ data class Order(
     val storeCategory: String,
     val status: OrderStatus,
     val total: Double,
-    val rating: Int? = null,
+    val rating: Float? = null, // Mudado de Int? para Float? para suportar decimais
     val canRate: Boolean = true,
-    val storeImageUrl: String = ""
+    val storeImageUrl: String = "",
+    val storeId: String = "" // ID da lanchonete no Firebase
 )
 
 enum class OrderStatus {
@@ -193,11 +200,26 @@ fun OrdersScreen(
             
             // Listar os pedidos
             items(orders) { order ->
+                Log.d("RateOrderScreen", "Renderizando pedido: ${order.orderNumber} (id: ${order.id})")
                 OrderCard(
                     order = order,
-                    onDetailsClick = { onOrderClick(order) },
+                    onDetailsClick = { 
+                        Log.d("RateOrderScreen", "==== CLIQUE EM DETALHES DO PEDIDO ====")
+                        Log.d("RateOrderScreen", "Order ID: ${order.id}")
+                        Log.d("RateOrderScreen", "Order Number: ${order.orderNumber}")
+                        Log.d("RateOrderScreen", "Store Name: ${order.storeName}")
+                        Log.d("RateOrderScreen", "Store ID: ${order.storeId}")
+                        Log.d("RateOrderScreen", "Status: ${order.status}")
+                        Log.d("RateOrderScreen", "Total: ${order.total}")
+                        onOrderClick(order) 
+                    },
                     onRateClick = if (order.status == OrderStatus.COMPLETED) {
-                        { onRateOrderClick(order) }
+                        { 
+                            Log.d("RateOrderScreen", "==== CLIQUE EM AVALIAR PEDIDO ====")
+                            Log.d("RateOrderScreen", "Order ID: ${order.id}")
+                            Log.d("RateOrderScreen", "Order Number: ${order.orderNumber}")
+                            onRateOrderClick(order) 
+                        }
                     } else {
                         null
                     },
@@ -226,6 +248,15 @@ fun OrderCard(
     onRateClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    // Log detalhado do OrderCard
+    Log.d("OrderCard", "==== RENDERIZANDO ORDER CARD ====")
+    Log.d("OrderCard", "Order ID: ${order.id}")
+    Log.d("OrderCard", "Order Number: ${order.orderNumber}")
+    Log.d("OrderCard", "Store: ${order.storeName}")
+    Log.d("OrderCard", "Status: ${order.status}")
+    Log.d("OrderCard", "Rating: ${order.rating}")
+    Log.d("OrderCard", "Can Rate: ${order.canRate}")
+    
     // Card background with dynamic width
     Card(
         modifier = modifier
@@ -392,6 +423,7 @@ fun OrderCard(
         
         // Rating stars or "Indisponível"
         if (order.status == OrderStatus.CANCELLED || !order.canRate) {
+            Log.d("OrderCard", "Rating indisponível para pedido ${order.orderNumber}")
             Text(
                 text = "Indisponível",
                 fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
@@ -402,6 +434,7 @@ fun OrderCard(
             )
         } else {
             // Star rating with exact positioning - clicável se pedido concluído
+            Log.d("OrderCard", "Mostrando estrelas para pedido ${order.orderNumber} - Rating: ${order.rating}")
             Box(
                 modifier = Modifier
                     .offset(x = 19.38.dp, y = 138.77.dp)
@@ -410,6 +443,7 @@ fun OrderCard(
                         if (order.status == OrderStatus.COMPLETED && onRateClick != null) {
                             Modifier.clickable(
                                 onClick = {
+                                    Log.d("OrderCard", "Clique nas estrelas - Pedido ${order.orderNumber}")
                                     onRateClick()
                                 },
                                 indication = null,
@@ -421,8 +455,13 @@ fun OrderCard(
                     )
             ) {
                 StarRatingAbsolute(
-                    rating = order.rating ?: 0
+                    rating = order.rating ?: 0f
                 )
+            }
+            
+            // Log para debug
+            LaunchedEffect(order.rating) {
+                Log.d("OrderCard", "LaunchedEffect - Pedido ${order.orderNumber} - Rating atualizado para: ${order.rating}")
             }
         }
         
@@ -454,41 +493,114 @@ fun OrderCard(
 
 @Composable
 fun StarRatingAbsolute(
-    rating: Int,
+    rating: Float,
     maxStars: Int = 5,
     modifier: Modifier = Modifier
 ) {
+    Log.d("StarRatingAbsolute", "==== RENDERIZANDO ESTRELAS ====")
+    Log.d("StarRatingAbsolute", "Rating recebido: $rating")
+    Log.d("StarRatingAbsolute", "Max stars: $maxStars")
+    
     Box(modifier = modifier) {
         // Star positions based on CSS: left positions are 0, 16.15, 32.3, 48.45, 64.6
         val starPositions = listOf(0.dp, 16.15.dp, 32.3.dp, 48.45.dp, 64.6.dp)
         
         repeat(maxStars) { index ->
-            Icon(
-                imageVector = if (index < rating) Icons.Default.Star else Icons.Default.StarBorder,
-                contentDescription = null,
-                tint = if (index < rating) Color(0xFFF2C12E) else Color(0xFFD1D1D1),
+            val starFill = when {
+                rating >= index + 1 -> 1f // Estrela cheia
+                rating > index -> rating - index // Estrela parcial (ex: 0.5, 0.7)
+                else -> 0f // Estrela vazia
+            }
+            
+            Log.d("StarRatingAbsolute", "Estrela $index - Fill: $starFill")
+            
+            Box(
                 modifier = Modifier
                     .size(17.23.dp)
                     .offset(x = starPositions[index])
-            )
+            ) {
+                // Fundo: estrela cinza completa
+                Icon(
+                    imageVector = Icons.Default.Star,
+                    contentDescription = null,
+                    tint = Color(0xFFD1D1D1),
+                    modifier = Modifier.size(17.23.dp)
+                )
+                
+                // Foreground: estrela amarela com drawWithContent para clip
+                if (starFill > 0f) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = Color(0xFFF2C12E),
+                        modifier = Modifier
+                            .size(17.23.dp)
+                            .drawWithContent {
+                                val clipWidth = size.width * starFill
+                                clipPath(
+                                    path = Path().apply {
+                                        addRect(Rect(0f, 0f, clipWidth, size.height))
+                                    }
+                                ) {
+                                    this@drawWithContent.drawContent()
+                                }
+                            }
+                    )
+                }
+            }
         }
     }
 }
 
 @Composable
 fun StarRating(
-    rating: Int,
+    rating: Float,
     maxStars: Int = 5,
     modifier: Modifier = Modifier
 ) {
+    Log.d("StarRating", "==== RENDERIZANDO ESTRELAS (ROW VERSION) ====")
+    Log.d("StarRating", "Rating recebido: $rating")
+    
     Row(modifier = modifier) {
         repeat(maxStars) { index ->
-            Icon(
-                imageVector = if (index < rating) Icons.Default.Star else Icons.Default.StarBorder,
-                contentDescription = null,
-                tint = if (index < rating) Color(0xFFF2C12E) else Color(0xFFD1D1D1),
-                modifier = Modifier.size(17.23.dp)
-            )
+            val starFill = when {
+                rating >= index + 1 -> 1f // Estrela cheia
+                rating > index -> rating - index // Estrela parcial
+                else -> 0f // Estrela vazia
+            }
+            
+            Log.d("StarRating", "Estrela $index - Fill: $starFill")
+            
+            Box(modifier = Modifier.size(17.23.dp)) {
+                // Fundo: estrela cinza completa
+                Icon(
+                    imageVector = Icons.Default.Star,
+                    contentDescription = null,
+                    tint = Color(0xFFD1D1D1),
+                    modifier = Modifier.size(17.23.dp)
+                )
+                
+                // Foreground: estrela amarela com drawWithContent para clip
+                if (starFill > 0f) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = Color(0xFFF2C12E),
+                        modifier = Modifier
+                            .size(17.23.dp)
+                            .drawWithContent {
+                                val clipWidth = size.width * starFill
+                                clipPath(
+                                    path = Path().apply {
+                                        addRect(Rect(0f, 0f, clipWidth, size.height))
+                                    }
+                                ) {
+                                    this@drawWithContent.drawContent()
+                                }
+                            }
+                    )
+                }
+            }
         }
     }
 }
@@ -549,7 +661,7 @@ fun OrderCardCompletedPreview() {
                     storeCategory = "Lanches e Salgados",
                     status = OrderStatus.COMPLETED,
                     total = 39.90,
-                    rating = 5,
+                    rating = 4.5f, // Exemplo com meia estrela
                     canRate = true,
                     storeImageUrl = ""
                 ),
@@ -578,6 +690,33 @@ fun OrderCardCancelledPreview() {
                     total = 28.75,
                     rating = null,
                     canRate = false,
+                    storeImageUrl = ""
+                ),
+                onDetailsClick = {}
+            )
+        }
+    }
+}
+
+@Preview(
+    name = "Order Card - Rating 3.67 (rounded to 3.7)",
+    showBackground = true
+)
+@Composable
+fun OrderCardRating367Preview() {
+    LineCutTheme {
+        Box(modifier = Modifier.size(400.dp, 200.dp)) {
+            OrderCard(
+                order = Order(
+                    id = "4",
+                    orderNumber = "#1030",
+                    date = "09 Novembro 2025",
+                    storeName = "Burger Queen",
+                    storeCategory = "Lanches e Salgados",
+                    status = OrderStatus.COMPLETED,
+                    total = 42.00,
+                    rating = 3.67f, // (5 + 4 + 2) / 3 = 3.67
+                    canRate = true,
                     storeImageUrl = ""
                 ),
                 onDetailsClick = {}

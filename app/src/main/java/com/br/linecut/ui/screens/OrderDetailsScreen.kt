@@ -48,12 +48,13 @@ data class OrderDetail(
     val total: Double,
     val paymentMethod: String,
     val pickupLocation: String,
-    val rating: Int? = null,
+    val rating: Float? = null, // Mudado de Int? para Float? para suportar decimais
     val imageRes: Int,
     val remainingTime: String? = null, // ex: "10:00 min"
     val createdAtMillis: Long? = null, // Timestamp de criação do pedido no Firebase
     val qrCodeBase64: String? = null, // QR Code PIX em base64
-    val pixCopiaCola: String? = null // Código PIX copia e cola
+    val pixCopiaCola: String? = null, // Código PIX copia e cola
+    val storeId: String = "" // ID da lanchonete no Firebase
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -417,7 +418,7 @@ fun OrderDetailsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    StarRating(rating = order.rating ?: 0)
+                    StarRating(rating = order.rating ?: 0f)
                     
                     OutlinedButton(
                         onClick = onRateOrderClick,
@@ -477,17 +478,50 @@ fun OrderDetailsScreen(
 
 @Composable
 private fun StarRating(
-    rating: Int,
+    rating: Float,
     modifier: Modifier = Modifier
 ) {
     Row(modifier = modifier) {
         repeat(5) { index ->
-            Icon(
-                imageVector = if (index < rating) Icons.Default.Star else Icons.Default.StarBorder,
-                contentDescription = null,
-                tint = if (index < rating) Color(0xFFFFD700) else Color(0xFFE0E0E0),
-                modifier = Modifier.size(17.dp)
-            )
+            val starFill = when {
+                rating >= index + 1 -> 1f // Estrela cheia
+                rating > index -> rating - index // Estrela parcial
+                else -> 0f // Estrela vazia
+            }
+            
+            Box(modifier = Modifier.size(17.dp)) {
+                // Estrela vazia (fundo)
+                Icon(
+                    imageVector = Icons.Default.StarBorder,
+                    contentDescription = null,
+                    tint = Color(0xFFE0E0E0),
+                    modifier = Modifier.size(17.dp)
+                )
+                
+                // Estrela preenchida (com clip para fração)
+                if (starFill > 0f) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(androidx.compose.ui.graphics.RectangleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = null,
+                            tint = Color(0xFFFFD700),
+                            modifier = Modifier
+                                .size(17.dp)
+                                .then(
+                                    if (starFill < 1f) {
+                                        Modifier.fillMaxWidth(starFill)
+                                    } else {
+                                        Modifier
+                                    }
+                                )
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -511,7 +545,7 @@ fun getSampleOrderDetail() = OrderDetail(
     total = 39.90,
     paymentMethod = "PIX",
     pickupLocation = "Praça 3 - Senac",
-    rating = 5,
+    rating = 5f,
     imageRes = R.drawable.burger_queen,
     remainingTime = null,
     createdAtMillis = null,

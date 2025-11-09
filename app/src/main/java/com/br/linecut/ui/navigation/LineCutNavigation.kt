@@ -148,6 +148,7 @@ fun LineCutNavigation(
     }
     var selectedOrderDetail by remember { mutableStateOf<OrderDetail?>(null) }
     var selectedOrderForRating by remember { mutableStateOf<com.br.linecut.ui.screens.Order?>(null) }
+    var existingRatingForOrder by remember { mutableStateOf<com.br.linecut.ui.screens.ExistingRating?>(null) }
     
     // Initialize order detail if starting directly on ORDER_DETAILS screen
     LaunchedEffect(startDestination) {
@@ -167,7 +168,7 @@ fun LineCutNavigation(
                 total = 39.90,
                 paymentMethod = "PIX",
                 pickupLocation = "Praça 3 - Senac",
-                rating = 5,
+                rating = 5f,
                 imageRes = R.drawable.burger_queen
             )
         }
@@ -454,12 +455,10 @@ fun LineCutNavigation(
                         currentScreen = Screen.STORE_DETAIL
                     },
                     onPaymentMethodChange = { method ->
-                        // TODO: Handle payment method change
-                        println("Payment method changed: $method")
+                        selectedPaymentMethod = method
                     },
                     onPaymentTypeChange = { type ->
-                        // TODO: Handle payment type change
-                        println("Payment type changed: $type")
+                        selectedPaymentType = type
                     },
                     onFinishOrderClick = {
                         currentScreen = Screen.PAYMENT_METHOD
@@ -950,20 +949,41 @@ fun LineCutNavigation(
                     currentScreen = Screen.PROFILE
                 },
                 onOrderClick = { order ->
+                    Log.d("RateOrderScreen", "==== NAVEGAÇÃO: onOrderClick CHAMADO ====")
+                    Log.d("RateOrderScreen", "Order recebido - ID: ${order.id}")
+                    Log.d("RateOrderScreen", "Order recebido - Number: ${order.orderNumber}")
+                    Log.d("RateOrderScreen", "Order recebido - Store: ${order.storeName}")
+                    Log.d("RateOrderScreen", "Order recebido - StoreId: ${order.storeId}")
+                    
                     // Buscar dados reais do pedido no Firebase
                     coroutineScope.launch {
                         val orderId = order.id.removePrefix("#")
+                        Log.d("RateOrderScreen", "Buscando pedido do Firebase - OrderId sem #: $orderId")
                         Log.d("LineCutNavigation", "Buscando pedido do Firebase ao clicar: $orderId")
                         
                         val firebaseOrder = orderRepository.getOrderById(orderId)
                         
                         if (firebaseOrder != null) {
+                            Log.d("RateOrderScreen", "✅ PEDIDO ENCONTRADO NO FIREBASE")
+                            Log.d("RateOrderScreen", "  - OrderId: ${firebaseOrder.orderId}")
+                            Log.d("RateOrderScreen", "  - StoreName: ${firebaseOrder.storeName}")
+                            Log.d("RateOrderScreen", "  - StoreId: ${firebaseOrder.storeId}")
+                            Log.d("RateOrderScreen", "  - Status Pagamento: ${firebaseOrder.statusPagamento}")
+                            Log.d("RateOrderScreen", "  - Status Pedido: ${firebaseOrder.statusPedido}")
+                            
                             Log.d("LineCutNavigation", "✅ Pedido encontrado - statusPagamento: ${firebaseOrder.statusPagamento}")
                             Log.d("LineCutNavigation", "QR Code Base64: ${if (firebaseOrder.qrCodeBase64.isNullOrEmpty()) "VAZIO ❌" else "OK ✅ (${firebaseOrder.qrCodeBase64.length} chars)"}")
                             Log.d("LineCutNavigation", "PIX Copia e Cola: ${if (firebaseOrder.pixCopiaCola.isNullOrEmpty()) "VAZIO ❌" else "OK ✅ (${firebaseOrder.pixCopiaCola.length} chars)"}")
+                            
                             selectedOrderDetail = firebaseOrder
+                            
+                            Log.d("RateOrderScreen", "Navegando para Screen.ORDER_DETAILS")
                             currentScreen = Screen.ORDER_DETAILS
                         } else {
+                            Log.e("RateOrderScreen", "❌ PEDIDO NÃO ENCONTRADO NO FIREBASE")
+                            Log.e("RateOrderScreen", "  - OrderId buscado: $orderId")
+                            Log.e("RateOrderScreen", "  - Função getOrderById retornou NULL")
+                            
                             Log.e("LineCutNavigation", "❌ Pedido não encontrado no Firebase - ID: $orderId")
                             // TODO: Mostrar mensagem de erro para o usuário
                             // Por enquanto, ficar na tela de pedidos
@@ -971,8 +991,37 @@ fun LineCutNavigation(
                     }
                 },
                 onRateOrderClick = { order ->
-                    selectedOrderForRating = order
-                    currentScreen = Screen.RATE_ORDER
+                    coroutineScope.launch {
+                        Log.d("LineCutNavigation", "==== BUSCANDO AVALIAÇÃO (Orders Screen) ====")
+                        Log.d("LineCutNavigation", "StoreId: ${order.storeId}")
+                        Log.d("LineCutNavigation", "OrderId: ${order.id}")
+                        
+                        // Buscar avaliação existente do Firebase
+                        val existingRating = orderRepository.getOrderRating(
+                            storeId = order.storeId,
+                            orderId = order.id
+                        )
+                        
+                        Log.d("LineCutNavigation", "Avaliação encontrada: ${existingRating != null}")
+                        if (existingRating != null) {
+                            Log.d("LineCutNavigation", "  - Qualidade: ${existingRating.qualidade}")
+                            Log.d("LineCutNavigation", "  - Velocidade: ${existingRating.velocidade}")
+                            Log.d("LineCutNavigation", "  - Atendimento: ${existingRating.atendimento}")
+                        }
+                        
+                        existingRatingForOrder = if (existingRating != null) {
+                            com.br.linecut.ui.screens.ExistingRating(
+                                qualityRating = existingRating.qualidade,
+                                speedRating = existingRating.velocidade,
+                                serviceRating = existingRating.atendimento
+                            )
+                        } else null
+                        
+                        Log.d("LineCutNavigation", "ExistingRatingForOrder: $existingRatingForOrder")
+                        
+                        selectedOrderForRating = order
+                        currentScreen = Screen.RATE_ORDER
+                    }
                 }
             )
         }
@@ -1059,20 +1108,51 @@ fun LineCutNavigation(
                         currentScreen = Screen.PROFILE
                     },
                     onRateOrderClick = {
-                        selectedOrderForRating = com.br.linecut.ui.screens.Order(
-                            id = currentOrder.orderId,
-                            orderNumber = currentOrder.orderId,
-                            date = currentOrder.date,
-                            storeName = currentOrder.storeName,
-                            storeCategory = currentOrder.storeType,
-                            status = if (currentOrder.statusPedido == "retirado" || currentOrder.statusPedido == "entregue") 
-                                com.br.linecut.ui.screens.OrderStatus.COMPLETED 
-                            else 
-                                com.br.linecut.ui.screens.OrderStatus.IN_PROGRESS,
-                            total = currentOrder.total,
-                            rating = currentOrder.rating ?: 0
-                        )
-                        currentScreen = Screen.RATE_ORDER
+                        coroutineScope.launch {
+                            Log.d("LineCutNavigation", "==== BUSCANDO AVALIAÇÃO ====")
+                            Log.d("LineCutNavigation", "StoreId: ${currentOrder.storeId}")
+                            Log.d("LineCutNavigation", "OrderId: ${currentOrder.orderId}")
+                            
+                            // Buscar avaliação existente do Firebase
+                            val existingRating = orderRepository.getOrderRating(
+                                storeId = currentOrder.storeId,
+                                orderId = currentOrder.orderId
+                            )
+                            
+                            Log.d("LineCutNavigation", "Avaliação encontrada: ${existingRating != null}")
+                            if (existingRating != null) {
+                                Log.d("LineCutNavigation", "  - Qualidade: ${existingRating.qualidade}")
+                                Log.d("LineCutNavigation", "  - Velocidade: ${existingRating.velocidade}")
+                                Log.d("LineCutNavigation", "  - Atendimento: ${existingRating.atendimento}")
+                            }
+                            
+                            existingRatingForOrder = if (existingRating != null) {
+                                com.br.linecut.ui.screens.ExistingRating(
+                                    qualityRating = existingRating.qualidade,
+                                    speedRating = existingRating.velocidade,
+                                    serviceRating = existingRating.atendimento
+                                )
+                            } else null
+                            
+                            Log.d("LineCutNavigation", "ExistingRatingForOrder: $existingRatingForOrder")
+                            
+                            selectedOrderForRating = com.br.linecut.ui.screens.Order(
+                                id = currentOrder.orderId,
+                                orderNumber = currentOrder.orderId,
+                                date = currentOrder.date,
+                                storeName = currentOrder.storeName,
+                                storeCategory = currentOrder.storeType,
+                                status = if (currentOrder.statusPedido == "retirado" || currentOrder.statusPedido == "entregue") 
+                                    com.br.linecut.ui.screens.OrderStatus.COMPLETED 
+                                else 
+                                    com.br.linecut.ui.screens.OrderStatus.IN_PROGRESS,
+                                total = currentOrder.total,
+                                rating = currentOrder.rating?.toFloat(),
+                                storeId = currentOrder.storeId
+                            )
+                            
+                            currentScreen = Screen.RATE_ORDER
+                        }
                     },
                     onAddToCartClick = {
                         // TODO: Add items to cart and navigate
@@ -1120,11 +1200,14 @@ fun LineCutNavigation(
                 com.br.linecut.ui.screens.RateOrderScreen(
                     order = com.br.linecut.ui.screens.OrderRatingData(
                         orderId = order.id,
+                        storeId = order.storeId,
                         orderNumber = order.orderNumber,
                         storeName = order.storeName,
                         storeCategory = order.storeCategory,
                         date = order.date,
-                        storeImageUrl = order.storeImageUrl
+                        storeImageUrl = order.storeImageUrl,
+                        totalPrice = order.total,
+                        existingRating = existingRatingForOrder
                     ),
                     onBackClick = {
                         currentScreen = Screen.ORDERS
@@ -1146,32 +1229,29 @@ fun LineCutNavigation(
                     onProfileClick = {
                         currentScreen = Screen.PROFILE
                     },
-                    onSubmitRating = { overallRating, qualityRating, speedRating, serviceRating ->
+                    onSubmitRating = { qualityRating, speedRating, serviceRating ->
                         coroutineScope.launch {
                             try {
-                                val database = FirebaseDatabase.getInstance()
-                                val orderId = order.id.removePrefix("#")
-                                val pedidoRef = database.getReference("pedidos").child(orderId)
+                                Log.d("LineCutNavigation", "Salvando avaliação - StoreId: ${order.storeId}, OrderId: ${order.id}")
                                 
-                                // Criar objeto de avaliação
-                                val ratingData = mapOf(
-                                    "avaliacao_geral" to overallRating,
-                                    "avaliacao_qualidade" to qualityRating,
-                                    "avaliacao_rapidez" to speedRating,
-                                    "avaliacao_atendimento" to serviceRating,
-                                    "data_avaliacao" to System.currentTimeMillis()
+                                // Usar o OrderRepository para salvar a avaliação
+                                val result = orderRepository.saveOrderRating(
+                                    storeId = order.storeId,
+                                    orderId = order.id,
+                                    qualityRating = qualityRating,
+                                    speedRating = speedRating,
+                                    serviceRating = serviceRating
                                 )
                                 
-                                // Salvar no Firebase
-                                pedidoRef.child("avaliacoes").setValue(ratingData).await()
-                                
-                                Log.d("LineCutNavigation", "✅ Avaliação salva com sucesso - Pedido: $orderId")
-                                
-                                // Navegar de volta para a tela de pedidos
-                                currentScreen = Screen.ORDERS
+                                result.onSuccess {
+                                    Log.d("LineCutNavigation", "✅ Avaliação salva com sucesso!")
+                                    // NÃO navegar automaticamente - usuário permanece na tela
+                                }.onFailure { error ->
+                                    Log.e("LineCutNavigation", "❌ Erro ao salvar avaliação: ${error.message}", error)
+                                    // TODO: Mostrar mensagem de erro para o usuário
+                                }
                             } catch (e: Exception) {
-                                Log.e("LineCutNavigation", "❌ Erro ao salvar avaliação: ${e.message}", e)
-                                // TODO: Mostrar mensagem de erro para o usuário
+                                Log.e("LineCutNavigation", "❌ Exceção ao salvar avaliação: ${e.message}", e)
                             }
                         }
                     }
@@ -1953,7 +2033,7 @@ private fun getSampleOrderDetail() = OrderDetail(
     total = 39.90,
     paymentMethod = "PIX",
     pickupLocation = "Praça 3 - Senac",
-    rating = 5,
+    rating = 5f,
     imageRes = R.drawable.burger_queen,
     createdAtMillis = null
 )

@@ -4,6 +4,7 @@ import android.util.Log
 import com.br.linecut.data.firebase.FirebaseConfig
 import com.br.linecut.data.models.FirebaseOrder
 import com.br.linecut.data.models.FirebaseStore
+import com.br.linecut.data.models.OrderRating
 import com.br.linecut.ui.screens.Order
 import com.br.linecut.ui.screens.OrderDetail
 import com.br.linecut.ui.screens.OrderDetailItem
@@ -210,40 +211,57 @@ class OrderRepository {
     suspend fun getOrderById(orderId: String): OrderDetail? {
         val currentUser = auth.currentUser
         if (currentUser == null) {
+            Log.e("RateOrderScreen", "❌ getOrderById - Usuário não autenticado")
             Log.e("OrderRepository", "Usuário não autenticado")
             return null
         }
         
         val userId = currentUser.uid
+        Log.d("RateOrderScreen", "==== getOrderById CHAMADO ====")
+        Log.d("RateOrderScreen", "  - OrderId: $orderId")
+        Log.d("RateOrderScreen", "  - UserId: $userId")
         Log.d("OrderRepository", "Buscando pedido específico: $orderId para usuário: $userId")
         
         return try {
             // Buscar o pedido na tabela 'pedidos'
+            Log.d("RateOrderScreen", "Buscando em: pedidos/$orderId")
             val orderSnapshot = database.reference
                 .child("pedidos")
                 .child(orderId)
                 .get()
                 .await()
             
+            Log.d("RateOrderScreen", "Snapshot exists: ${orderSnapshot.exists()}")
+            Log.d("RateOrderScreen", "Snapshot hasChildren: ${orderSnapshot.hasChildren()}")
+            
             if (!orderSnapshot.exists()) {
+                Log.w("RateOrderScreen", "❌ Pedido $orderId NÃO ENCONTRADO na tabela 'pedidos'")
                 Log.w("OrderRepository", "Pedido $orderId não encontrado")
                 return null
             }
             
+            Log.d("RateOrderScreen", "✅ Pedido encontrado na tabela 'pedidos'")
             Log.d("OrderRepository", "Dados do pedido: ${orderSnapshot.value}")
             
             // O Firebase pode retornar dados em formato aninhado com o ID como chave
             // Precisamos verificar e extrair corretamente
             val firebaseOrder = try {
-                if (orderSnapshot.hasChildren()) {
+                Log.d("RateOrderScreen", "Tentando converter snapshot para FirebaseOrder...")
+                val result = if (orderSnapshot.hasChildren()) {
                     // Estrutura: { orderId: { dados } } - pegar o primeiro filho
+                    Log.d("RateOrderScreen", "Snapshot tem filhos - estrutura aninhada")
                     val firstChild = orderSnapshot.children.firstOrNull()
+                    Log.d("RateOrderScreen", "Primeiro filho key: ${firstChild?.key}")
                     firstChild?.getValue(FirebaseOrder::class.java)?.copy(id = firstChild.key ?: orderId)
                 } else {
                     // Estrutura direta: { dados }
+                    Log.d("RateOrderScreen", "Estrutura direta - sem filhos")
                     orderSnapshot.getValue(FirebaseOrder::class.java)?.copy(id = orderId)
                 }
+                Log.d("RateOrderScreen", "Conversão automática: ${if (result != null) "SUCESSO ✅" else "FALHOU ❌"}")
+                result
             } catch (e: Exception) {
+                Log.e("RateOrderScreen", "❌ Erro ao converter pedido: ${e.message}", e)
                 Log.e("OrderRepository", "Erro ao converter pedido para FirebaseOrder: ${e.message}", e)
                 
                 // Tentar conversão manual como fallback
@@ -276,9 +294,17 @@ class OrderRepository {
             }
             
             if (firebaseOrder == null) {
+                Log.e("RateOrderScreen", "❌ FirebaseOrder é NULL após conversão")
                 Log.e("OrderRepository", "Erro ao converter pedido $orderId")
                 return null
             }
+            
+            Log.d("RateOrderScreen", "✅ FirebaseOrder convertido com sucesso")
+            Log.d("RateOrderScreen", "  - id: '${firebaseOrder.id}'")
+            Log.d("RateOrderScreen", "  - userId: '${firebaseOrder.userId}'")
+            Log.d("RateOrderScreen", "  - idLanchonete: '${firebaseOrder.idLanchonete}'")
+            Log.d("RateOrderScreen", "  - statusPagamento: '${firebaseOrder.statusPagamento}'")
+            Log.d("RateOrderScreen", "  - statusPedido: '${firebaseOrder.statusPedido}'")
             
             Log.d("OrderRepository", "FirebaseOrder convertido:")
             Log.d("OrderRepository", "  - id: '${firebaseOrder.id}'")
@@ -290,11 +316,16 @@ class OrderRepository {
             Log.d("OrderRepository", "  - pixCopiaCola: ${if (firebaseOrder.pixCopiaCola.isEmpty()) "VAZIO ❌" else "OK ✅ (${firebaseOrder.pixCopiaCola.length} chars)"}")
             
             // SEGURANÇA: Verificar se o pedido pertence ao usuário autenticado
+            Log.d("RateOrderScreen", "Verificando segurança - userId do pedido: '${firebaseOrder.userId}' vs userId autenticado: '$userId'")
             if (firebaseOrder.userId != userId) {
+                Log.w("RateOrderScreen", "❌ PEDIDO NÃO PERTENCE AO USUÁRIO")
+                Log.w("RateOrderScreen", "  - Pedido pertence a: '${firebaseOrder.userId}'")
+                Log.w("RateOrderScreen", "  - Usuário autenticado: '$userId'")
                 Log.w("OrderRepository", "❌ Pedido $orderId não pertence ao usuário $userId (pertence a '${firebaseOrder.userId}')")
                 return null
             }
             
+            Log.d("RateOrderScreen", "✅ Pedido validado - pertence ao usuário")
             Log.d("OrderRepository", "✅ Pedido validado - pertence ao usuário")
             
             // Buscar informações da lanchonete
@@ -395,7 +426,8 @@ class OrderRepository {
                 remainingTime = null,
                 createdAtMillis = firebaseOrder.date,
                 qrCodeBase64 = qrCodeBase64,
-                pixCopiaCola = pixCopiaCola
+                pixCopiaCola = pixCopiaCola,
+                storeId = firebaseOrder.idLanchonete
             ).also { orderDetail ->
                 Log.d("OrderRepository", "==== ORDER DETAIL CRIADO ====")
                 Log.d("OrderRepository", "orderId: ${orderDetail.orderId}")
@@ -449,19 +481,20 @@ class OrderRepository {
     }
     
     /**
-     * Busca informações da lanchonete no Firebase e converte o pedido
+     * Busca informações da lanchonete e avaliação no Firebase e converte o pedido
      */
     private fun fetchStoreInfo(firebaseOrder: FirebaseOrder, callback: (Order?) -> Unit) {
         val storeId = firebaseOrder.idLanchonete
         
         if (storeId.isEmpty()) {
             Log.w("OrderRepository", "ID da lanchonete vazio, usando valores padrão")
-            callback(convertFirebaseOrderToOrder(firebaseOrder, "Lanchonete", "Categoria", ""))
+            callback(convertFirebaseOrderToOrder(firebaseOrder, "Lanchonete", "Categoria", "", null))
             return
         }
         
         Log.d("OrderRepository", "Buscando informações da lanchonete: $storeId")
         
+        // Buscar informações da lanchonete
         database.reference
             .child("empresas")
             .child(storeId)
@@ -479,23 +512,67 @@ class OrderRepository {
                             val storeImageUrl = firebaseStore.imageUrl
                             
                             Log.d("OrderRepository", "Lanchonete encontrada: $storeName - $storeCategory - imageUrl: $storeImageUrl")
-                            callback(convertFirebaseOrderToOrder(firebaseOrder, storeName, storeCategory, storeImageUrl))
+                            
+                            // Buscar avaliação do pedido
+                            fetchRatingForOrder(storeId, firebaseOrder.id) { averageRating ->
+                                callback(convertFirebaseOrderToOrder(firebaseOrder, storeName, storeCategory, storeImageUrl, averageRating))
+                            }
                         } else {
                             Log.w("OrderRepository", "FirebaseStore é null, usando valores padrão")
-                            callback(convertFirebaseOrderToOrder(firebaseOrder, "Lanchonete", "Categoria", ""))
+                            callback(convertFirebaseOrderToOrder(firebaseOrder, "Lanchonete", "Categoria", "", null))
                         }
                     } catch (e: Exception) {
                         Log.e("OrderRepository", "Erro ao converter lanchonete $storeId: ${e.message}", e)
-                        callback(convertFirebaseOrderToOrder(firebaseOrder, "Lanchonete", "Categoria", ""))
+                        callback(convertFirebaseOrderToOrder(firebaseOrder, "Lanchonete", "Categoria", "", null))
                     }
                 } else {
                     Log.w("OrderRepository", "Lanchonete $storeId não encontrada, usando valores padrão")
-                    callback(convertFirebaseOrderToOrder(firebaseOrder, "Lanchonete", "Categoria", ""))
+                    callback(convertFirebaseOrderToOrder(firebaseOrder, "Lanchonete", "Categoria", "", null))
                 }
             }
             .addOnFailureListener { exception ->
                 Log.e("OrderRepository", "Erro ao buscar lanchonete $storeId: ${exception.message}", exception)
-                callback(convertFirebaseOrderToOrder(firebaseOrder, "Lanchonete", "Categoria", ""))
+                callback(convertFirebaseOrderToOrder(firebaseOrder, "Lanchonete", "Categoria", "", null))
+            }
+    }
+    
+    /**
+     * Busca a avaliação de um pedido e calcula a média
+     * Retorna a média exata (1.0-5.0) ou null se não houver avaliação
+     */
+    private fun fetchRatingForOrder(storeId: String, orderId: String, callback: (Double?) -> Unit) {
+        database.reference
+            .child("pedidos_por_lanchonete")
+            .child(storeId)
+            .child(orderId)
+            .child("avaliacao")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                if (snapshot.exists()) {
+                    try {
+                        val rating = snapshot.getValue(OrderRating::class.java)
+                        if (rating != null) {
+                            // Calcular média das 3 notas (mantém decimais)
+                            val average = (rating.atendimento + rating.qualidade + rating.velocidade) / 3.0
+                            
+                            Log.d("OrderRepository", "Avaliação encontrada para pedido $orderId: atendimento=${rating.atendimento}, qualidade=${rating.qualidade}, velocidade=${rating.velocidade}, média=$average")
+                            callback(average)
+                        } else {
+                            Log.d("OrderRepository", "Nenhuma avaliação para pedido $orderId")
+                            callback(null)
+                        }
+                    } catch (e: Exception) {
+                        Log.e("OrderRepository", "Erro ao processar avaliação: ${e.message}", e)
+                        callback(null)
+                    }
+                } else {
+                    Log.d("OrderRepository", "Sem avaliação para pedido $orderId")
+                    callback(null)
+                }
+            }
+            .addOnFailureListener { exception ->
+                Log.e("OrderRepository", "Erro ao buscar avaliação: ${exception.message}", exception)
+                callback(null)
             }
     }
     
@@ -506,8 +583,14 @@ class OrderRepository {
         firebaseOrder: FirebaseOrder,
         storeName: String,
         storeCategory: String,
-        storeImageUrl: String
+        storeImageUrl: String,
+        averageRating: Double? = null
     ): Order {
+        Log.d("OrderRepository", "==== CONVERTENDO FIREBASE ORDER PARA ORDER ====")
+        Log.d("OrderRepository", "Firebase Order ID: ${firebaseOrder.id}")
+        Log.d("OrderRepository", "Store Name: $storeName")
+        Log.d("OrderRepository", "Average Rating recebido: $averageRating")
+        
         val orderStatus = when (firebaseOrder.status.uppercase()) {
             "IN_PROGRESS", "EM_ANDAMENTO" -> OrderStatus.IN_PROGRESS
             "COMPLETED", "CONCLUIDO", "CONCLUÍDO" -> OrderStatus.COMPLETED
@@ -518,7 +601,10 @@ class OrderRepository {
         // Formatar a data
         val dateString = formatDate(firebaseOrder.date)
         
-        return Order(
+        val ratingFloat = averageRating?.toFloat()
+        Log.d("OrderRepository", "Rating convertido para Float: $ratingFloat")
+        
+        val order = Order(
             id = firebaseOrder.id,
             orderNumber = firebaseOrder.orderNumber,
             date = dateString,
@@ -526,10 +612,14 @@ class OrderRepository {
             storeCategory = storeCategory,
             status = orderStatus,
             total = firebaseOrder.total,
-            rating = firebaseOrder.rating,
+            rating = ratingFloat, // Converter para Float
             canRate = firebaseOrder.canRate,
-            storeImageUrl = storeImageUrl
+            storeImageUrl = storeImageUrl,
+            storeId = firebaseOrder.idLanchonete
         )
+        
+        Log.d("OrderRepository", "Order criado - ID: ${order.id}, Rating: ${order.rating}, Status: ${order.status}")
+        return order
     }
     
     /**
@@ -543,6 +633,111 @@ class OrderRepository {
         } catch (e: Exception) {
             Log.e("OrderRepository", "Erro ao formatar data: ${e.message}", e)
             "Data indisponível"
+        }
+    }
+    
+    /**
+     * Salva a avaliação do pedido no Firebase
+     * Caminho: pedidos_por_lanchonete/{storeId}/{orderId}/avaliacao
+     * 
+     * @param storeId ID da lanchonete
+     * @param orderId ID do pedido
+     * @param qualityRating Nota de qualidade (1-5)
+     * @param speedRating Nota de velocidade (1-5)
+     * @param serviceRating Nota de atendimento (1-5)
+     * @return Result<Unit> indicando sucesso ou erro
+     */
+    suspend fun saveOrderRating(
+        storeId: String,
+        orderId: String,
+        qualityRating: Int,
+        speedRating: Int,
+        serviceRating: Int
+    ): Result<Unit> {
+        return try {
+            Log.d("OrderRepository", "Salvando avaliação para pedido $orderId da lanchonete $storeId")
+            
+            // Validar parâmetros
+            if (storeId.isEmpty() || orderId.isEmpty()) {
+                Log.e("OrderRepository", "StoreId ou OrderId vazios")
+                return Result.failure(IllegalArgumentException("StoreId e OrderId são obrigatórios"))
+            }
+            
+            if (qualityRating !in 1..5 || speedRating !in 1..5 || serviceRating !in 1..5) {
+                Log.e("OrderRepository", "Notas devem estar entre 1 e 5")
+                return Result.failure(IllegalArgumentException("Notas devem estar entre 1 e 5"))
+            }
+            
+            // Criar timestamp no formato ISO 8601
+            val currentTimestamp = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
+                timeZone = java.util.TimeZone.getTimeZone("UTC")
+            }.format(Date())
+            
+            // Criar objeto de avaliação
+            val rating = OrderRating(
+                atendimento = serviceRating,
+                qualidade = qualityRating,
+                velocidade = speedRating,
+                dataAvaliacao = currentTimestamp
+            )
+            
+            Log.d("OrderRepository", "Avaliação criada: atendimento=$serviceRating, qualidade=$qualityRating, velocidade=$speedRating")
+            Log.d("OrderRepository", "Data da avaliação: $currentTimestamp")
+            
+            // Salvar no caminho: pedidos_por_lanchonete/{storeId}/{orderId}/avaliacao
+            database.reference
+                .child("pedidos_por_lanchonete")
+                .child(storeId)
+                .child(orderId)
+                .child("avaliacao")
+                .setValue(rating)
+                .await()
+            
+            Log.d("OrderRepository", "✅ Avaliação salva com sucesso!")
+            Result.success(Unit)
+            
+        } catch (e: Exception) {
+            Log.e("OrderRepository", "❌ Erro ao salvar avaliação: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Busca a avaliação de um pedido específico
+     * Caminho: pedidos_por_lanchonete/{storeId}/{orderId}/avaliacao
+     * 
+     * @param storeId ID da lanchonete
+     * @param orderId ID do pedido
+     * @return OrderRating? - null se não houver avaliação
+     */
+    suspend fun getOrderRating(storeId: String, orderId: String): OrderRating? {
+        return try {
+            Log.d("OrderRepository", "Buscando avaliação - StoreId: $storeId, OrderId: $orderId")
+            
+            if (storeId.isEmpty() || orderId.isEmpty()) {
+                Log.w("OrderRepository", "StoreId ou OrderId vazios")
+                return null
+            }
+            
+            val snapshot = database.reference
+                .child("pedidos_por_lanchonete")
+                .child(storeId)
+                .child(orderId)
+                .child("avaliacao")
+                .get()
+                .await()
+            
+            if (snapshot.exists()) {
+                val rating = snapshot.getValue(OrderRating::class.java)
+                Log.d("OrderRepository", "✅ Avaliação encontrada: atendimento=${rating?.atendimento}, qualidade=${rating?.qualidade}, velocidade=${rating?.velocidade}")
+                rating
+            } else {
+                Log.d("OrderRepository", "Nenhuma avaliação encontrada para este pedido")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("OrderRepository", "❌ Erro ao buscar avaliação: ${e.message}", e)
+            null
         }
     }
 }

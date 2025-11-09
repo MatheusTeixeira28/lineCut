@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.util.Log
 import com.br.linecut.R
 import com.br.linecut.ui.components.CachedAsyncImage
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
@@ -32,11 +33,23 @@ import com.br.linecut.ui.theme.LineCutTheme
 
 data class OrderRatingData(
     val orderId: String,
+    val storeId: String,
     val orderNumber: String,
     val storeName: String,
     val storeCategory: String,
     val date: String,
-    val storeImageUrl: String = ""
+    val storeImageUrl: String = "",
+    val totalPrice: Double = 0.0,
+    val existingRating: ExistingRating? = null // Avaliação já existente, se houver
+)
+
+/**
+ * Dados de uma avaliação existente
+ */
+data class ExistingRating(
+    val qualityRating: Int,
+    val speedRating: Int,
+    val serviceRating: Int
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,14 +62,49 @@ fun RateOrderScreen(
     onNotificationClick: () -> Unit,
     onOrdersClick: () -> Unit,
     onProfileClick: () -> Unit,
-    onSubmitRating: (overallRating: Int, qualityRating: Int, speedRating: Int, serviceRating: Int) -> Unit,
+    onSubmitRating: (qualityRating: Int, speedRating: Int, serviceRating: Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     // Estados para as avaliações
-    var overallRating by remember { mutableStateOf(0) }
     var qualityRating by remember { mutableStateOf(0) }
     var speedRating by remember { mutableStateOf(0) }
     var serviceRating by remember { mutableStateOf(0) }
+    var isRatingSubmitted by remember { mutableStateOf(false) }
+    
+    // Armazenar as avaliações enviadas (para exibir no modo readonly)
+    var submittedQualityRating by remember { mutableStateOf(0) }
+    var submittedSpeedRating by remember { mutableStateOf(0) }
+    var submittedServiceRating by remember { mutableStateOf(0) }
+    
+    // Atualizar os estados quando order.existingRating mudar
+    LaunchedEffect(order.existingRating) {
+        Log.d("RateOrderScreen", "==== DADOS DO PEDIDO (LaunchedEffect) ====")
+        Log.d("RateOrderScreen", "OrderId: ${order.orderId}")
+        Log.d("RateOrderScreen", "StoreId: ${order.storeId}")
+        Log.d("RateOrderScreen", "ExistingRating: ${order.existingRating}")
+        
+        if (order.existingRating != null) {
+            Log.d("RateOrderScreen", "  ✅ AVALIAÇÃO ENCONTRADA!")
+            Log.d("RateOrderScreen", "  - Qualidade: ${order.existingRating.qualityRating}")
+            Log.d("RateOrderScreen", "  - Velocidade: ${order.existingRating.speedRating}")
+            Log.d("RateOrderScreen", "  - Atendimento: ${order.existingRating.serviceRating}")
+            
+            // Atualizar TODOS os estados
+            qualityRating = order.existingRating.qualityRating
+            speedRating = order.existingRating.speedRating
+            serviceRating = order.existingRating.serviceRating
+            
+            submittedQualityRating = order.existingRating.qualityRating
+            submittedSpeedRating = order.existingRating.speedRating
+            submittedServiceRating = order.existingRating.serviceRating
+            
+            isRatingSubmitted = true
+            
+            Log.d("RateOrderScreen", "  ✅ Estados atualizados com avaliação existente")
+        } else {
+            Log.d("RateOrderScreen", "  - Nenhuma avaliação existente")
+        }
+    }
     
     Box(
         modifier = modifier
@@ -205,24 +253,14 @@ fun RateOrderScreen(
             
             Spacer(modifier = Modifier.height(36.dp))
             
-            // Overall rating section
-            RatingSection(
-                title = "O que achou do pedido?",
-                subtitle = "Escolha de 1 a 5 estrelas para classificar",
-                rating = overallRating,
-                onRatingChange = { overallRating = it },
-                starSize = 35.dp
-            )
-            
-            Spacer(modifier = Modifier.height(40.dp))
-            
             // Quality rating section
             RatingSection(
                 title = "Qualidade do produto",
                 subtitle = "Estava bem preparado, saboroso, embalado corretamente.",
                 rating = qualityRating,
-                onRatingChange = { qualityRating = it },
-                starSize = 30.dp
+                onRatingChange = { if (!isRatingSubmitted) qualityRating = it },
+                starSize = 30.dp,
+                isReadOnly = isRatingSubmitted
             )
             
             Spacer(modifier = Modifier.height(40.dp))
@@ -232,8 +270,9 @@ fun RateOrderScreen(
                 title = "Velocidade de entrega",
                 subtitle = "Tempo de espera, agilidade no preparo.",
                 rating = speedRating,
-                onRatingChange = { speedRating = it },
-                starSize = 30.dp
+                onRatingChange = { if (!isRatingSubmitted) speedRating = it },
+                starSize = 30.dp,
+                isReadOnly = isRatingSubmitted
             )
             
             Spacer(modifier = Modifier.height(40.dp))
@@ -243,8 +282,9 @@ fun RateOrderScreen(
                 title = "Atendimento",
                 subtitle = "Comunicação, atenção aos detalhes, resolução de dúvidas",
                 rating = serviceRating,
-                onRatingChange = { serviceRating = it },
-                starSize = 30.dp
+                onRatingChange = { if (!isRatingSubmitted) serviceRating = it },
+                starSize = 30.dp,
+                isReadOnly = isRatingSubmitted
             )
             
             Spacer(modifier = Modifier.height(56.dp))
@@ -252,20 +292,32 @@ fun RateOrderScreen(
             // Submit button
             Button(
                 onClick = {
-                    onSubmitRating(overallRating, qualityRating, speedRating, serviceRating)
+                    if (!isRatingSubmitted) {
+                        // Salvar as avaliações enviadas
+                        submittedQualityRating = qualityRating
+                        submittedSpeedRating = speedRating
+                        submittedServiceRating = serviceRating
+                        
+                        // Marcar como enviado
+                        isRatingSubmitted = true
+                        
+                        // Enviar para o Firebase (sem overallRating)
+                        onSubmitRating(qualityRating, speedRating, serviceRating)
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(28.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = LineCutRed
+                    containerColor = if (isRatingSubmitted) Color(0xFF515050) else LineCutRed,
+                    disabledContainerColor = Color(0xFF515050)
                 ),
                 shape = RoundedCornerShape(20.dp),
                 contentPadding = PaddingValues(0.dp),
-                enabled = overallRating > 0 // Apenas habilitar se houver avaliação geral
+                enabled = if (isRatingSubmitted) false else (qualityRating > 0 && speedRating > 0 && serviceRating > 0)
             ) {
                 Text(
-                    text = "Finalizar avaliação",
+                    text = if (isRatingSubmitted) "Pedido avaliado" else "Finalizar avaliação",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color.White
@@ -294,6 +346,7 @@ private fun RatingSection(
     rating: Int,
     onRatingChange: (Int) -> Unit,
     starSize: androidx.compose.ui.unit.Dp,
+    isReadOnly: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -333,7 +386,13 @@ private fun RatingSection(
                     tint = if (index < rating) Color(0xFFF2C12E) else Color(0xFFD1D1D1),
                     modifier = Modifier
                         .size(starSize)
-                        .clickable { onRatingChange(index + 1) }
+                        .then(
+                            if (!isReadOnly) {
+                                Modifier.clickable { onRatingChange(index + 1) }
+                            } else {
+                                Modifier
+                            }
+                        )
                 )
             }
         }
@@ -346,12 +405,14 @@ fun RateOrderScreenPreview() {
     LineCutTheme {
         RateOrderScreen(
             order = OrderRatingData(
-                orderId = "1",
+                orderId = "GZK92",
+                storeId = "SefAPVcpIzgqIuPLIDNpYb4kNBl2",
                 orderNumber = "#1025",
                 storeName = "Burger Queen",
                 storeCategory = "Lanches e Salgados",
                 date = "24/04/2025",
-                storeImageUrl = ""
+                storeImageUrl = "",
+                totalPrice = 10.7
             ),
             onBackClick = {},
             onHomeClick = {},
@@ -359,7 +420,38 @@ fun RateOrderScreenPreview() {
             onNotificationClick = {},
             onOrdersClick = {},
             onProfileClick = {},
-            onSubmitRating = { _, _, _, _ -> }
+            onSubmitRating = { _, _, _ -> }
+        )
+    }
+}
+
+@Preview(showBackground = true, showSystemUi = true, name = "Pedido Já Avaliado")
+@Composable
+fun RateOrderScreenRatedPreview() {
+    LineCutTheme {
+        RateOrderScreen(
+            order = OrderRatingData(
+                orderId = "GZK92",
+                storeId = "SefAPVcpIzgqIuPLIDNpYb4kNBl2",
+                orderNumber = "#1025",
+                storeName = "Burger Queen",
+                storeCategory = "Lanches e Salgados",
+                date = "24/04/2025",
+                storeImageUrl = "",
+                totalPrice = 10.7,
+                existingRating = ExistingRating(
+                    qualityRating = 4,
+                    speedRating = 5,
+                    serviceRating = 3
+                )
+            ),
+            onBackClick = {},
+            onHomeClick = {},
+            onSearchClick = {},
+            onNotificationClick = {},
+            onOrdersClick = {},
+            onProfileClick = {},
+            onSubmitRating = { _, _, _ -> }
         )
     }
 }
