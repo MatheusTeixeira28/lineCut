@@ -207,14 +207,18 @@ fun OrderDetailsScreen(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Ícone dinâmico baseado no statusPedido (campo do Firebase)
-                            val (statusIcon, statusColor) = when (order.statusPedido) {
-                                "retirado" -> 
-                                    Icons.Default.CheckCircle to Color(0xFF4CAF50) // Verde SOMENTE quando retirado
+                            // Ícone e texto dinâmicos baseados no statusPedido (campo do Firebase)
+                            val (statusIcon, statusColor, statusText) = when (order.statusPedido) {
+                                "retirado", "entregue" -> 
+                                    Triple(Icons.Default.CheckCircle, Color(0xFF4CAF50), "Pedido concluído") // Verde quando retirado/entregue
                                 "cancelado" -> 
-                                    Icons.Default.Cancel to Color(0xFFF44336) // Vermelho quando cancelado
+                                    Triple(Icons.Default.Cancel, Color(0xFFF44336), "Cancelado") // Vermelho quando cancelado
+                                "pronto" ->
+                                    Triple(Icons.Default.Schedule, Color(0xFFFFA500), "Pronto para retirada") // Laranja quando pronto
+                                "em_preparo" ->
+                                    Triple(Icons.Default.Schedule, Color(0xFFFFA500), "Em preparo") // Laranja quando em preparo
                                 else -> 
-                                    Icons.Default.Schedule to Color(0xFFFFA500) // Amarelo para todos os outros (pendente, em_preparo, pronto, etc)
+                                    Triple(Icons.Default.Schedule, Color(0xFFFFA500), "Em andamento") // Laranja para pendente e outros
                             }
                             
                             Icon(
@@ -225,7 +229,7 @@ fun OrderDetailsScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = order.status,
+                                text = statusText,
                                 fontSize = 10.5.sp,
                                 color = Color(0xFF515050)
                             )
@@ -434,27 +438,29 @@ fun OrderDetailsScreen(
                 Spacer(modifier = Modifier.height(32.dp))
             }
             
-            // Cancel order button
-            OutlinedButton(
-                onClick = { 
-                    // TODO: Implementar funcionalidade de cancelar pedido
-                },
-                shape = RoundedCornerShape(22.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = LineCutRed
-                ),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(30.dp)
-            ) {
-                Text(
-                    text = "Cancelar pedido",
-                    fontSize = 13.23.sp
-                )
+            // Cancel order button - ocultar quando pedido já foi retirado
+            if (order.statusPedido !in listOf("retirado", "entregue")) {
+                OutlinedButton(
+                    onClick = { 
+                        // TODO: Implementar funcionalidade de cancelar pedido
+                    },
+                    shape = RoundedCornerShape(22.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = LineCutRed
+                    ),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(30.dp)
+                ) {
+                    Text(
+                        text = "Cancelar pedido",
+                        fontSize = 13.23.sp
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(32.dp))
             }
-            
-            Spacer(modifier = Modifier.height(32.dp))
         }
         
         // Bottom Navigation Bar
@@ -922,22 +928,22 @@ fun OrderProgressTracker(
             title = "Preparando pedido",
             description = null,
             icon = Icons.Default.Schedule,
-            isCompleted = statusPedido in listOf("pronto", "entregue"),
+            isCompleted = statusPedido in listOf("pronto", "retirado", "entregue"),
             isActive = statusPedido == "em_preparo"
         ),
         ProgressStep(
             title = "Pronto para retirada",
             description = null,
             icon = Icons.Default.ShoppingBag,
-            isCompleted = statusPedido == "entregue",
+            isCompleted = statusPedido in listOf("retirado", "entregue"),
             isActive = statusPedido == "pronto"
         ),
         ProgressStep(
             title = "Retirado",
             description = null,
             icon = Icons.Default.CheckCircle,
-            isCompleted = statusPedido == "entregue",
-            isActive = statusPedido == "entregue"
+            isCompleted = statusPedido in listOf("retirado", "entregue"),
+            isActive = statusPedido in listOf("retirado", "entregue")
         )
     )
     
@@ -976,6 +982,9 @@ fun OrderProgressTracker(
         
         // Progress steps
         progressSteps.forEachIndexed { index, step ->
+            // Determinar se é o último step (Retirado) e se está ativo/completo
+            val isLastStepComplete = index == progressSteps.size - 1 && (step.isCompleted || step.isActive)
+            
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
@@ -990,8 +999,11 @@ fun OrderProgressTracker(
                             .size(22.dp)
                             .clip(CircleShape)
                             .background(
-                                if (step.isCompleted || step.isActive) LineCutRed
-                                else Color(0xFFE0E0E0)
+                                when {
+                                    isLastStepComplete -> Color(0xFF1CB456) // Verde para último step quando completo
+                                    step.isCompleted || step.isActive -> LineCutRed
+                                    else -> Color(0xFFE0E0E0)
+                                }
                             ),
                         contentAlignment = Alignment.Center
                     ) {
@@ -1006,13 +1018,20 @@ fun OrderProgressTracker(
                     
                     // Connecting line (except for the last item)
                     if (index < progressSteps.size - 1) {
+                        // Verificar se o próximo step é o último e está completo
+                        val isNextStepLastAndComplete = index == progressSteps.size - 2 && 
+                                                       (progressSteps[index + 1].isCompleted || progressSteps[index + 1].isActive)
+                        
                         Box(
                             modifier = Modifier
                                 .width(2.dp)
                                 .height(56.dp)
                                 .background(
-                                    if (progressSteps[index + 1].isCompleted || progressSteps[index + 1].isActive) LineCutRed
-                                    else Color(0xFFE0E0E0)
+                                    when {
+                                        isNextStepLastAndComplete -> Color(0xFF1CB456) // Verde quando conecta ao último step completo
+                                        progressSteps[index + 1].isCompleted || progressSteps[index + 1].isActive -> LineCutRed
+                                        else -> Color(0xFFE0E0E0)
+                                    }
                                 )
                         )
                     }

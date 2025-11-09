@@ -2,6 +2,7 @@ package com.br.linecut.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -35,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -82,6 +84,7 @@ fun OrdersScreen(
     onOrdersClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     onOrderClick: (Order) -> Unit = {},
+    onRateOrderClick: (Order) -> Unit = {},
     modifier: Modifier = Modifier,
     orderViewModel: OrderViewModel = viewModel()
 ) {
@@ -193,6 +196,11 @@ fun OrdersScreen(
                 OrderCard(
                     order = order,
                     onDetailsClick = { onOrderClick(order) },
+                    onRateClick = if (order.status == OrderStatus.COMPLETED) {
+                        { onRateOrderClick(order) }
+                    } else {
+                        null
+                    },
                     modifier = Modifier.padding(bottom = 13.dp)
                 )
             }
@@ -215,6 +223,7 @@ fun OrdersScreen(
 fun OrderCard(
     order: Order,
     onDetailsClick: () -> Unit,
+    onRateClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     // Card background with dynamic width
@@ -225,8 +234,7 @@ fun OrderCard(
             .shadow(
                 elevation = 4.31.dp,
                 shape = RoundedCornerShape(10.77.dp)
-            )
-            .clickable { onDetailsClick() },
+            ),
         shape = RoundedCornerShape(10.77.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
@@ -393,11 +401,29 @@ fun OrderCard(
                 modifier = Modifier.offset(x = 21.92.dp, y = 138.dp)
             )
         } else {
-            // Star rating with exact positioning
-            StarRatingAbsolute(
-                rating = order.rating ?: 0,
-                modifier = Modifier.offset(x = 19.38.dp, y = 138.77.dp)
-            )
+            // Star rating with exact positioning - clicável se pedido concluído
+            Box(
+                modifier = Modifier
+                    .offset(x = 19.38.dp, y = 138.77.dp)
+                    .size(width = 81.dp, height = 18.dp) // Área clicável das 5 estrelas
+                    .then(
+                        if (order.status == OrderStatus.COMPLETED && onRateClick != null) {
+                            Modifier.clickable(
+                                onClick = {
+                                    onRateClick()
+                                },
+                                indication = null,
+                                interactionSource = remember { MutableInteractionSource() }
+                            )
+                        } else {
+                            Modifier
+                        }
+                    )
+            ) {
+                StarRatingAbsolute(
+                    rating = order.rating ?: 0
+                )
+            }
         }
         
         // Details button - positioned at bottom right dynamically

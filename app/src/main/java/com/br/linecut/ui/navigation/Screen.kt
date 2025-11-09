@@ -22,6 +22,7 @@ enum class Screen {
     PAYMENTS,
     ORDERS,
     ORDER_DETAILS,
+    RATE_ORDER,
     HELP,
     HOW_TO_ORDER,
     TRACK_ORDER,

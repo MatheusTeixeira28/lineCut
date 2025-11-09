@@ -29,6 +29,7 @@ import com.br.linecut.ui.screens.profile.NotificationsScreen
 import com.br.linecut.ui.screens.profile.PaymentsScreen
 import com.br.linecut.ui.screens.OrdersScreen
 import com.br.linecut.ui.screens.OrderDetailsScreen
+import com.br.linecut.ui.screens.RateOrderScreen
 import com.br.linecut.ui.screens.profile.HelpScreen
 import com.br.linecut.ui.screens.profile.help.HowToOrderScreen
 import com.br.linecut.ui.screens.profile.help.TrackOrderScreen
@@ -146,6 +147,7 @@ fun LineCutNavigation(
         }
     }
     var selectedOrderDetail by remember { mutableStateOf<OrderDetail?>(null) }
+    var selectedOrderForRating by remember { mutableStateOf<com.br.linecut.ui.screens.Order?>(null) }
     
     // Initialize order detail if starting directly on ORDER_DETAILS screen
     LaunchedEffect(startDestination) {
@@ -967,6 +969,10 @@ fun LineCutNavigation(
                             // Por enquanto, ficar na tela de pedidos
                         }
                     }
+                },
+                onRateOrderClick = { order ->
+                    selectedOrderForRating = order
+                    currentScreen = Screen.RATE_ORDER
                 }
             )
         }
@@ -1053,7 +1059,20 @@ fun LineCutNavigation(
                         currentScreen = Screen.PROFILE
                     },
                     onRateOrderClick = {
-                        // TODO: Implement rating functionality
+                        selectedOrderForRating = com.br.linecut.ui.screens.Order(
+                            id = currentOrder.orderId,
+                            orderNumber = currentOrder.orderId,
+                            date = currentOrder.date,
+                            storeName = currentOrder.storeName,
+                            storeCategory = currentOrder.storeType,
+                            status = if (currentOrder.statusPedido == "retirado" || currentOrder.statusPedido == "entregue") 
+                                com.br.linecut.ui.screens.OrderStatus.COMPLETED 
+                            else 
+                                com.br.linecut.ui.screens.OrderStatus.IN_PROGRESS,
+                            total = currentOrder.total,
+                            rating = currentOrder.rating ?: 0
+                        )
+                        currentScreen = Screen.RATE_ORDER
                     },
                     onAddToCartClick = {
                         // TODO: Add items to cart and navigate
@@ -1092,6 +1111,70 @@ fun LineCutNavigation(
                         currentScreen = Screen.PICKUP_QR
                     },
                     modifier = modifier
+                )
+            }
+        }
+        
+        Screen.RATE_ORDER -> {
+            selectedOrderForRating?.let { order ->
+                com.br.linecut.ui.screens.RateOrderScreen(
+                    order = com.br.linecut.ui.screens.OrderRatingData(
+                        orderId = order.id,
+                        orderNumber = order.orderNumber,
+                        storeName = order.storeName,
+                        storeCategory = order.storeCategory,
+                        date = order.date,
+                        storeImageUrl = order.storeImageUrl
+                    ),
+                    onBackClick = {
+                        currentScreen = Screen.ORDERS
+                    },
+                    onHomeClick = {
+                        showSearchBarOnStores = false
+                        currentScreen = Screen.STORES
+                    },
+                    onSearchClick = {
+                        showSearchBarOnStores = true
+                        currentScreen = Screen.STORES
+                    },
+                    onNotificationClick = {
+                        currentScreen = Screen.NOTIFICATIONS
+                    },
+                    onOrdersClick = {
+                        currentScreen = Screen.ORDERS
+                    },
+                    onProfileClick = {
+                        currentScreen = Screen.PROFILE
+                    },
+                    onSubmitRating = { overallRating, qualityRating, speedRating, serviceRating ->
+                        coroutineScope.launch {
+                            try {
+                                val database = FirebaseDatabase.getInstance()
+                                val orderId = order.id.removePrefix("#")
+                                val pedidoRef = database.getReference("pedidos").child(orderId)
+                                
+                                // Criar objeto de avaliação
+                                val ratingData = mapOf(
+                                    "avaliacao_geral" to overallRating,
+                                    "avaliacao_qualidade" to qualityRating,
+                                    "avaliacao_rapidez" to speedRating,
+                                    "avaliacao_atendimento" to serviceRating,
+                                    "data_avaliacao" to System.currentTimeMillis()
+                                )
+                                
+                                // Salvar no Firebase
+                                pedidoRef.child("avaliacoes").setValue(ratingData).await()
+                                
+                                Log.d("LineCutNavigation", "✅ Avaliação salva com sucesso - Pedido: $orderId")
+                                
+                                // Navegar de volta para a tela de pedidos
+                                currentScreen = Screen.ORDERS
+                            } catch (e: Exception) {
+                                Log.e("LineCutNavigation", "❌ Erro ao salvar avaliação: ${e.message}", e)
+                                // TODO: Mostrar mensagem de erro para o usuário
+                            }
+                        }
+                    }
                 )
             }
         }
