@@ -76,8 +76,8 @@ data class FirebaseOrder(
     
     val status: String
         get() = when (statusPedido.lowercase()) {
-            "pendente", "em_preparo" -> "IN_PROGRESS"
-            "pronto", "entregue" -> "COMPLETED"
+            "pendente", "em_preparo", "pronto" -> "IN_PROGRESS"
+            "retirado", "entregue" -> "COMPLETED"
             "cancelado" -> "CANCELLED"
             else -> "IN_PROGRESS"
         }
@@ -89,5 +89,5 @@ data class FirebaseOrder(
         get() = null // TODO: Implementar sistema de avaliação
     
     val canRate: Boolean
-        get() = statusPedido.lowercase() in listOf("pronto", "entregue")
+        get() = statusPedido.lowercase() == "retirado" || statusPedido.lowercase() == "entregue"
 }

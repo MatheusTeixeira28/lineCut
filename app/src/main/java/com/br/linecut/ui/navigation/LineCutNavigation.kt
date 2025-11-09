@@ -53,6 +53,49 @@ import com.br.linecut.ui.utils.ImageCache
 import com.br.linecut.ui.utils.ImageLoader
 import com.br.linecut.ui.viewmodel.AuthViewModel
 import com.br.linecut.data.repository.OrderRepository
+import kotlin.random.Random
+
+/**
+ * Gera um código único para pedido com formato: 3 LETRAS + 2 NÚMEROS (ex: ABC12, XYZ45)
+ * Verifica no Firebase se o código já existe antes de retornar
+ */
+suspend fun generateUniqueOrderCode(): String {
+    val database = FirebaseDatabase.getInstance()
+    val pedidosRef = database.getReference("pedidos")
+    
+    var attempts = 0
+    val maxAttempts = 50 // Limitar tentativas para evitar loop infinito
+    
+    while (attempts < maxAttempts) {
+        // Gerar 3 letras aleatórias (A-Z)
+        val letters = (1..3).map { 
+            ('A'..'Z').random() 
+        }.joinToString("")
+        
+        // Gerar 2 números aleatórios (0-9)
+        val numbers = (1..2).map { 
+            Random.nextInt(0, 10) 
+        }.joinToString("")
+        
+        val code = letters + numbers
+        
+        // Verificar se já existe no Firebase
+        val snapshot = pedidosRef.child(code).get().await()
+        
+        if (!snapshot.exists()) {
+            Log.d("ORDER_CODE", "✅ Código único gerado: $code (tentativa ${attempts + 1})")
+            return code
+        }
+        
+        attempts++
+        Log.d("ORDER_CODE", "⚠️ Código $code já existe, tentando novamente... (tentativa $attempts)")
+    }
+    
+    // Fallback: se não conseguir gerar código único após maxAttempts, usar timestamp
+    val fallbackCode = "ORD${System.currentTimeMillis().toString().takeLast(5)}"
+    Log.e("ORDER_CODE", "❌ Não foi possível gerar código único após $maxAttempts tentativas. Usando fallback: $fallbackCode")
+    return fallbackCode
+}
 
 @Composable
 fun LineCutNavigation(
@@ -529,15 +572,15 @@ fun LineCutNavigation(
                         pedidoRef = database.getReference("pedidos").child(pedidoId)
                         android.util.Log.d("PIX_RESPONSE", "Usando pedido existente: $pedidoId")
                     } else {
-                        // Não temos pedido - gerar novo ID do Firebase
-                        pedidoRef = database.getReference("pedidos").push()
-                        pedidoId = pedidoRef.key ?: java.util.UUID.randomUUID().toString()
+                        // Não temos pedido - gerar novo código único
+                        pedidoId = generateUniqueOrderCode()
+                        pedidoRef = database.getReference("pedidos").child(pedidoId)
                         currentPedidoId = pedidoId
                         
                         // Limpar selectedOrderDetail de pedidos anteriores
                         selectedOrderDetail = null
                         
-                        android.util.Log.d("PIX_RESPONSE", "Criando novo pedido: $pedidoId")
+                        android.util.Log.d("PIX_RESPONSE", "Criando novo pedido com código: $pedidoId")
                     }
                     
                     // Criar pedido a partir do carrinho usando o ID correto

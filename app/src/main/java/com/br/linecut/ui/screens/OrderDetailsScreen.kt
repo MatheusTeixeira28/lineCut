@@ -207,16 +207,14 @@ fun OrderDetailsScreen(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Ícone dinâmico baseado no status
-                            val (statusIcon, statusColor) = when {
-                                order.status.contains("concluído", ignoreCase = true) -> 
-                                    Icons.Default.CheckCircle to Color(0xFF4CAF50)
-                                order.status.contains("preparo", ignoreCase = true) -> 
-                                    Icons.Default.Schedule to Color(0xFFFFA500) // Laranja/Amarelo
-                                order.status.contains("cancelado", ignoreCase = true) -> 
-                                    Icons.Default.Cancel to Color(0xFFF44336)
+                            // Ícone dinâmico baseado no statusPedido (campo do Firebase)
+                            val (statusIcon, statusColor) = when (order.statusPedido) {
+                                "retirado" -> 
+                                    Icons.Default.CheckCircle to Color(0xFF4CAF50) // Verde SOMENTE quando retirado
+                                "cancelado" -> 
+                                    Icons.Default.Cancel to Color(0xFFF44336) // Vermelho quando cancelado
                                 else -> 
-                                    Icons.Default.Schedule to Color(0xFFFFA500)
+                                    Icons.Default.Schedule to Color(0xFFFFA500) // Amarelo para todos os outros (pendente, em_preparo, pronto, etc)
                             }
                             
                             Icon(
@@ -497,7 +495,7 @@ fun getSampleOrderDetail() = OrderDetail(
     status = "Pedido concluído",
     paymentStatus = "aprovado",
     statusPagamento = "pago",
-    statusPedido = "entregue",
+    statusPedido = "retirado", // Pedido concluído = retirado
     items = listOf(
         OrderDetailItem("Açaí", 1, 11.90),
         OrderDetailItem("Pizza", 2, 20.00),

@@ -42,7 +42,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -270,7 +269,7 @@ fun OrderCard(
             }
         }
         
-        // Store name "Museoh"
+        // Store name
         Text(
             text = order.storeName,
             fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
@@ -280,7 +279,7 @@ fun OrderCard(
             modifier = Modifier.offset(x = 68.91.dp, y = 41.99.dp)
         )
         
-        // Store category "Lanches e Salgados"
+        // Store category
         Text(
             text = order.storeCategory,
             fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
@@ -290,229 +289,16 @@ fun OrderCard(
             modifier = Modifier.offset(x = 68.91.dp, y = 61.37.dp)
         )
         
-        // Order number
+        // Order number - alinhado à direita
         Text(
             text = "Pedido nº ${order.orderNumber}",
             fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
             fontWeight = FontWeight.Normal,
             fontSize = 11.sp,
             color = Color(0xFF515050).copy(alpha = 0.85f),
-            modifier = Modifier.offset(x = 139.dp, y = 84.dp)
-        )
-        
-        // Line divider
-        Box(
-            modifier = Modifier
-                .width(347.78.dp)
-                .height(1.08.dp)
-                .offset(x = 11.84.dp, y = 109.83.dp)
-                .background(Color(0xFFB9B9B9).copy(alpha = 0.14f))
-        )
-        
-        // Status indicator - positioned at top right dynamically
-        val (statusText, statusColor) = when (order.status) {
-            OrderStatus.IN_PROGRESS -> Pair("Em andamento", Color(0xFFF2C12E))
-            OrderStatus.COMPLETED -> Pair("Pedido concluído", Color(0xFF1CB456))
-            OrderStatus.CANCELLED -> Pair("Cancelado", Color(0xFF9C0202))
-        }
-        
-        // Status row at top right
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(top = 14.dp, end = 11.dp)
-        ) {
-            // Status circle
-            Box(
-                modifier = Modifier
-                    .size(17.dp)
-                    .shadow(4.31.dp, CircleShape)
-                    .background(statusColor, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                when (order.status) {
-                    OrderStatus.IN_PROGRESS -> {
-                        Icon(
-                            imageVector = Icons.Default.Schedule,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(9.69.dp)
-                        )
-                    }
-                    OrderStatus.COMPLETED -> {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(10.8.dp)
-                        )
-                    }
-                    OrderStatus.CANCELLED -> {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(7.56.dp)
-                        )
-                    }
-                }
-            }
-            
-            Spacer(modifier = Modifier.width(6.dp))
-            
-            // Status text
-            Text(
-                text = statusText,
-                fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
-                fontWeight = FontWeight.Normal,
-                fontSize = 11.sp,
-                color = Color(0xFF515050)
-            )
-        }
-        
-        // "Avaliação" label
-        Text(
-            text = "Avaliação",
-            fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
-            fontWeight = FontWeight.Normal,
-            fontSize = 11.84.sp,
-            color = Color(0xFF515050),
-            modifier = Modifier.offset(x = 22.32.dp, y = 116.29.dp)
-        )
-        
-        // Rating stars or "Indisponível"
-        if (order.status == OrderStatus.CANCELLED || !order.canRate) {
-            Text(
-                text = "Indisponível",
-                fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
-                fontWeight = FontWeight.Normal,
-                fontSize = 10.sp,
-                color = Color(0xFF959595),
-                modifier = Modifier.offset(x = 21.92.dp, y = 138.dp)
-            )
-        } else {
-            // Star rating with exact positioning
-            StarRatingAbsolute(
-                rating = order.rating ?: 0,
-                modifier = Modifier.offset(x = 19.38.dp, y = 138.77.dp)
-            )
-        }
-        
-        // Details button - positioned at bottom right dynamically
-        OutlinedButton(
-            onClick = onDetailsClick,
-            shape = RoundedCornerShape(21.53.dp),
-            colors = ButtonDefaults.outlinedButtonColors(
-                contentColor = Color(0xFF959595)
-            ),
-            border = androidx.compose.foundation.BorderStroke(1.08.dp, Color(0xFF959595)),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp),
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 11.dp, bottom = 13.dp)
-                .height(20.46.dp)
-        ) {
-            Text(
-                text = "Detalhes do Pedido",
-                fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
-                fontWeight = FontWeight.Medium,
-                fontSize = 10.77.sp,
-                color = Color(0xFF959595)
-            )
-        }
-        }
-    }
-}
-
-@Composable
-fun OrderCardAbsolute(
-    order: Order,
-    topOffset: Dp,
-    onDetailsClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    // Card background with dynamic width
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(165.dp)
-            .offset(y = topOffset)
-            .shadow(
-                elevation = 4.31.dp,
-                shape = RoundedCornerShape(10.77.dp)
-            )
-            .clickable { onDetailsClick() },
-        shape = RoundedCornerShape(10.77.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-        // Date - positioned exactly as in CSS
-        Text(
-            text = order.date,
-            fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
-            fontWeight = FontWeight.Normal,
-            fontSize = 11.84.sp,
-            color = Color(0xFF515050),
-            modifier = Modifier.offset(x = 11.84.dp, y = 9.69.dp)
-        )
-        
-        // Store image - circular with exact positioning
-        Box(
-            modifier = Modifier
-                .size(36.61.dp)
-                .offset(x = 18.3.dp, y = 43.07.dp)
-                .shadow(4.31.dp, CircleShape)
-                .clip(CircleShape)
-                .background(Color(0xFF8B4513)),
-            contentAlignment = Alignment.Center
-        ) {
-            if (order.storeImageUrl.isNotEmpty()) {
-                CachedAsyncImage(
-                    imageUrl = order.storeImageUrl,
-                    contentDescription = "Logo ${order.storeName}",
-                    modifier = Modifier.size(36.61.dp),
-                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                )
-            } else {
-                // Fallback para primeira letra do nome
-                Text(
-                    text = order.storeName.firstOrNull()?.uppercase() ?: "L",
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-        
-        // Store name "Museoh"
-        Text(
-            text = order.storeName,
-            fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
-            fontWeight = FontWeight.Bold,
-            fontSize = 15.07.sp,
-            color = Color(0xFF515050).copy(alpha = 0.85f),
-            modifier = Modifier.offset(x = 68.91.dp, y = 41.99.dp)
-        )
-        
-        // Store category "Lanches e Salgados"
-        Text(
-            text = order.storeCategory,
-            fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
-            fontWeight = FontWeight.Normal,
-            fontSize = 12.92.sp,
-            color = Color(0xFF515050).copy(alpha = 0.85f),
-            modifier = Modifier.offset(x = 68.91.dp, y = 61.37.dp)
-        )
-        
-        // Order number
-        Text(
-            text = "Pedido nº ${order.orderNumber}",
-            fontFamily = androidx.compose.ui.text.font.FontFamily.Default,
-            fontWeight = FontWeight.Normal,
-            fontSize = 11.sp,
-            color = Color(0xFF515050).copy(alpha = 0.85f),
-            modifier = Modifier.offset(x = 139.dp, y = 84.dp)
+                .padding(top = 84.dp, end = 11.dp)
         )
         
         // Line divider
