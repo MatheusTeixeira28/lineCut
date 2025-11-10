@@ -20,6 +20,7 @@ enum class Screen {
     ACCOUNT_DATA,
     NOTIFICATIONS,
     PAYMENTS,
+    FAVORITES,
     ORDERS,
     ORDER_DETAILS,
     RATE_ORDER,

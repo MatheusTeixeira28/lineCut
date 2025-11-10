@@ -439,7 +439,7 @@ fun StoresScreen(
 }
 
 @Composable
-private fun StoreCard(
+fun StoreCard(
     store: Store,
     onStoreClick: () -> Unit,
     onFavoriteClick: () -> Unit,

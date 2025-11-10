@@ -27,6 +27,7 @@ import com.br.linecut.ui.screens.profile.ProfileScreen
 import com.br.linecut.ui.screens.profile.AccountDataScreen
 import com.br.linecut.ui.screens.profile.NotificationsScreen
 import com.br.linecut.ui.screens.profile.PaymentsScreen
+import com.br.linecut.ui.screens.profile.FavoritesScreen
 import com.br.linecut.ui.screens.OrdersScreen
 import com.br.linecut.ui.screens.OrderDetailsScreen
 import com.br.linecut.ui.screens.RateOrderScreen
@@ -803,8 +804,7 @@ fun LineCutNavigation(
                     currentScreen = Screen.PAYMENTS
                 },
                 onFavoritesClick = {
-                    // TODO: Navigate to favorites screen
-                    println("Favorites clicked")
+                    currentScreen = Screen.FAVORITES
                 },
                 onHelpClick = {
                     currentScreen = Screen.HELP
@@ -921,6 +921,36 @@ fun LineCutNavigation(
                 onProfileClick = {
                     currentScreen = Screen.PROFILE
                 }
+            )
+        }
+        
+        Screen.FAVORITES -> {
+            FavoritesScreen(
+                onBackClick = {
+                    currentScreen = Screen.PROFILE
+                },
+                onStoreClick = { store ->
+                    selectedStore = store
+                    currentScreen = Screen.STORE_DETAIL
+                },
+                onHomeClick = {
+                    showSearchBarOnStores = false
+                    currentScreen = Screen.STORES
+                },
+                onSearchClick = {
+                    showSearchBarOnStores = true
+                    currentScreen = Screen.STORES
+                },
+                onNotificationClick = {
+                    currentScreen = Screen.NOTIFICATIONS
+                },
+                onOrdersClick = {
+                    currentScreen = Screen.ORDERS
+                },
+                onProfileClick = {
+                    currentScreen = Screen.PROFILE
+                },
+                modifier = modifier
             )
         }
         
