@@ -180,8 +180,9 @@ fun StoreDetailScreen(
     Box(modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
+                .statusBarsPadding()
                 .fillMaxSize()
-                .background(Color.White)
+                .background(LineCutDesignSystem.screenBackgroundColor)
         ) {
             // Header da loja
             StoreHeader(
