@@ -40,7 +40,8 @@ fun EmailSentScreen(
     modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = modifier
+        modifier = Modifier
+            .statusBarsPadding()
             .fillMaxSize()
             .background(LineCutDesignSystem.screenBackgroundColor)
             .padding(horizontal = 24.dp)

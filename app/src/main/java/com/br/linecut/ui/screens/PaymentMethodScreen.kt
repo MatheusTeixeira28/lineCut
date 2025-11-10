@@ -41,7 +41,8 @@ fun PaymentMethodScreen(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier
+        modifier = Modifier
+            .statusBarsPadding()
             .fillMaxSize()
             .background(Color.White)
     ) {

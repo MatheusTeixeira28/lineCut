@@ -85,7 +85,8 @@ fun SignUpScreen(
     }
 
     Box(
-        modifier = modifier
+        modifier = Modifier
+            .statusBarsPadding()
             .fillMaxSize()
             .background(LineCutDesignSystem.screenBackgroundColor)
             .padding(horizontal = 58.dp)
@@ -96,19 +97,19 @@ fun SignUpScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            LineCutSpacer(LineCutSpacing.XLarge)
+            LineCutSpacer(LineCutSpacing.Medium)
             
             // Logo
             Box(
                 modifier = Modifier
-                    .size(214.dp)
-                    .padding(bottom = 20.dp),
+                    .size(180.dp)
+                    .padding(bottom = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
                 LineCutLogo()
             }
             
-            LineCutSpacer(LineCutSpacing.Large)
+            LineCutSpacer(LineCutSpacing.Medium)
             
             // Cadastro Title
             LineCutTitle(
@@ -118,7 +119,7 @@ fun SignUpScreen(
                     .padding(start = 15.dp)
             )
             
-            LineCutSpacer(LineCutSpacing.XLarge)
+            LineCutSpacer(LineCutSpacing.Medium)
             
             // Full Name Field
             LineCutTextField(

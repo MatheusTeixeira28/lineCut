@@ -89,9 +89,10 @@ fun OrderSummaryScreen(
     // Estado interno para controlar o método de pagamento selecionado
     var currentPaymentMethod by remember { mutableStateOf(selectedPaymentMethod) }
     
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
+                .statusBarsPadding()
                 .fillMaxSize()
                 .background(LineCutDesignSystem.screenBackgroundColor)
         ) {
@@ -169,15 +170,20 @@ fun OrderSummaryScreen(
                     onFinishOrderClick = onFinishOrderClick
                 )
             }
-            
-            // Bottom Navigation
-            LineCutBottomNavigationBar(
-                onHomeClick = onHomeClick,
-                onSearchClick = onSearchClick,
-                onNotificationClick = onNotificationClick,
-                onOrdersClick = onOrdersClick,
-                onProfileClick = onProfileClick
-            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                // Bottom Navigation
+                LineCutBottomNavigationBar(
+                    onHomeClick = onHomeClick,
+                    onSearchClick = onSearchClick,
+                    onNotificationClick = onNotificationClick,
+                    onOrdersClick = onOrdersClick,
+                    onProfileClick = onProfileClick
+                )
+            }
         }
     }
 }
@@ -565,7 +571,8 @@ private fun PaymentMethodSection(
                     .fillMaxWidth()
                     .height(43.dp),
                 shape = RoundedCornerShape(10.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8F7))
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Row(
                     modifier = Modifier

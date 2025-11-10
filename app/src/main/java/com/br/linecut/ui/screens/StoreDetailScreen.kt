@@ -177,7 +177,7 @@ fun StoreDetailScreen(
         onViewCartClick()
     }
     
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .statusBarsPadding()
@@ -228,8 +228,8 @@ fun StoreDetailScreen(
         // Área do carrinho e bottom nav
         Column(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
                 .fillMaxWidth()
+                .align(Alignment.BottomCenter)
         ) {
             // Fundo branco para o carrinho
             if (cartItemCount > 0) {
@@ -246,7 +246,11 @@ fun StoreDetailScreen(
                     )
                 }
             }
-            
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
             // Bottom Navigation
             LineCutBottomNavigationBar(
                 onHomeClick = onHomeClick,
@@ -254,7 +258,8 @@ fun StoreDetailScreen(
                 onNotificationClick = onNotificationClick,
                 onOrdersClick = onOrdersClick,
                 onProfileClick = onProfileClick
-            )
+                )
+            }
         }
     }
 }

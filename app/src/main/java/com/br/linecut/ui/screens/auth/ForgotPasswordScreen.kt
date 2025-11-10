@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -65,7 +66,8 @@ fun ForgotPasswordScreen(
     val isEmailValid = email.isNotBlank() && email.contains("@")
 
     Box(
-        modifier = modifier
+        modifier = Modifier
+            .statusBarsPadding()
             .fillMaxSize()
             .background(LineCutDesignSystem.screenBackgroundColor)
     ) {

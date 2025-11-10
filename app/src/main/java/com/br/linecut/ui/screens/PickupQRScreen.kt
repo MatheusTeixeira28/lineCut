@@ -54,7 +54,8 @@ fun PickupQRScreen(
     var isSearchVisible by remember { mutableStateOf(false) }
 
     Column(
-        modifier = modifier
+        modifier = Modifier
+            .statusBarsPadding()
             .fillMaxSize()
             .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
@@ -376,28 +377,33 @@ fun PickupQRScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
         }
-        
-        // Bottom Navigation
-        LineCutBottomNavigationBar(
-            selectedItem = if (isSearchVisible) NavigationItem.SEARCH else NavigationItem.HOME,
-            onHomeClick = {
-                if (isSearchVisible) {
-                    isSearchVisible = false
-                } else {
-                    onHomeClick()
-                }
-            },
-            onSearchClick = {
-                isSearchVisible = true
-                if (!isSearchVisible) {
-                    // This condition will never be true, but keeping the pattern
-                }
-                onSearchClick()
-            },
-            onNotificationClick = onNotificationClick,
-            onOrdersClick = onOrdersClick,
-            onProfileClick = onProfileClick
-        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            // Bottom Navigation
+            LineCutBottomNavigationBar(
+                selectedItem = if (isSearchVisible) NavigationItem.SEARCH else NavigationItem.HOME,
+                onHomeClick = {
+                    if (isSearchVisible) {
+                        isSearchVisible = false
+                    } else {
+                        onHomeClick()
+                    }
+                },
+                onSearchClick = {
+                    isSearchVisible = true
+                    if (!isSearchVisible) {
+                        // This condition will never be true, but keeping the pattern
+                    }
+                    onSearchClick()
+                },
+                onNotificationClick = onNotificationClick,
+                onOrdersClick = onOrdersClick,
+                onProfileClick = onProfileClick
+            )
+        }
     }
 }
 

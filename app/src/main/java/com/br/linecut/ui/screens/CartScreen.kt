@@ -68,9 +68,10 @@ fun CartScreen(
     val totalPrice = cartItems.sumOf { it.price * it.quantity }
     val totalItems = cartItems.sumOf { it.quantity }
     
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
+                .statusBarsPadding()
                 .fillMaxSize()
                 .background(LineCutDesignSystem.screenBackgroundColor)
         ) {
@@ -127,8 +128,6 @@ fun CartScreen(
                     }
                 }
             }
-            
-            // (removido) Espaço fixo substituído por contentPadding no LazyColumn
         }
         
         // Área do resumo e bottom nav
@@ -152,15 +151,20 @@ fun CartScreen(
                     )
                 }
             }
-            
-            // Bottom Navigation
-            LineCutBottomNavigationBar(
-                onHomeClick = onHomeClick,
-                onSearchClick = onSearchClick,
-                onNotificationClick = onNotificationClick,
-                onOrdersClick = onOrdersClick,
-                onProfileClick = onProfileClick
-            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                // Bottom Navigation
+                LineCutBottomNavigationBar(
+                    onHomeClick = onHomeClick,
+                    onSearchClick = onSearchClick,
+                    onNotificationClick = onNotificationClick,
+                    onOrdersClick = onOrdersClick,
+                    onProfileClick = onProfileClick
+                )
+            }
         }
     }
 }

@@ -56,7 +56,8 @@ fun QRCodePixScreen(
     }
     
     Column(
-        modifier = modifier
+        modifier = Modifier
+            .statusBarsPadding()
             .fillMaxSize()
             .background(LineCutDesignSystem.screenBackgroundColor)
     ) {
