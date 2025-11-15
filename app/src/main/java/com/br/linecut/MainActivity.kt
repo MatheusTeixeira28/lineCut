@@ -20,6 +20,7 @@ import com.br.linecut.service.ServiceManager
 import com.br.linecut.ui.navigation.LineCutNavigation
 import com.br.linecut.ui.navigation.Screen
 import com.br.linecut.ui.theme.LineCutTheme
+import com.br.linecut.utils.NotificationHelper
 
 class MainActivity : ComponentActivity() {
     
@@ -41,6 +42,9 @@ class MainActivity : ComponentActivity() {
         
         // Inicializar Firebase
         FirebaseConfig.initialize(this)
+        
+        // Criar canal de notificações
+        NotificationHelper.createNotificationChannel(this)
         
         // Solicitar permissão de notificações (Android 13+)
         // O service será iniciado apenas após login bem-sucedido

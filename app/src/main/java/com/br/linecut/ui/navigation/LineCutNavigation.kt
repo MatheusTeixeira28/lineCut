@@ -1,63 +1,69 @@
 package com.br.linecut.ui.navigation
 
 import android.util.Log
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.br.linecut.R
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
-import com.google.firebase.database.FirebaseDatabase
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.br.linecut.R
+import com.br.linecut.data.repository.NotificationRepository
+import com.br.linecut.data.repository.OrderRepository
+import com.br.linecut.service.ServiceManager
+import com.br.linecut.ui.screens.CartScreen
+import com.br.linecut.ui.screens.LoadingScreen
+import com.br.linecut.ui.screens.OrderDetail
+import com.br.linecut.ui.screens.OrderDetailItem
+import com.br.linecut.ui.screens.OrderDetailsScreen
+import com.br.linecut.ui.screens.OrderSummaryScreen
+import com.br.linecut.ui.screens.OrdersScreen
+import com.br.linecut.ui.screens.PaymentMethod
+import com.br.linecut.ui.screens.PaymentMethodScreen
+import com.br.linecut.ui.screens.PaymentType
+import com.br.linecut.ui.screens.PickupQRScreen
+import com.br.linecut.ui.screens.QRCodePixScreen
+import com.br.linecut.ui.screens.Store
+import com.br.linecut.ui.screens.StoreDetailScreen
+import com.br.linecut.ui.screens.StoresScreen
 import com.br.linecut.ui.screens.auth.EmailSentScreen
 import com.br.linecut.ui.screens.auth.ForgotPasswordScreen
 import com.br.linecut.ui.screens.auth.LoginScreen
 import com.br.linecut.ui.screens.auth.SignUpScreen
-import com.br.linecut.ui.screens.StoresScreen
-import com.br.linecut.ui.screens.StoreDetailScreen
-import com.br.linecut.ui.screens.CartScreen
-import com.br.linecut.ui.screens.OrderSummaryScreen
-import com.br.linecut.ui.screens.PaymentMethodScreen
-import com.br.linecut.ui.screens.QRCodePixScreen
-import com.br.linecut.ui.screens.PickupQRScreen
-import com.br.linecut.ui.screens.LoadingScreen
-import com.br.linecut.ui.screens.profile.ProfileScreen
+import com.br.linecut.ui.screens.getSampleOrderDetail
 import com.br.linecut.ui.screens.profile.AccountDataScreen
+import com.br.linecut.ui.screens.profile.FavoritesScreen
+import com.br.linecut.ui.screens.profile.HelpScreen
 import com.br.linecut.ui.screens.profile.NotificationsScreen
 import com.br.linecut.ui.screens.profile.PaymentsScreen
-import com.br.linecut.ui.screens.profile.FavoritesScreen
-import com.br.linecut.ui.screens.OrdersScreen
-import com.br.linecut.service.ServiceManager
-import com.br.linecut.ui.screens.OrderDetailsScreen
-import com.br.linecut.ui.screens.RateOrderScreen
-import com.br.linecut.ui.screens.profile.HelpScreen
-import com.br.linecut.ui.screens.profile.help.HowToOrderScreen
-import com.br.linecut.ui.screens.profile.help.TrackOrderScreen
+import com.br.linecut.ui.screens.profile.ProfileScreen
+import com.br.linecut.ui.screens.profile.SettingsScreen
 import com.br.linecut.ui.screens.profile.help.CancelOrderScreen
-import com.br.linecut.ui.screens.profile.help.NotPickedUpScreen
 import com.br.linecut.ui.screens.profile.help.ContactSupportScreen
 import com.br.linecut.ui.screens.profile.help.FAQScreen
-import com.br.linecut.ui.screens.profile.SettingsScreen
-import com.br.linecut.ui.screens.profile.settings.TermsAndConditionsScreen
-import com.br.linecut.ui.screens.profile.settings.PrivacyPolicyScreen
-import com.br.linecut.ui.screens.profile.settings.CloseAccountScreen
+import com.br.linecut.ui.screens.profile.help.HowToOrderScreen
+import com.br.linecut.ui.screens.profile.help.NotPickedUpScreen
+import com.br.linecut.ui.screens.profile.help.TrackOrderScreen
 import com.br.linecut.ui.screens.profile.settings.AccountClosedScreen
-import com.br.linecut.ui.screens.OrderDetail
-import com.br.linecut.ui.screens.OrderDetailItem
-import com.br.linecut.ui.screens.OrderStatus
-import com.br.linecut.ui.screens.PaymentMethod
-import com.br.linecut.ui.screens.PaymentType
-import com.br.linecut.ui.screens.Store
-import com.br.linecut.ui.screens.getSampleOrderDetail
+import com.br.linecut.ui.screens.profile.settings.CloseAccountScreen
+import com.br.linecut.ui.screens.profile.settings.PrivacyPolicyScreen
+import com.br.linecut.ui.screens.profile.settings.TermsAndConditionsScreen
 import com.br.linecut.ui.theme.LineCutTheme
 import com.br.linecut.ui.utils.ImageCache
 import com.br.linecut.ui.utils.ImageLoader
 import com.br.linecut.ui.viewmodel.AuthViewModel
-import com.br.linecut.data.repository.OrderRepository
-import com.br.linecut.data.repository.NotificationRepository
+import com.google.firebase.database.FirebaseDatabase
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlin.random.Random
 
 /**
@@ -105,7 +111,7 @@ suspend fun generateUniqueOrderCode(): String {
 @Composable
 fun LineCutNavigation(
     modifier: Modifier = Modifier,
-    startDestination: Screen = Screen.LOGIN,
+    startDestination: Screen = Screen.SPLASH,
     authViewModel: AuthViewModel = viewModel()
 ) {
     var currentScreen by rememberSaveable { mutableStateOf(startDestination) }
@@ -179,6 +185,16 @@ fun LineCutNavigation(
     }
     
     when (currentScreen) {
+        Screen.SPLASH -> {
+            LoadingScreen(modifier = modifier)
+            
+            // Navegar automaticamente para LOGIN após 2 segundos
+            LaunchedEffect(Unit) {
+                kotlinx.coroutines.delay(2000)
+                currentScreen = Screen.LOGIN
+            }
+        }
+        
         Screen.LOGIN -> {
             val context = LocalContext.current
             
@@ -551,17 +567,19 @@ fun LineCutNavigation(
         Screen.LOADING -> {
             LoadingScreen(modifier = modifier)
             
+            // Capturar context no escopo Composable
+            val context = LocalContext.current
+            
             // Disparar requisição PIX e criar/atualizar pedido
             LaunchedEffect(Unit) {
-                try {
-                    // Verificar se temos usuário e loja selecionados
-                    val userId = currentUser?.uid ?: ""
-                    val storeId = selectedStore?.id ?: ""
-                    
-                    if (userId.isEmpty() || storeId.isEmpty()) {
-                        currentScreen = Screen.PAYMENT_METHOD
-                        return@LaunchedEffect
-                    }
+                // Verificar se temos usuário e loja selecionados
+                val userId = currentUser?.uid ?: ""
+                val storeId = selectedStore?.id ?: ""
+                
+                if (userId.isEmpty() || storeId.isEmpty()) {
+                    currentScreen = Screen.PAYMENT_METHOD
+                    return@LaunchedEffect
+                }
                     
                     // Disparar requisição PIX em paralelo
                     val pixJob = async(kotlinx.coroutines.Dispatchers.IO) {
@@ -648,7 +666,7 @@ fun LineCutNavigation(
                         android.util.Log.d("PIX_RESPONSE", "✅ Dados PIX salvos no Firebase com sucesso!")
                         
                         // Criar notificação de pedido realizado
-                        val notificationRepository = NotificationRepository()
+                        val notificationRepository = NotificationRepository(context)
                         val storeName = selectedStore?.name ?: "Lanchonete"
                         val notificationCreated = notificationRepository.createOrderPlacedNotification(
                             userId = userId,
@@ -672,10 +690,6 @@ fun LineCutNavigation(
                     
                     // Navegar para QR Code PIX
                     currentScreen = Screen.QR_CODE_PIX
-                } catch (e: Exception) {
-                    android.util.Log.e("PIX_ERROR", "Erro ao processar PIX", e)
-                    currentScreen = Screen.PAYMENT_METHOD
-                }
             }
         }
         
@@ -1151,6 +1165,9 @@ fun LineCutNavigation(
                     mutableStateOf(initialOrderDetail.statusPedido)
                 }
                 
+                // Capturar context no escopo Composable
+                val context = LocalContext.current
+                
                 // Listener para monitorar mudanças no pedido
                 DisposableEffect(initialOrderDetail.orderId) {
                     val orderId = initialOrderDetail.orderId.removePrefix("#")
@@ -1159,97 +1176,89 @@ fun LineCutNavigation(
                     
                     val listener = object : com.google.firebase.database.ValueEventListener {
                         override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
-                            try {
-                                val statusPagamento = snapshot.child("status_pagamento").getValue(String::class.java) ?: "pendente"
-                                val statusPedido = snapshot.child("status_pedido").getValue(String::class.java) ?: "pendente"
-                                val idLanchonete = snapshot.child("id_lanchonete").getValue(String::class.java) ?: ""
+                            val statusPagamento = snapshot.child("status_pagamento").getValue(String::class.java) ?: "pendente"
+                            val statusPedido = snapshot.child("status_pedido").getValue(String::class.java) ?: "pendente"
+                            val idLanchonete = snapshot.child("id_lanchonete").getValue(String::class.java) ?: ""
+                            
+                            Log.d("LineCutNavigation", "Firebase atualizado - status_pagamento: $statusPagamento, status_pedido: $statusPedido")
+                            
+                            // Mapear status_pedido do Firebase para status da UI
+                            val statusUI = when (statusPedido.lowercase()) {
+                                "pendente", "em_preparo" -> "Em preparo"
+                                "pronto" -> "Pronto para retirada"
+                                "entregue" -> "Pedido concluído"
+                                "cancelado" -> "Pedido cancelado"
+                                else -> "Em preparo"
+                            }
+                            
+                            // Detectar mudança de status e criar notificação
+                            if (statusPedido != previousStatusPedido) {
+                                Log.d("LineCutNavigation", "🔔 Status mudou de $previousStatusPedido para $statusPedido")
                                 
-                                Log.d("LineCutNavigation", "Firebase atualizado - status_pagamento: $statusPagamento, status_pedido: $statusPedido")
-                                
-                                // Mapear status_pedido do Firebase para status da UI
-                                val statusUI = when (statusPedido.lowercase()) {
-                                    "pendente", "em_preparo" -> "Em preparo"
-                                    "pronto" -> "Pronto para retirada"
-                                    "entregue" -> "Pedido concluído"
-                                    "cancelado" -> "Pedido cancelado"
-                                    else -> "Em preparo"
-                                }
-                                
-                                // Detectar mudança de status e criar notificação
-                                if (statusPedido != previousStatusPedido) {
-                                    Log.d("LineCutNavigation", "🔔 Status mudou de $previousStatusPedido para $statusPedido")
+                                // Buscar nome da lanchonete do Firebase
+                                coroutineScope.launch {
+                                    val companiesRef = database.getReference("empresas").child(idLanchonete)
+                                    val companySnapshot = companiesRef.get().await()
+                                    val storeName = companySnapshot.child("nome_lanchonete").getValue(String::class.java) 
+                                        ?: currentOrder.storeName
                                     
-                                    // Buscar nome da lanchonete do Firebase
-                                    coroutineScope.launch {
-                                        try {
-                                            val companiesRef = database.getReference("empresas").child(idLanchonete)
-                                            val companySnapshot = companiesRef.get().await()
-                                            val storeName = companySnapshot.child("nome_lanchonete").getValue(String::class.java) 
-                                                ?: currentOrder.storeName
-                                            
-                                            Log.d("LineCutNavigation", "Nome da lanchonete: $storeName")
-                                            
-                                            // Obter userId
-                                            val userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
-                                            
-                                            if (userId != null) {
-                                                val notificationRepository = NotificationRepository()
-                                                
-                                                // Criar notificação baseada no novo status
-                                                when (statusPedido.lowercase()) {
-                                                    "em_preparo" -> {
-                                                        notificationRepository.createOrderPreparingNotification(
-                                                            userId = userId,
-                                                            orderId = orderId,
-                                                            storeName = storeName
-                                                        )
-                                                        Log.d("LineCutNavigation", "✅ Notificação 'em preparo' criada")
-                                                    }
-                                                    "pronto" -> {
-                                                        notificationRepository.createOrderReadyNotification(
-                                                            userId = userId,
-                                                            orderId = orderId,
-                                                            storeName = storeName
-                                                        )
-                                                        Log.d("LineCutNavigation", "✅ Notificação 'pronto' criada")
-                                                    }
-                                                    "retirado", "entregue" -> {
-                                                        notificationRepository.createOrderPickedUpNotification(
-                                                            userId = userId,
-                                                            orderId = orderId,
-                                                            storeName = storeName
-                                                        )
-                                                        // Também criar notificação de avaliação
-                                                        notificationRepository.createRatingNotification(
-                                                            userId = userId,
-                                                            orderId = orderId,
-                                                            storeName = storeName
-                                                        )
-                                                        Log.d("LineCutNavigation", "✅ Notificações 'retirado' e 'avaliação' criadas")
-                                                    }
-                                                }
+                                    Log.d("LineCutNavigation", "Nome da lanchonete: $storeName")
+                                    
+                                    // Obter userId
+                                    val userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+                                    
+                                    if (userId != null) {
+                                        val notificationRepository = NotificationRepository(context)
+                                        
+                                        // Criar notificação baseada no novo status
+                                        when (statusPedido.lowercase()) {
+                                            "em_preparo" -> {
+                                                notificationRepository.createOrderPreparingNotification(
+                                                    userId = userId,
+                                                    orderId = orderId,
+                                                    storeName = storeName
+                                                )
+                                                Log.d("LineCutNavigation", "✅ Notificação 'em preparo' criada")
                                             }
-                                        } catch (e: Exception) {
-                                            Log.e("LineCutNavigation", "Erro ao criar notificação", e)
+                                            "pronto" -> {
+                                                notificationRepository.createOrderReadyNotification(
+                                                    userId = userId,
+                                                    orderId = orderId,
+                                                    storeName = storeName
+                                                )
+                                                Log.d("LineCutNavigation", "✅ Notificação 'pronto' criada")
+                                            }
+                                            "retirado", "entregue" -> {
+                                                notificationRepository.createOrderPickedUpNotification(
+                                                    userId = userId,
+                                                    orderId = orderId,
+                                                    storeName = storeName
+                                                )
+                                                // Também criar notificação de avaliação
+                                                notificationRepository.createRatingNotification(
+                                                    userId = userId,
+                                                    orderId = orderId,
+                                                    storeName = storeName
+                                                )
+                                                Log.d("LineCutNavigation", "✅ Notificações 'retirado' e 'avaliação' criadas")
+                                            }
                                         }
                                     }
-                                    
-                                    // Atualizar status anterior
-                                    previousStatusPedido = statusPedido
                                 }
                                 
-                                // Atualizar o estado do pedido para forçar recomposição
-                                if (statusPagamento != currentOrder.statusPagamento || statusPedido != currentOrder.statusPedido) {
-                                    currentOrder = currentOrder.copy(
-                                        statusPagamento = statusPagamento,
-                                        paymentStatus = if (statusPagamento == "pago") "aprovado" else "pendente",
-                                        status = statusUI,
-                                        statusPedido = statusPedido
-                                    )
-                                    Log.d("LineCutNavigation", "✅ UI atualizada - statusPagamento: $statusPagamento, statusPedido: $statusPedido, statusUI: $statusUI")
-                                }
-                            } catch (e: Exception) {
-                                Log.e("LineCutNavigation", "Erro ao processar atualização: ${e.message}", e)
+                                // Atualizar status anterior
+                                previousStatusPedido = statusPedido
+                            }
+                            
+                            // Atualizar o estado do pedido para forçar recomposição
+                            if (statusPagamento != currentOrder.statusPagamento || statusPedido != currentOrder.statusPedido) {
+                                currentOrder = currentOrder.copy(
+                                    statusPagamento = statusPagamento,
+                                    paymentStatus = if (statusPagamento == "pago") "aprovado" else "pendente",
+                                    status = statusUI,
+                                    statusPedido = statusPedido
+                                )
+                                Log.d("LineCutNavigation", "✅ UI atualizada - statusPagamento: $statusPagamento, statusPedido: $statusPedido, statusUI: $statusUI")
                             }
                         }
                         
@@ -1754,6 +1763,18 @@ fun LineCutNavigation(
 }
 
 // Previews para testar diferentes telas da navegação
+@Preview(
+    name = "Splash Screen",
+    showBackground = true,
+    group = "Navigation"
+)
+@Composable
+fun NavigationSplashPreview() {
+    LineCutTheme {
+        LineCutNavigation(startDestination = Screen.SPLASH)
+    }
+}
+
 @Preview(
     name = "Login Screen",
     showBackground = true,

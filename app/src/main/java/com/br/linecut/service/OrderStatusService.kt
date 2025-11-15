@@ -12,6 +12,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.br.linecut.R
 import com.br.linecut.data.repository.NotificationRepository
+import com.br.linecut.utils.NotificationHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import kotlinx.coroutines.*
@@ -47,7 +48,7 @@ class OrderStatusService : Service() {
         }
     }
     
-    private val notificationRepository = NotificationRepository()
+    private lateinit var notificationRepository: NotificationRepository
     private val auth = FirebaseAuth.getInstance()
     private val database = FirebaseDatabase.getInstance()
     
@@ -62,7 +63,13 @@ class OrderStatusService : Service() {
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "Service criado")
+        
+        // Inicializar repository com contexto
+        notificationRepository = NotificationRepository(this)
+        
+        // Criar canais de notificação
         createNotificationChannel()
+        NotificationHelper.createNotificationChannel(this)
     }
     
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

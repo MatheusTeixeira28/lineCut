@@ -83,7 +83,8 @@ class OrderRepository {
                 Log.d("OrderRepository", "Total de IDs encontrados: ${orderIds.size}")
                 
                 // Buscar os detalhes de cada pedido na tabela 'pedidos'
-                val orders = mutableListOf<Order>()
+                // Lista temporária com Order e timestamp para ordenação correta
+                val ordersWithTimestamp = mutableListOf<Pair<Order, Long>>()
                 var processedCount = 0
                 
                 for (orderId in orderIds) {
@@ -116,6 +117,7 @@ class OrderRepository {
                                         Log.d("OrderRepository", "  - idLanchonete: '${firebaseOrder.idLanchonete}'")
                                         Log.d("OrderRepository", "  - status: '${firebaseOrder.status}'")
                                         Log.d("OrderRepository", "  - total: ${firebaseOrder.total}")
+                                        Log.d("OrderRepository", "  - timestamp: ${firebaseOrder.date}")
                                         Log.d("OrderRepository", "Usuario esperado: '$userId'")
                                         
                                         // SEGURANÇA: Verificar se o pedido pertence EXATAMENTE ao usuário autenticado
@@ -124,7 +126,8 @@ class OrderRepository {
                                             // Buscar informações da lanchonete antes de converter
                                             fetchStoreInfo(firebaseOrder) { order ->
                                                 if (order != null) {
-                                                    orders.add(order)
+                                                    // Adicionar com timestamp para ordenação
+                                                    ordersWithTimestamp.add(Pair(order, firebaseOrder.date))
                                                     Log.d("OrderRepository", "✅ Pedido convertido com sucesso: ${order.orderNumber}")
                                                 }
                                                 
@@ -133,9 +136,11 @@ class OrderRepository {
                                                 
                                                 // Quando todos os pedidos forem processados, enviar a lista
                                                 if (processedCount == orderIds.size) {
-                                                    // Ordenar por data (mais recente primeiro)
-                                                    val sortedOrders = orders.sortedByDescending { it.date }
-                                                    Log.d("OrderRepository", "Enviando ${sortedOrders.size} pedidos para a UI")
+                                                    // Ordenar por timestamp (mais recente primeiro) e extrair apenas os Orders
+                                                    val sortedOrders = ordersWithTimestamp
+                                                        .sortedByDescending { it.second }
+                                                        .map { it.first }
+                                                    Log.d("OrderRepository", "Enviando ${sortedOrders.size} pedidos ordenados para a UI")
                                                     trySend(sortedOrders)
                                                 }
                                             }
@@ -148,7 +153,9 @@ class OrderRepository {
                                             
                                             processedCount++
                                             if (processedCount == orderIds.size) {
-                                                val sortedOrders = orders.sortedByDescending { it.date }
+                                                val sortedOrders = ordersWithTimestamp
+                                                    .sortedByDescending { it.second }
+                                                    .map { it.first }
                                                 trySend(sortedOrders)
                                             }
                                         }
@@ -156,7 +163,9 @@ class OrderRepository {
                                         Log.e("OrderRepository", "FirebaseOrder é null após conversão para $orderId")
                                         processedCount++
                                         if (processedCount == orderIds.size) {
-                                            val sortedOrders = orders.sortedByDescending { it.date }
+                                            val sortedOrders = ordersWithTimestamp
+                                                .sortedByDescending { it.second }
+                                                .map { it.first }
                                             trySend(sortedOrders)
                                         }
                                     }
@@ -165,7 +174,9 @@ class OrderRepository {
                                     e.printStackTrace()
                                     processedCount++
                                     if (processedCount == orderIds.size) {
-                                        val sortedOrders = orders.sortedByDescending { it.date }
+                                        val sortedOrders = ordersWithTimestamp
+                                            .sortedByDescending { it.second }
+                                            .map { it.first }
                                         trySend(sortedOrders)
                                     }
                                 }
@@ -173,7 +184,9 @@ class OrderRepository {
                                 Log.w("OrderRepository", "Pedido $orderId não encontrado na tabela 'pedidos'")
                                 processedCount++
                                 if (processedCount == orderIds.size) {
-                                    val sortedOrders = orders.sortedByDescending { it.date }
+                                    val sortedOrders = ordersWithTimestamp
+                                        .sortedByDescending { it.second }
+                                        .map { it.first }
                                     trySend(sortedOrders)
                                 }
                             }
@@ -184,7 +197,9 @@ class OrderRepository {
                             processedCount++
                             
                             if (processedCount == orderIds.size) {
-                                val sortedOrders = orders.sortedByDescending { it.date }
+                                val sortedOrders = ordersWithTimestamp
+                                    .sortedByDescending { it.second }
+                                    .map { it.first }
                                 trySend(sortedOrders)
                             }
                         }

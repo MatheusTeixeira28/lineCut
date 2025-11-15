@@ -4,6 +4,7 @@ package com.br.linecut.ui.navigation
  * Enum que define as telas disponíveis na aplicação
  */
 enum class Screen {
+    SPLASH,
     LOGIN,
     SIGNUP,
     FORGOT_PASSWORD,

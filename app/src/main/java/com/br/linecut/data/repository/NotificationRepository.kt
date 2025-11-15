@@ -1,8 +1,10 @@
 package com.br.linecut.data.repository
 
+import android.content.Context
 import android.util.Log
 import com.br.linecut.ui.screens.profile.Notification
 import com.br.linecut.ui.screens.profile.NotificationType
+import com.br.linecut.utils.NotificationHelper
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -14,7 +16,7 @@ import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.*
 
-class NotificationRepository {
+class NotificationRepository(private val context: Context? = null) {
     private val database = FirebaseDatabase.getInstance()
     private val notificationsRef = database.getReference("notificacoes")
     
@@ -30,14 +32,17 @@ class NotificationRepository {
             val notificationId = notificationsRef.push().key ?: return false
             val currentTime = System.currentTimeMillis()
             
+            val title = "Pedido realizado"
+            val message = "Recebemos seu pedido na $storeName. Em breve ele será preparado!"
+            
             val notification = mapOf(
                 "id" to notificationId,
                 "userId" to userId,
                 "orderId" to orderId,
                 "storeName" to storeName,
                 "type" to "ORDER_PLACED",
-                "title" to "Pedido realizado",
-                "message" to "Recebemos seu pedido na $storeName. Em breve ele será preparado!",
+                "title" to title,
+                "message" to message,
                 "timestamp" to currentTime,
                 "read" to false,
                 "showRating" to false
@@ -45,6 +50,18 @@ class NotificationRepository {
             
             notificationsRef.child(userId).child(notificationId).setValue(notification).await()
             Log.d("NotificationRepository", "✅ Notificação criada: $notificationId para pedido $orderId")
+            
+            // Mostrar notificação do sistema Android
+            context?.let {
+                NotificationHelper.showNotification(
+                    context = it,
+                    notificationId = NotificationHelper.generateNotificationId(),
+                    title = title,
+                    message = message
+                )
+                Log.d("NotificationRepository", "🔔 Notificação do sistema mostrada")
+            }
+            
             true
         } catch (e: Exception) {
             Log.e("NotificationRepository", "❌ Erro ao criar notificação", e)
@@ -64,14 +81,17 @@ class NotificationRepository {
             val notificationId = notificationsRef.push().key ?: return false
             val currentTime = System.currentTimeMillis()
             
+            val title = "Pedido em preparo"
+            val message = "Seu pedido na $storeName está sendo preparado!"
+            
             val notification = mapOf(
                 "id" to notificationId,
                 "userId" to userId,
                 "orderId" to orderId,
                 "storeName" to storeName,
                 "type" to "ORDER_PREPARING",
-                "title" to "Pedido em preparo",
-                "message" to "Seu pedido na $storeName está sendo preparado!",
+                "title" to title,
+                "message" to message,
                 "timestamp" to currentTime,
                 "read" to false,
                 "showRating" to false
@@ -79,6 +99,18 @@ class NotificationRepository {
             
             notificationsRef.child(userId).child(notificationId).setValue(notification).await()
             Log.d("NotificationRepository", "✅ Notificação de preparo criada para pedido $orderId")
+            
+            // Mostrar notificação do sistema Android
+            context?.let {
+                NotificationHelper.showNotification(
+                    context = it,
+                    notificationId = NotificationHelper.generateNotificationId(),
+                    title = title,
+                    message = message
+                )
+                Log.d("NotificationRepository", "🔔 Notificação do sistema mostrada")
+            }
+            
             true
         } catch (e: Exception) {
             Log.e("NotificationRepository", "❌ Erro ao criar notificação de preparo", e)
@@ -98,14 +130,17 @@ class NotificationRepository {
             val notificationId = notificationsRef.push().key ?: return false
             val currentTime = System.currentTimeMillis()
             
+            val title = "Pedido pronto para retirada"
+            val message = "Seu pedido está pronto! Retire no balcão quando quiser."
+            
             val notification = mapOf(
                 "id" to notificationId,
                 "userId" to userId,
                 "orderId" to orderId,
                 "storeName" to storeName,
                 "type" to "ORDER_READY",
-                "title" to "Pedido pronto para retirada",
-                "message" to "Seu pedido está pronto! Retire no balcão quando quiser.",
+                "title" to title,
+                "message" to message,
                 "timestamp" to currentTime,
                 "read" to false,
                 "showRating" to false
@@ -113,6 +148,18 @@ class NotificationRepository {
             
             notificationsRef.child(userId).child(notificationId).setValue(notification).await()
             Log.d("NotificationRepository", "✅ Notificação de pedido pronto criada para $orderId")
+            
+            // Mostrar notificação do sistema Android
+            context?.let {
+                NotificationHelper.showNotification(
+                    context = it,
+                    notificationId = NotificationHelper.generateNotificationId(),
+                    title = title,
+                    message = message
+                )
+                Log.d("NotificationRepository", "🔔 Notificação do sistema mostrada")
+            }
+            
             true
         } catch (e: Exception) {
             Log.e("NotificationRepository", "❌ Erro ao criar notificação de pedido pronto", e)
@@ -132,14 +179,17 @@ class NotificationRepository {
             val notificationId = notificationsRef.push().key ?: return false
             val currentTime = System.currentTimeMillis()
             
+            val title = "Pedido retirado"
+            val message = "Você retirou seu pedido na $storeName. Aproveite sua refeição!"
+            
             val notification = mapOf(
                 "id" to notificationId,
                 "userId" to userId,
                 "orderId" to orderId,
                 "storeName" to storeName,
                 "type" to "ORDER_PICKED_UP",
-                "title" to "Pedido retirado",
-                "message" to "Você retirou seu pedido na $storeName. Aproveite sua refeição!",
+                "title" to title,
+                "message" to message,
                 "timestamp" to currentTime,
                 "read" to false,
                 "showRating" to false
@@ -147,6 +197,18 @@ class NotificationRepository {
             
             notificationsRef.child(userId).child(notificationId).setValue(notification).await()
             Log.d("NotificationRepository", "✅ Notificação de pedido retirado criada para $orderId")
+            
+            // Mostrar notificação do sistema Android
+            context?.let {
+                NotificationHelper.showNotification(
+                    context = it,
+                    notificationId = NotificationHelper.generateNotificationId(),
+                    title = title,
+                    message = message
+                )
+                Log.d("NotificationRepository", "🔔 Notificação do sistema mostrada")
+            }
+            
             true
         } catch (e: Exception) {
             Log.e("NotificationRepository", "❌ Erro ao criar notificação de pedido retirado", e)
@@ -166,21 +228,36 @@ class NotificationRepository {
             val notificationId = notificationsRef.push().key ?: return false
             val currentTime = System.currentTimeMillis()
             
+            val title = "Avalie seu pedido"
+            val message = "O que achou do seu pedido? Sua opinião é muito importante!"
+            
             val notification = mapOf(
                 "id" to notificationId,
                 "userId" to userId,
                 "orderId" to orderId,
                 "storeName" to storeName,
                 "type" to "RATING",
-                "title" to "Avalie seu pedido",
-                "message" to "O que achou do seu pedido?\nSua opinião é muito importante!",
+                "title" to title,
+                "message" to message,
                 "timestamp" to currentTime,
                 "read" to false,
-                "showRating" to true
+                "showRating" to true // Mostrar estrelas de avaliação
             )
             
             notificationsRef.child(userId).child(notificationId).setValue(notification).await()
             Log.d("NotificationRepository", "✅ Notificação de avaliação criada para pedido $orderId")
+            
+            // Mostrar notificação do sistema Android
+            context?.let {
+                NotificationHelper.showNotification(
+                    context = it,
+                    notificationId = NotificationHelper.generateNotificationId(),
+                    title = title,
+                    message = message
+                )
+                Log.d("NotificationRepository", "🔔 Notificação do sistema mostrada")
+            }
+            
             true
         } catch (e: Exception) {
             Log.e("NotificationRepository", "❌ Erro ao criar notificação de avaliação", e)
@@ -194,7 +271,8 @@ class NotificationRepository {
     fun getUserNotifications(userId: String): Flow<List<Notification>> = callbackFlow {
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val notifications = mutableListOf<Notification>()
+                // Lista temporária com timestamp para ordenação
+                val notificationsWithTimestamp = mutableListOf<Pair<Notification, Long>>()
                 
                 for (child in snapshot.children) {
                     try {
@@ -215,32 +293,28 @@ class NotificationRepository {
                         
                         val time = formatTimestamp(timestamp)
                         
-                        notifications.add(
-                            Notification(
-                                id = id,
-                                title = title,
-                                message = message,
-                                time = time,
-                                type = type,
-                                showRating = showRating
-                            )
+                        val notification = Notification(
+                            id = id,
+                            title = title,
+                            message = message,
+                            time = time,
+                            type = type,
+                            showRating = showRating
                         )
+                        
+                        // Adicionar com timestamp para ordenação
+                        notificationsWithTimestamp.add(Pair(notification, timestamp))
                     } catch (e: Exception) {
                         Log.e("NotificationRepository", "Erro ao converter notificação", e)
                     }
                 }
                 
-                // Ordenar por timestamp (mais recente primeiro)
-                notifications.sortByDescending { 
-                    when {
-                        it.time.contains("agora") -> System.currentTimeMillis()
-                        it.time.contains("min atrás") -> System.currentTimeMillis() - (it.time.split(" ")[0].toIntOrNull() ?: 0) * 60000L
-                        it.time.contains("h atrás") -> System.currentTimeMillis() - (it.time.split(" ")[0].toIntOrNull() ?: 0) * 3600000L
-                        else -> 0L
-                    }
-                }
+                // Ordenar por timestamp (mais recente primeiro) e extrair apenas as notificações
+                val notifications = notificationsWithTimestamp
+                    .sortedByDescending { it.second }
+                    .map { it.first }
                 
-                Log.d("NotificationRepository", "✅ ${notifications.size} notificações carregadas")
+                Log.d("NotificationRepository", "✅ ${notifications.size} notificações carregadas e ordenadas")
                 trySend(notifications)
             }
             
@@ -264,6 +338,7 @@ class NotificationRepository {
         val now = System.currentTimeMillis()
         val diff = now - timestamp
         
+        
         return when {
             diff < 60000 -> "Agora"
             diff < 3600000 -> "${diff / 60000} min atrás"
@@ -274,4 +349,19 @@ class NotificationRepository {
             }
         }
     }
+    
+    /**
+     * Deleta todas as notificações do usuário
+     */
+    suspend fun deleteAllNotifications(userId: String): Boolean {
+        return try {
+            notificationsRef.child(userId).removeValue().await()
+            Log.d("NotificationRepository", "✅ Todas as notificações do usuário $userId foram deletadas")
+            true
+        } catch (e: Exception) {
+            Log.e("NotificationRepository", "❌ Erro ao deletar notificações", e)
+            false
+        }
+    }
 }
+

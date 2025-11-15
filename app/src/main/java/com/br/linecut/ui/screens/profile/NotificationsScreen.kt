@@ -67,6 +67,9 @@ fun NotificationsScreen(
     val isLoading by notificationViewModel.isLoading.collectAsState()
     val error by notificationViewModel.error.collectAsState()
     
+    // Estado para controlar o dialog de confirmação
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    
     Column(
         modifier = Modifier
             .statusBarsPadding()
@@ -116,6 +119,38 @@ fun NotificationsScreen(
                     .align(Alignment.BottomStart)
                     .padding(start = 50.dp, end = 34.dp, bottom = 16.dp),
             )
+        }
+
+        // Botão "Limpar tudo" (só aparece se tiver notificações)
+        if (notifications.isNotEmpty()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    modifier = Modifier
+                        .clickable { showDeleteDialog = true }
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Limpar tudo",
+                        tint = LineCutRed,
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Text(
+                        text = "Limpar tudo",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = LineCutRed
+                    )
+                }
+            }
         }
 
         // Lista de notificações - começando mais próxima ao header
@@ -209,6 +244,53 @@ fun NotificationsScreen(
                     }
                 }
             }
+        }
+
+        // Dialog de confirmação para deletar todas as notificações
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = {
+                    Text(
+                        text = "Limpar notificações",
+                        fontWeight = FontWeight.Bold,
+                        color = LineCutRed
+                    )
+                },
+                text = {
+                    Text(
+                        text = "Tem certeza que deseja deletar todas as notificações? Esta ação não pode ser desfeita.",
+                        fontSize = 14.sp,
+                        color = Color(0xFF515050)
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            notificationViewModel.deleteAllNotifications()
+                            showDeleteDialog = false
+                        }
+                    ) {
+                        Text(
+                            text = "Limpar",
+                            fontWeight = FontWeight.Bold,
+                            color = LineCutRed
+                        )
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showDeleteDialog = false }
+                    ) {
+                        Text(
+                            text = "Cancelar",
+                            color = Color(0xFF7D7D7D)
+                        )
+                    }
+                },
+                containerColor = Color.White,
+                shape = RoundedCornerShape(20.dp)
+            )
         }
 
         // Bottom Navigation

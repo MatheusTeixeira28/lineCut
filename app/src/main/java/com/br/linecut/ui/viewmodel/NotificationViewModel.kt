@@ -70,4 +70,35 @@ class NotificationViewModel : ViewModel() {
     fun refresh() {
         loadNotifications()
     }
+    
+    /**
+     * Deleta todas as notificações do usuário
+     */
+    fun deleteAllNotifications() {
+        viewModelScope.launch {
+            try {
+                val userId = auth.currentUser?.uid
+                if (userId == null) {
+                    Log.e("NotificationViewModel", "Usuário não autenticado")
+                    _error.value = "Usuário não autenticado"
+                    return@launch
+                }
+                
+                Log.d("NotificationViewModel", "Deletando todas as notificações para userId: $userId")
+                
+                val success = notificationRepository.deleteAllNotifications(userId)
+                if (success) {
+                    Log.d("NotificationViewModel", "✅ Notificações deletadas com sucesso")
+                    _notifications.value = emptyList()
+                } else {
+                    Log.e("NotificationViewModel", "❌ Falha ao deletar notificações")
+                    _error.value = "Erro ao deletar notificações"
+                }
+            } catch (e: Exception) {
+                Log.e("NotificationViewModel", "Erro ao deletar notificações", e)
+                _error.value = e.message ?: "Erro desconhecido"
+            }
+        }
+    }
 }
+
