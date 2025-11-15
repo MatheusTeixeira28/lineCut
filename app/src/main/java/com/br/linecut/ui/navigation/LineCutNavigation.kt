@@ -6,6 +6,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.br.linecut.R
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
@@ -29,6 +30,7 @@ import com.br.linecut.ui.screens.profile.NotificationsScreen
 import com.br.linecut.ui.screens.profile.PaymentsScreen
 import com.br.linecut.ui.screens.profile.FavoritesScreen
 import com.br.linecut.ui.screens.OrdersScreen
+import com.br.linecut.service.ServiceManager
 import com.br.linecut.ui.screens.OrderDetailsScreen
 import com.br.linecut.ui.screens.RateOrderScreen
 import com.br.linecut.ui.screens.profile.HelpScreen
@@ -55,6 +57,7 @@ import com.br.linecut.ui.utils.ImageCache
 import com.br.linecut.ui.utils.ImageLoader
 import com.br.linecut.ui.viewmodel.AuthViewModel
 import com.br.linecut.data.repository.OrderRepository
+import com.br.linecut.data.repository.NotificationRepository
 import kotlin.random.Random
 
 /**
@@ -177,9 +180,14 @@ fun LineCutNavigation(
     
     when (currentScreen) {
         Screen.LOGIN -> {
+            val context = LocalContext.current
+            
             LoginScreen(
                 onLoginSuccess = {
-                    // Após login bem-sucedido, navegar para a tela principal
+                    // Após login bem-sucedido, iniciar o service de monitoramento
+                    ServiceManager.startOrderMonitoringIfLoggedIn(context)
+                    
+                    // Navegar para a tela principal
                     currentScreen = Screen.STORES
                 },
                 onForgotPasswordClick = {
@@ -638,6 +646,21 @@ fun LineCutNavigation(
                         )
                         pedidoRef.updateChildren(updates).await()
                         android.util.Log.d("PIX_RESPONSE", "✅ Dados PIX salvos no Firebase com sucesso!")
+                        
+                        // Criar notificação de pedido realizado
+                        val notificationRepository = NotificationRepository()
+                        val storeName = selectedStore?.name ?: "Lanchonete"
+                        val notificationCreated = notificationRepository.createOrderPlacedNotification(
+                            userId = userId,
+                            orderId = pedidoId,
+                            storeName = storeName
+                        )
+                        
+                        if (notificationCreated) {
+                            android.util.Log.d("PIX_RESPONSE", "✅ Notificação de pedido criada com sucesso!")
+                        } else {
+                            android.util.Log.e("PIX_RESPONSE", "❌ Falha ao criar notificação")
+                        }
                     } else {
                         android.util.Log.e("PIX_RESPONSE", "❌ Dados PIX NÃO foram salvos! txid vazio: ${txid.isEmpty()}, pixCopiaCola vazio: ${pixCopiaCola.isEmpty()}, resultado.isSuccess: ${resultado.isSuccess}")
                     }
@@ -872,8 +895,68 @@ fun LineCutNavigation(
                     currentScreen = Screen.PROFILE
                 },
                 onRatingClick = { notificationId ->
-                    // TODO: Navigate to rating screen or show rating dialog
-                    println("Rating clicked for notification: $notificationId")
+                    // Buscar a notificação para obter o orderId
+                    coroutineScope.launch {
+                        try {
+                            val userId = authViewModel.currentUser.value?.uid
+                            if (userId != null) {
+                                val database = FirebaseDatabase.getInstance()
+                                val notificationRef = database.getReference("notificacoes")
+                                    .child(userId)
+                                    .child(notificationId)
+                                
+                                val snapshot = notificationRef.get().await()
+                                val orderId = snapshot.child("orderId").getValue(String::class.java)
+                                
+                                if (orderId != null) {
+                                    Log.d("LineCutNavigation", "Notificação de avaliação clicada - OrderId: $orderId")
+                                    
+                                    // Buscar detalhes do pedido
+                                    val orderDetail = orderRepository.getOrderById(orderId)
+                                    
+                                    if (orderDetail != null) {
+                                        // Buscar avaliação existente
+                                        val existingRating = orderRepository.getOrderRating(
+                                            storeId = orderDetail.storeId,
+                                            orderId = orderDetail.orderId
+                                        )
+                                        
+                                        existingRatingForOrder = if (existingRating != null) {
+                                            com.br.linecut.ui.screens.ExistingRating(
+                                                qualityRating = existingRating.qualidade,
+                                                speedRating = existingRating.velocidade,
+                                                serviceRating = existingRating.atendimento
+                                            )
+                                        } else null
+                                        
+                                        selectedOrderForRating = com.br.linecut.ui.screens.Order(
+                                            id = orderDetail.orderId,
+                                            orderNumber = orderDetail.orderId,
+                                            date = orderDetail.date,
+                                            storeName = orderDetail.storeName,
+                                            storeCategory = orderDetail.storeType,
+                                            status = if (orderDetail.statusPedido == "retirado" || orderDetail.statusPedido == "entregue") 
+                                                com.br.linecut.ui.screens.OrderStatus.COMPLETED 
+                                            else 
+                                                com.br.linecut.ui.screens.OrderStatus.IN_PROGRESS,
+                                            total = orderDetail.total,
+                                            rating = orderDetail.rating?.toFloat(),
+                                            storeId = orderDetail.storeId
+                                        )
+                                        
+                                        currentScreen = Screen.RATE_ORDER
+                                        Log.d("LineCutNavigation", "Navegando para tela de avaliação")
+                                    } else {
+                                        Log.e("LineCutNavigation", "Pedido não encontrado: $orderId")
+                                    }
+                                } else {
+                                    Log.e("LineCutNavigation", "OrderId não encontrado na notificação")
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.e("LineCutNavigation", "Erro ao navegar para avaliação", e)
+                        }
+                    }
                 },
                 onHomeClick = {
                     showSearchBarOnStores = false
@@ -1063,6 +1146,11 @@ fun LineCutNavigation(
                     mutableStateOf(initialOrderDetail) 
                 }
                 
+                // Estado para rastrear status anterior (para detectar mudanças)
+                var previousStatusPedido by remember(initialOrderDetail.orderId) {
+                    mutableStateOf(initialOrderDetail.statusPedido)
+                }
+                
                 // Listener para monitorar mudanças no pedido
                 DisposableEffect(initialOrderDetail.orderId) {
                     val orderId = initialOrderDetail.orderId.removePrefix("#")
@@ -1074,6 +1162,7 @@ fun LineCutNavigation(
                             try {
                                 val statusPagamento = snapshot.child("status_pagamento").getValue(String::class.java) ?: "pendente"
                                 val statusPedido = snapshot.child("status_pedido").getValue(String::class.java) ?: "pendente"
+                                val idLanchonete = snapshot.child("id_lanchonete").getValue(String::class.java) ?: ""
                                 
                                 Log.d("LineCutNavigation", "Firebase atualizado - status_pagamento: $statusPagamento, status_pedido: $statusPedido")
                                 
@@ -1084,6 +1173,69 @@ fun LineCutNavigation(
                                     "entregue" -> "Pedido concluído"
                                     "cancelado" -> "Pedido cancelado"
                                     else -> "Em preparo"
+                                }
+                                
+                                // Detectar mudança de status e criar notificação
+                                if (statusPedido != previousStatusPedido) {
+                                    Log.d("LineCutNavigation", "🔔 Status mudou de $previousStatusPedido para $statusPedido")
+                                    
+                                    // Buscar nome da lanchonete do Firebase
+                                    coroutineScope.launch {
+                                        try {
+                                            val companiesRef = database.getReference("empresas").child(idLanchonete)
+                                            val companySnapshot = companiesRef.get().await()
+                                            val storeName = companySnapshot.child("nome_lanchonete").getValue(String::class.java) 
+                                                ?: currentOrder.storeName
+                                            
+                                            Log.d("LineCutNavigation", "Nome da lanchonete: $storeName")
+                                            
+                                            // Obter userId
+                                            val userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+                                            
+                                            if (userId != null) {
+                                                val notificationRepository = NotificationRepository()
+                                                
+                                                // Criar notificação baseada no novo status
+                                                when (statusPedido.lowercase()) {
+                                                    "em_preparo" -> {
+                                                        notificationRepository.createOrderPreparingNotification(
+                                                            userId = userId,
+                                                            orderId = orderId,
+                                                            storeName = storeName
+                                                        )
+                                                        Log.d("LineCutNavigation", "✅ Notificação 'em preparo' criada")
+                                                    }
+                                                    "pronto" -> {
+                                                        notificationRepository.createOrderReadyNotification(
+                                                            userId = userId,
+                                                            orderId = orderId,
+                                                            storeName = storeName
+                                                        )
+                                                        Log.d("LineCutNavigation", "✅ Notificação 'pronto' criada")
+                                                    }
+                                                    "retirado", "entregue" -> {
+                                                        notificationRepository.createOrderPickedUpNotification(
+                                                            userId = userId,
+                                                            orderId = orderId,
+                                                            storeName = storeName
+                                                        )
+                                                        // Também criar notificação de avaliação
+                                                        notificationRepository.createRatingNotification(
+                                                            userId = userId,
+                                                            orderId = orderId,
+                                                            storeName = storeName
+                                                        )
+                                                        Log.d("LineCutNavigation", "✅ Notificações 'retirado' e 'avaliação' criadas")
+                                                    }
+                                                }
+                                            }
+                                        } catch (e: Exception) {
+                                            Log.e("LineCutNavigation", "Erro ao criar notificação", e)
+                                        }
+                                    }
+                                    
+                                    // Atualizar status anterior
+                                    previousStatusPedido = statusPedido
                                 }
                                 
                                 // Atualizar o estado do pedido para forçar recomposição

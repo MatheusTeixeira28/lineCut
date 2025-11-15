@@ -1,6 +1,7 @@
 package com.br.linecut.ui.screens.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,11 +21,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.br.linecut.R
 import com.br.linecut.ui.components.LineCutDesignSystem
 import com.br.linecut.ui.components.LineCutBottomNavigationBar
 import com.br.linecut.ui.components.NavigationItem
 import com.br.linecut.ui.theme.*
+import com.br.linecut.ui.viewmodel.NotificationViewModel
 
 // Data class para representar uma notificação
 data class Notification(
@@ -50,7 +53,6 @@ enum class NotificationType(
 
 @Composable
 fun NotificationsScreen(
-    notifications: List<Notification> = getSampleNotifications(),
     onBackClick: () -> Unit = {},
     onRatingClick: (String) -> Unit = {},
     onHomeClick: () -> Unit = {},
@@ -58,8 +60,13 @@ fun NotificationsScreen(
     onNotificationClick: () -> Unit = {},
     onOrdersClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    notificationViewModel: NotificationViewModel = viewModel()
 ) {
+    val notifications by notificationViewModel.notifications.collectAsState()
+    val isLoading by notificationViewModel.isLoading.collectAsState()
+    val error by notificationViewModel.error.collectAsState()
+    
     Column(
         modifier = Modifier
             .statusBarsPadding()
@@ -112,19 +119,95 @@ fun NotificationsScreen(
         }
 
         // Lista de notificações - começando mais próxima ao header
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(top = 24.dp, bottom = 20.dp)
         ) {
-            items(notifications) { notification ->
-                NotificationCard(
-                    notification = notification,
-                    onRatingClick = { onRatingClick(notification.id) }
-                )
+            when {
+                isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color = LineCutRed,
+                            modifier = Modifier.size(48.dp)
+                        )
+                    }
+                }
+                error != null -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = null,
+                                tint = LineCutRed,
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Erro ao carregar notificações",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = LineCutRed
+                            )
+                        }
+                    }
+                }
+                notifications.isEmpty() -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = null,
+                                tint = Color(0xFFD1D1D1),
+                                modifier = Modifier.size(64.dp)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Nenhuma notificação",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF7D7D7D)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Você ainda não possui notificações",
+                                fontSize = 14.sp,
+                                color = Color(0xFF959595)
+                            )
+                        }
+                    }
+                }
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        contentPadding = PaddingValues(top = 24.dp, bottom = 20.dp)
+                    ) {
+                        items(notifications) { notification ->
+                            NotificationCard(
+                                notification = notification,
+                                onRatingClick = { onRatingClick(notification.id) }
+                            )
+                        }
+                    }
+                }
             }
         }
 
@@ -221,7 +304,9 @@ private fun NotificationCard(
                     Spacer(modifier = Modifier.height(8.dp))
                     
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onRatingClick() }, // Tornar clicável
                         horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -239,15 +324,15 @@ private fun NotificationCard(
                             
                             Spacer(modifier = Modifier.height(4.dp))
                             
-                            // Estrelas de avaliação
+                            // Estrelas de avaliação (vazias)
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(2.dp)
                             ) {
                                 repeat(5) { index ->
                                     Icon(
-                                        imageVector = Icons.Default.Star,
+                                        imageVector = Icons.Default.StarBorder, // Estrela vazia
                                         contentDescription = "Estrela ${index + 1}",
-                                        tint = Color(0xFFFFD700),
+                                        tint = Color(0xFFD1D1D1), // Cor cinza para estrelas vazias
                                         modifier = Modifier.size(11.63.dp)
                                     )
                                 }
@@ -259,46 +344,6 @@ private fun NotificationCard(
         }
     }
 }
-
-// Função para gerar dados de exemplo das notificações
-private fun getSampleNotifications(): List<Notification> = listOf(
-    Notification(
-        id = "1",
-        title = "Avalie seu pedido",
-        message = "O que achou do seu pedido?\nSua opinião é muito importante!",
-        time = "Hoje às 17:30",
-        type = NotificationType.RATING,
-        showRating = true
-    ),
-    Notification(
-        id = "2",
-        title = "Pedido retirado",
-        message = "Você retirou seu pedido na Lanchonete Museoh. Aproveite sua refeição!",
-        time = "Hoje às 17:20",
-        type = NotificationType.ORDER_PICKED_UP
-    ),
-    Notification(
-        id = "3",
-        title = "Pedido pronto para retirada",
-        message = "Seu pedido está pronto! Retire no balcão quando quiser.",
-        time = "Hoje às 17:15",
-        type = NotificationType.ORDER_READY
-    ),
-    Notification(
-        id = "4",
-        title = "Pedido em preparo",
-        message = "Seu pedido na Lanchonete Museoh está sendo preparado!",
-        time = "Hoje às 17:05",
-        type = NotificationType.ORDER_PREPARING
-    ),
-    Notification(
-        id = "5",
-        title = "Pedido realizado",
-        message = "Recebemos seu pedido na Lanchonete Museoh. Em breve ele será preparado!",
-        time = "Hoje às 17:00",
-        type = NotificationType.ORDER_PLACED
-    )
-)
 
 // Previews
 @Preview(
