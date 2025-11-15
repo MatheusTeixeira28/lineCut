@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.br.linecut.data.firebase.FirebaseConfig
 import com.br.linecut.service.ServiceManager
 import com.br.linecut.ui.navigation.LineCutNavigation
@@ -38,7 +39,13 @@ class MainActivity : ComponentActivity() {
     }
     
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Install splash screen before super.onCreate
+        installSplashScreen()
+        
         super.onCreate(savedInstanceState)
+        
+        // Trocar do tema de splash para o tema normal
+        setTheme(R.style.Theme_LineCut)
         
         // Inicializar Firebase
         FirebaseConfig.initialize(this)
@@ -55,8 +62,8 @@ class MainActivity : ComponentActivity() {
             LineCutTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     LineCutNavigation(
-                        modifier = Modifier.padding(innerPadding),
-                        startDestination = Screen.LOGIN
+                        modifier = Modifier.padding(innerPadding)
+                        // Usar o startDestination padrão (Screen.SPLASH)
                     )
                 }
             }

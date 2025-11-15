@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android" android:opacity="opaque">
+    <!-- White background -->
+    <item android:drawable="@android:color/white" />
+    
+    <!-- Centered logo with padding -->
+    <item
+        android:drawable="@drawable/linecut_login_icon"
+        android:gravity="center"
+        android:top="100dp"
+        android:bottom="100dp"
+        android:left="50dp"
+        android:right="50dp" />
+</layer-list>

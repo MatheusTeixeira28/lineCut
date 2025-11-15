@@ -2,4 +2,11 @@
 <resources>
 
     <style name="Theme.LineCut" parent="android:Theme.Material.Light.NoActionBar" />
+    
+    <!-- Tema de Splash Screen com logo LineCut -->
+    <style name="Theme.LineCut.Splash" parent="Theme.LineCut">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+        <item name="android:statusBarColor">@color/white</item>
+        <item name="android:navigationBarColor">@color/white</item>
+    </style>
 </resources>
